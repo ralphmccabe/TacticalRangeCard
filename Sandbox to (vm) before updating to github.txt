@@ -1,0 +1,11 @@
+Sandbox to (vm) before updating to GitHub/      changing Version #'s all the way around.
+
+
+insert a banner:        then remove before update
+      snap a the current version for a resave state  before applying new changes
+ 
+       every new state gets a new snap to the patch or update
+
+
+
+      
