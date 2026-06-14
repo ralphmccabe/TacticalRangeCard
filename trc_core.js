@@ -3523,6 +3523,10 @@ function initializeTacticalDashboard2() {
     let orbitalMap = null;
 window.eventMarkers = [];
 window.eventLines = [];
+window.allDrawings = [];
+window.isMapDrawingMode = false;
+let currentMapDrawing = null;
+let isMapPointerDown = false;
 let rallyPointLine = null;
     let mapMarkers = [];
     let mapPolyline = null;
@@ -3575,6 +3579,57 @@ let rallyPointLine = null;
             // 3. Add Global Map Click Listener for Vector Points
             orbitalMap.on('click', handleMapClick);
 
+            // --- MAP DRAWING LOGIC (ROBUST NATIVE TOUCH FOR MOBILE) ---
+            const mapEl = orbitalMap.getContainer();
+            
+            function getMapLatLng(e) {
+                if (e.latlng) return e.latlng;
+                const evt = e.touches && e.touches.length > 0 ? e.touches[0] : (e.changedTouches ? e.changedTouches[0] : e);
+                return orbitalMap.mouseEventToLatLng(evt);
+            }
+
+            let lastDrawPoint = null;
+            const startDraw = (e) => {
+                if (!window.isMapDrawingMode) return;
+                if (e.type === 'touchstart') e.preventDefault(); // Stop mobile scroll
+                isMapPointerDown = true;
+                let latlng = getMapLatLng(e);
+                lastDrawPoint = latlng;
+                currentMapDrawing = L.polyline([latlng], {color: '#3b82f6', weight: 5, opacity: 0.9, smoothFactor: 1}).addTo(orbitalMap);
+            };
+
+            const moveDraw = (e) => {
+                if (!window.isMapDrawingMode || !isMapPointerDown || !currentMapDrawing) return;
+                if (e.type === 'touchmove') e.preventDefault(); // Stop mobile scroll
+                let latlng = getMapLatLng(e);
+                
+                // Throttle drawing density to prevent massive payloads crushing the chat socket
+                if (lastDrawPoint) {
+                    const p1 = orbitalMap.latLngToLayerPoint(lastDrawPoint);
+                    const p2 = orbitalMap.latLngToLayerPoint(latlng);
+                    if (p1.distanceTo(p2) < 5) return; // Drop points closer than 5 pixels
+                }
+                lastDrawPoint = latlng;
+                currentMapDrawing.addLatLng(latlng);
+            };
+
+            const stopDraw = (e) => {
+                if (!window.isMapDrawingMode || !isMapPointerDown) return;
+                isMapPointerDown = false;
+                if (currentMapDrawing) {
+                    window.allDrawings.push(currentMapDrawing);
+                    currentMapDrawing = null;
+                }
+            };
+
+            mapEl.addEventListener('mousedown', startDraw);
+            mapEl.addEventListener('mousemove', moveDraw);
+            mapEl.addEventListener('mouseup', stopDraw);
+            mapEl.addEventListener('touchstart', startDraw, { passive: false });
+            mapEl.addEventListener('touchmove', moveDraw, { passive: false });
+            mapEl.addEventListener('touchend', stopDraw);
+            mapEl.addEventListener('touchcancel', stopDraw);
+
             // Auto-Trigger initial GPS sync to find where the user currently is!
             // syncMapToGps(); // Disabled on page load to comply with Lighthouse Best Practices
             
@@ -3620,6 +3675,7 @@ let rallyPointLine = null;
     }
 
     function handleMapClick(e) {
+        if (window.isMapDrawingMode) return;
         // Prevent accidental marker drops when clicking to expand the panel from the dashboard
         const panel = document.getElementById('panel-measuring');
         if (panel && !panel.classList.contains('is-maximized')) return;
@@ -3739,6 +3795,13 @@ let rallyPointLine = null;
         const group = new L.featureGroup(mapMarkers);
         orbitalMap.fitBounds(group.getBounds().pad(0.2));
     }
+
+    window.clearMapDrawings = function() {
+        if (window.orbitalMap && window.allDrawings) {
+            window.allDrawings.forEach(d => window.orbitalMap.removeLayer(d));
+            window.allDrawings = [];
+        }
+    };
 
     function clearMapMeasurements() {
         // Wipe Visuals from memory
@@ -3873,6 +3936,10 @@ let rallyPointLine = null;
                 if(typeof mapMarkers !== 'undefined' && mapMarkers.length >= 2) {
                     meta.markers = mapMarkers.map(m => m.getLatLng());
                 }
+                if (typeof window.allDrawings !== 'undefined' && window.allDrawings.length > 0) {
+                    // Compress into truncated arrays [lat, lng] instead of full LatLng objects to drastically reduce JSON size for chat limits
+                    meta.drawings = window.allDrawings.map(d => d.getLatLngs().map(ll => [parseFloat(ll.lat.toFixed(5)), parseFloat(ll.lng.toFixed(5))]));
+                }
                 saveIntelSnapshot("Orbital_Vector_" + Date.now().toString().slice(-4), dataUri, meta);
                 
                 mapSnapBtn.innerHTML = `<i data-lucide="check" class="w-3 h-3"></i> SAVED TO VAULT`;
@@ -3908,7 +3975,8 @@ let rallyPointLine = null;
             }
 
             const dbItems = await TRC_IDB.getAll('intelVault');
-            vaultCache = Object.values(dbItems).sort((a, b) => {
+            const itemsArray = dbItems ? Object.values(dbItems) : [];
+            vaultCache = itemsArray.sort((a, b) => {
                 const tsA = new Date(a.timestamp).getTime();
                 const tsB = new Date(b.timestamp).getTime();
                 return tsB - tsA;
@@ -3925,8 +3993,8 @@ let rallyPointLine = null;
     // LOAD INTEL VAULT TO MAP
     // ========================================================================
     window.loadVaultToMap = function(item) {
-        if (!item || (!item.markers && !item.originLat)) {
-            alert("This snapshot does not contain valid map coordinates.");
+        if (!item || (!item.markers && !item.originLat && !item.drawings && !item.routeTracker)) {
+            alert("This snapshot does not contain valid map coordinates or drawings.");
             return;
         }
 
@@ -3938,6 +4006,8 @@ let rallyPointLine = null;
 
         // 2. Clear Existing Map
         if (typeof clearMapMeasurements === 'function') clearMapMeasurements();
+        if (typeof clearMapDrawings === 'function') clearMapDrawings();
+        if (typeof clearTrack === 'function') clearTrack();
 
         // 3. Inject Markers
         if (item.markers && Array.isArray(item.markers)) {
@@ -3971,6 +4041,19 @@ let rallyPointLine = null;
         if (orbitalMap && mapMarkers.length > 0) {
             orbitalMap.fitBounds(L.featureGroup(mapMarkers).getBounds(), { padding: [50, 50], maxZoom: 18 });
         }
+
+        // 6. Restore Drawings
+        if (item.drawings && Array.isArray(item.drawings)) {
+            item.drawings.forEach(dLatLngs => {
+                const dLine = L.polyline(dLatLngs, {color: '#3b82f6', weight: 5, opacity: 0.9, smoothFactor: 1}).addTo(orbitalMap);
+                if (typeof allDrawings !== 'undefined') allDrawings.push(dLine);
+            });
+        }
+
+        // 7. Restore Route Tracker
+        if (item.routeTracker && Array.isArray(item.routeTracker) && typeof trackPolyline !== 'undefined') {
+            trackPolyline.setLatLngs(item.routeTracker);
+        }
     };
 
     window.saveIntelSnapshot = saveIntelSnapshot;
@@ -3992,6 +4075,7 @@ let rallyPointLine = null;
             ...metadata
         };
         
+        if (!vaultCache) vaultCache = [];
         vaultCache.unshift(entry);
         
         if (window.TRC_IDB) {
@@ -4020,7 +4104,7 @@ let rallyPointLine = null;
                 " " + "vault-accent-card";
             el.innerHTML = `
                 <div class="aspect-square bg-black overflow-hidden relative border border-gray-800 mb-1 flex items-center justify-center">
-                    <img src="${item.image}" class="max-w-full max-h-full object-contain opacity-90 group-hover:opacity-100 transition-all">
+                    ${item.image.startsWith('data:video') ? `<div class="absolute inset-0 flex items-center justify-center bg-gray-900"><i data-lucide="play-circle" class="w-8 h-8 text-white opacity-80 group-hover:opacity-100 transition-opacity"></i></div>` : `<img src="${item.image}" class="max-w-full max-h-full object-contain opacity-90 group-hover:opacity-100 transition-all">`}
                 </div>
                 <div class="text-[7px] font-mono text-gray-400 uppercase truncate pr-4">${item.label || item.missionName || 'TACTICAL BRIEF'}</div>
                 <div class="text-[6px] text-gray-600">${
@@ -4124,7 +4208,9 @@ let rallyPointLine = null;
         // 1. Populate Target Visualizer (Window 4)
         target.innerHTML = `
             <div class="w-full h-full relative bg-black overflow-hidden flex items-center justify-center">
-                <img src="${item.image}" class="w-full h-full object-contain">
+                ${item.image.startsWith('data:video') 
+                    ? `<video src="${item.image}" class="w-full h-full object-contain" controls playsinline preload="metadata"></video>` 
+                    : `<img src="${item.image}" class="w-full h-full object-contain">`}
                 <div class="absolute bottom-0 inset-x-0 h-8 bg-gradient-to-t from-black via-black/50 to-transparent pointer-events-none"></div>
                 <div class="absolute bottom-1 left-1 bg-emerald-950/80 px-1.5 py-0.5 rounded border border-emerald-500 text-[7px] font-mono text-emerald-300 uppercase tracking-widest opacity-90 z-10">
                     ${item.label}
@@ -4149,6 +4235,9 @@ let rallyPointLine = null;
                     ` : ''}
                     <button class="bg-red-950/90 text-red-300 border border-red-600/50 p-1.5 rounded hover:bg-red-600 hover:text-white transition-all shadow-lg" onclick="event.stopPropagation(); window.unloadDashboardCard(4)" title="Unload Vault Item">
                         <i data-lucide="trash-2" class="w-2.5 h-2.5"></i>
+                    </button>
+                    <button class="bg-emerald-950/90 text-emerald-300 border border-emerald-600/50 p-1.5 rounded hover:bg-emerald-600 hover:text-white transition-all shadow-lg flex items-center gap-1 font-black text-[7px]" onclick="event.stopPropagation(); window.sendVaultItemToChat(${item.id})" title="Send to Team Chat">
+                        <i data-lucide="send" class="w-2.5 h-2.5"></i> SEND
                     </button>
                 </div>
             </div>
@@ -4441,6 +4530,16 @@ let rallyPointLine = null;
 
             const stream = await navigator.mediaDevices.getUserMedia(constraints);
             activeStream = stream;
+
+            // Also grab mic audio for video recording, if available
+            try {
+                const audioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                const audioTrack = audioStream.getAudioTracks()[0];
+                if (audioTrack) activeStream.addTrack(audioTrack);
+            } catch(e) {
+                console.warn('Mic not available for recording:', e);
+            }
+
             videoEl.srcObject = stream;
             
             // Hard kick start for mobile auto-play security!
@@ -4462,6 +4561,34 @@ let rallyPointLine = null;
 
             label.textContent = currentFacingMode === "environment" ? "REAR CAM" : "LOCAL HUD / FRONT";
             
+            // Show draw tools when feed is live
+            const drawTools = document.getElementById('surveillance-draw-tools');
+            if (drawTools) {
+                drawTools.classList.remove('hidden');
+                drawTools.classList.add('flex');
+            }
+
+            // Wire HUD Toggle (each time feed starts, re-wire so it's always valid)
+            const hudToggleBtn = document.getElementById('feed-hud-toggle-btn');
+            if (hudToggleBtn && hud) {
+                // Remove old listener by replacing the element clone trick
+                const newHudBtn = hudToggleBtn.cloneNode(true);
+                hudToggleBtn.parentNode.replaceChild(newHudBtn, hudToggleBtn);
+                let hudVisible = !hud.classList.contains('hidden');
+                newHudBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    hudVisible = !hudVisible;
+                    if (hudVisible) {
+                        hud.classList.remove('hidden');
+                        newHudBtn.innerHTML = `<i data-lucide="eye-off" class="w-4 h-4"></i> HUD`;
+                    } else {
+                        hud.classList.add('hidden');
+                        newHudBtn.innerHTML = `<i data-lucide="eye" class="w-4 h-4"></i> HUD`;
+                    }
+                    if (window.lucide) window.lucide.createIcons();
+                });
+            }
+            
             initTacticalHUD(); // START HUD LOGIC
             
         } catch (err) {
@@ -4471,6 +4598,16 @@ let rallyPointLine = null;
     }
 
     function stopFeed() {
+        if (window.mediaRecorder && window.mediaRecorder.state !== 'inactive') {
+            window.mediaRecorder.stop();
+        }
+        const captureBtn = document.getElementById('surveillance-capture-btn');
+        const recStartBtn = document.getElementById('surveillance-record-start-btn');
+        const recStopBtn = document.getElementById('surveillance-record-stop-btn');
+        if (captureBtn) captureBtn.classList.add('hidden');
+        if (recStartBtn) recStartBtn.classList.add('hidden');
+        if (recStopBtn) recStopBtn.classList.add('hidden');
+
         if (activeStream) {
             activeStream.getTracks().forEach(track => track.stop());
             activeStream = null;
@@ -4484,6 +4621,13 @@ let rallyPointLine = null;
         hud.classList.add('hidden');
         if(killBtn) killBtn.classList.add('hidden'); // Hide shutdown button again
         
+        // Hide draw tools when feed is stopped
+        const drawTools = document.getElementById('surveillance-draw-tools');
+        if (drawTools) {
+            drawTools.classList.add('hidden');
+            drawTools.classList.remove('flex');
+        }
+        
         // HIDE FOOTER ON STOP
         const survFooter = document.getElementById('surveillance-footer');
         if(survFooter) survFooter.classList.add('hidden');
@@ -4493,10 +4637,119 @@ let rallyPointLine = null;
         label.textContent = "OFFLINE";
     }
 
-    if (activateBtn) {
-        activateBtn.addEventListener('click', (e) => {
+    const activateScopeBtn = document.getElementById('feed-activate-scope-btn');
+    const activateVideoBtn = document.getElementById('feed-activate-video-btn');
+    const _captureBtn = document.getElementById('surveillance-capture-btn');
+    const recStartBtn = document.getElementById('surveillance-record-start-btn');
+    const recStopBtn = document.getElementById('surveillance-record-stop-btn');
+
+    if (activateScopeBtn) {
+        activateScopeBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             startFeed();
+            if (_captureBtn) _captureBtn.classList.remove('hidden');
+            if (recStartBtn) recStartBtn.classList.add('hidden');
+            if (recStopBtn) recStopBtn.classList.add('hidden');
+        });
+    }
+
+    if (activateVideoBtn) {
+        activateVideoBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            startFeed();
+            if (_captureBtn) _captureBtn.classList.add('hidden');
+            if (recStartBtn) recStartBtn.classList.remove('hidden');
+            if (recStopBtn) recStopBtn.classList.add('hidden');
+        });
+    }
+
+    let recordedChunks = [];
+    if (recStartBtn && recStopBtn) {
+        recStartBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (!activeStream) return;
+            
+            recordedChunks = [];
+            try {
+                window.mediaRecorder = new MediaRecorder(activeStream);
+            } catch(err) {
+                // Try with a supported mime type
+                try {
+                    window.mediaRecorder = new MediaRecorder(activeStream, { mimeType: 'video/webm; codecs=vp8,opus' });
+                } catch(err2) {
+                    console.error('MediaRecorder error:', err2);
+                    if (window.pushTacLog) window.pushTacLog("VIDEO RECORDING NOT SUPPORTED", "ERROR");
+                    return;
+                }
+            }
+
+            window.mediaRecorder.ondataavailable = (event) => {
+                if (event.data.size > 0) recordedChunks.push(event.data);
+            };
+
+            window.mediaRecorder.onstop = () => {
+                const blob = new Blob(recordedChunks, { type: window.mediaRecorder.mimeType || 'video/webm' });
+                window._currentTapeBlob = blob;
+                
+                const tapeModal = document.getElementById('tape-modal');
+                const tapeInput = document.getElementById('tape-designation-input');
+                if (tapeModal && tapeInput) {
+                    tapeInput.value = 'SCOPETAPE_' + Date.now().toString().slice(-4);
+                    tapeModal.classList.remove('hidden');
+                    tapeModal.classList.add('flex');
+                } else {
+                    const reader = new FileReader();
+                    reader.readAsDataURL(blob);
+                    reader.onloadend = () => {
+                        if (window.saveIntelSnapshot) {
+                            window.saveIntelSnapshot("FEED_VIDEO_" + Date.now().toString().slice(-4), reader.result, { type: 'video' });
+                            if (window.pushTacLog) window.pushTacLog("VIDEO SAVED TO INTEL VAULT", "SUCCESS");
+                        }
+                    };
+                }
+            };
+
+            // Start recording with countdown timer
+            let recSeconds = 0;
+            const origText = recStopBtn.innerHTML;
+            const countdownInterval = setInterval(() => {
+                recSeconds++;
+                const mins = String(Math.floor(recSeconds / 60)).padStart(2, '0');
+                const secs = String(recSeconds % 60).padStart(2, '0');
+                const stopBtnEl = document.getElementById('surveillance-record-stop-btn');
+                if (stopBtnEl) {
+                    stopBtnEl.innerHTML = `<div class="w-3 h-3 bg-red-600 rounded-sm animate-pulse inline-block mr-1"></div> ${mins}:${secs}`;
+                } else {
+                    clearInterval(countdownInterval);
+                }
+                // Auto-stop at 5 minutes
+                if (recSeconds >= 300) {
+                    clearInterval(countdownInterval);
+                    const stopEl = document.getElementById('surveillance-record-stop-btn');
+                    if (stopEl) stopEl.click();
+                }
+            }, 1000);
+            window._recCountdownInterval = countdownInterval;
+
+            window.mediaRecorder.start();
+            recStartBtn.classList.add('hidden');
+            recStopBtn.classList.remove('hidden');
+            if (window.pushTacLog) window.pushTacLog("VIDEO RECORDING STARTED", "SYS");
+        });
+
+        recStopBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (window.mediaRecorder && window.mediaRecorder.state !== 'inactive') {
+                window.mediaRecorder.stop();
+                recStopBtn.classList.add('hidden');
+                recStartBtn.classList.remove('hidden');
+                // Clear countdown
+                if (window._recCountdownInterval) {
+                    clearInterval(window._recCountdownInterval);
+                    window._recCountdownInterval = null;
+                }
+                if (window.pushTacLog) window.pushTacLog("VIDEO RECORDING STOPPED — ENCRYPTING...", "SYS");
+            }
         });
     }
 
@@ -4528,6 +4781,12 @@ let rallyPointLine = null;
             canvas.height = videoEl.videoHeight || 480;
             const ctx = canvas.getContext('2d');
             ctx.drawImage(videoEl, 0, 0, canvas.width, canvas.height);
+
+            // Composite the Drawing Canvas Over the Video Feed
+            const survDrawCanvas = document.getElementById('surveillance-draw-canvas');
+            if (survDrawCanvas) {
+                ctx.drawImage(survDrawCanvas, 0, 0, canvas.width, canvas.height);
+            }
             
             // --- TACTICAL HUD FULL GRAPHIC BURN-IN ---
             // Dynamic scaler: Mobile cameras are high resolution (1080p+), so we must scale the UI up to match
@@ -5806,6 +6065,34 @@ let rallyPointLine = null;
             });
       }
 
+      const drawBtn = document.getElementById('geo-draw-btn');
+      if (drawBtn) {
+          drawBtn.addEventListener('click', (e) => {
+              e.stopPropagation();
+              window.isMapDrawingMode = !window.isMapDrawingMode;
+              if (window.isMapDrawingMode) {
+                  drawBtn.innerHTML = `<i data-lucide="pen-tool" class="w-4 h-4"></i> ACTIVE`;
+                  drawBtn.classList.replace('text-gray-300', 'text-blue-400');
+                  drawBtn.classList.replace('border-gray-700', 'border-blue-500');
+                  if (window.orbitalMap) window.orbitalMap.dragging.disable();
+              } else {
+                  drawBtn.innerHTML = `<i data-lucide="pen-tool" class="w-4 h-4"></i> DRAW`;
+                  drawBtn.classList.replace('text-blue-400', 'text-gray-300');
+                  drawBtn.classList.replace('border-blue-500', 'border-gray-700');
+                  if (window.orbitalMap) window.orbitalMap.dragging.enable();
+              }
+              if (window.lucide) lucide.createIcons();
+          });
+      }
+
+      const clearDrawBtn = document.getElementById('geo-clear-draw-btn');
+      if (clearDrawBtn) {
+          clearDrawBtn.addEventListener('click', (e) => {
+              e.stopPropagation();
+              if (typeof window.clearMapDrawings === 'function') window.clearMapDrawings();
+          });
+      }
+
     const connectBtn = document.getElementById('comms-connect-btn');
     
     // Auto-fill from localStorage if available
@@ -6503,7 +6790,13 @@ let rallyPointLine = null;
         
         let contentHtml = '';
         if (msg) contentHtml += `<div>${msg}</div>`;
-        if (imageBase64) contentHtml += `<img src="${imageBase64}" class="mt-1 rounded border border-gray-600 w-32 h-auto cursor-pointer" onclick="window.open(this.src)">`;
+        if (imageBase64) {
+            if (imageBase64.startsWith('data:video')) {
+                contentHtml += `<video src="${imageBase64}" class="mt-1 rounded border border-gray-600 w-32 h-auto cursor-pointer" controls playsinline onclick="if(this.paused)this.play();else this.pause();"></video>`;
+            } else {
+                contentHtml += `<img src="${imageBase64}" class="mt-1 rounded border border-gray-600 w-32 h-auto cursor-pointer" onclick="window.open(this.src)">`;
+            }
+        }
 
         entry.innerHTML = `
             <span class="text-[6px] text-gray-600 uppercase font-black">${userObj.callsign} [${userObj.role}]</span>
@@ -7743,6 +8036,87 @@ let rallyPointLine = null;
             toVaultBtnBottom.addEventListener('click', (e) => handleVaultClick(e, toVaultBtnBottom));
         }
 
+        // SEND INDIVIDUAL VAULT ITEM TO CHAT (used by SEND button in selectVaultItem)
+        window.sendVaultItemToChat = function(itemId) {
+            if (!commsChannel) {
+                alert('Connect to Tactical Comms first!');
+                return;
+            }
+            const item = vaultCache.find(i => i.id == itemId);
+            if (!item) return;
+
+            window.pushTacLog(`TRANSMITTING VAULT ITEM TO COMMS...`, "SYS");
+
+            const isVideo = item.image && item.image.startsWith('data:video');
+
+            if (isVideo) {
+                // Video path: send metadata reference + flag. Video blob too large for Supabase realtime.
+                // We send a compact notification with the label so the other device knows a video was shared.
+                try {
+                    const metaPayload = { 
+                        message: `🎥 VIDEO INTEL INCOMING: ${item.label}`, 
+                        user: commsUser, 
+                        timestamp: Date.now(),
+                        isVideo: true,
+                        videoLabel: item.label
+                    };
+                    const encrypted = TacticalCrypto.encrypt(metaPayload);
+                    const msgId = Math.random().toString(36).substring(2, 9);
+                    window.receivedMsgIds.add(msgId);
+                    commsChannel.send({ type: 'broadcast', event: 'chat', payload: { data: encrypted, msgId } });
+                    renderChatMessage(commsUser, `🎥 VIDEO INTEL: ${item.label}`, false, null);
+                    window.pushTacLog(`VIDEO METADATA BROADCAST SENT`, "SUCCESS");
+                } catch(e) {
+                    window.pushTacLog("VIDEO BROADCAST FAILED: " + e.message, "ERROR");
+                }
+            } else {
+                // Image path: compress and send
+                const img = new Image();
+                img.onload = () => {
+                    let w = img.width, h = img.height;
+                    const MAX_DIM = 400;
+                    if (w > MAX_DIM || h > MAX_DIM) {
+                        if (w > h) { h = Math.floor(h * (MAX_DIM / w)); w = MAX_DIM; }
+                        else { w = Math.floor(w * (MAX_DIM / h)); h = MAX_DIM; }
+                    }
+                    const canvas = document.createElement('canvas');
+                    canvas.width = w; canvas.height = h;
+                    canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+                    const compressedBase64 = canvas.toDataURL('image/jpeg', 0.5);
+                    try {
+                        const metadataObj = Object.assign({}, item);
+                        delete metadataObj.image;
+                        delete metadataObj.snapshot;
+                        delete metadataObj.bgImage;
+                        delete metadataObj.id;
+                        delete metadataObj.routeTracker;
+                        const encryptedImage = TacticalCrypto.encrypt({ 
+                            message: "INCOMING IMAGE INTEL", 
+                            image: compressedBase64, 
+                            user: commsUser,
+                            metadata: metadataObj
+                        });
+                        const msgId = Math.random().toString(36).substring(2, 9);
+                        window.receivedMsgIds.add(msgId);
+                        if (window.dataChannels) {
+                            Object.values(window.dataChannels).forEach(dc => {
+                                if (dc && dc.readyState === 'open') {
+                                    try { dc.send(JSON.stringify({ event: 'chat', data: encryptedImage, msgId })); } catch(e2) {}
+                                }
+                            });
+                        }
+                        commsChannel.send({ type: 'broadcast', event: 'chat', payload: { data: encryptedImage, msgId } });
+                        renderChatMessage(commsUser, "INCOMING IMAGE INTEL", true, compressedBase64);
+                        window.pushTacLog(`IMAGE INTEL SENT TO COMMS`, "SUCCESS");
+                    } catch(e) {
+                        window.pushTacLog("VAULT SEND FAILED: " + e.message, "ERROR");
+                    }
+                };
+                img.onerror = () => window.pushTacLog('IMG LOAD ERR FOR VAULT SEND', 'ERROR');
+                img.src = item.image;
+            }
+        };
+
         const vaultChatsBtn = document.getElementById('vault-chats-btn');
         if (vaultChatsBtn) {
             vaultChatsBtn.addEventListener('click', (e) => {
@@ -7754,83 +8128,12 @@ let rallyPointLine = null;
                 const itemsToSend = vaultCache.filter(item => selectedIds.includes(item.id.toString()));
                 
                 itemsToSend.forEach((item, index) => {
-                    setTimeout(() => {
-                        try {
-                            const originalBase64 = item.image;
-                            const metadataObj = Object.assign({}, item);
-                            // Strip ALL large base64 blobs from metadata before broadcast
-                            // (DOPE_CARD / RECON_MAP embed a full 'snapshot' in their metadata
-                            //  which would cause Supabase to reject the oversized payload)
-                            delete metadataObj.image;
-                            delete metadataObj.snapshot;
-                            delete metadataObj.bgImage;
-                            delete metadataObj.id;
-                            delete metadataObj.routeTracker;
-                            
-                            const img = new Image();
-                            img.onload = () => {
-                                let w = img.width;
-                                let h = img.height;
-                                const MAX_DIM = 400;
-                                
-                                if (w > MAX_DIM || h > MAX_DIM) {
-                                    if (w > h) { h = Math.floor(h * (MAX_DIM / w)); w = MAX_DIM; }
-                                    else { w = Math.floor(w * (MAX_DIM / h)); h = MAX_DIM; }
-                                }
-                                const canvas = document.createElement('canvas');
-                                canvas.width = w;
-                                canvas.height = h;
-                                canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-                                
-                                const compressedBase64 = canvas.toDataURL('image/jpeg', 0.5);
-                                
-                                try {
-                                    const encryptedImage = TacticalCrypto.encrypt({ 
-                                        message: "INCOMING IMAGE INTEL", 
-                                        image: compressedBase64, 
-                                        user: commsUser,
-                                        metadata: metadataObj
-                                    });
-                                    const msgId = Math.random().toString(36).substring(2, 9);
-                                    window.receivedMsgIds.add(msgId);
-                                    
-                                    // P2P Image Paste
-                                    if (window.dataChannels) {
-                                        Object.values(window.dataChannels).forEach(dc => {
-                                            if (dc && dc.readyState === 'open') {
-                                                try {
-                                                    dc.send(JSON.stringify({ event: 'chat', data: encryptedImage, msgId }));
-                                                } catch (err) {
-                                                    window.pushTacLog("P2P IMG PASTE ERR: " + err.message, "ERROR");
-                                                }
-                                            }
-                                        });
-                                    }
-
-                                    commsChannel.send({
-                                        type: 'broadcast',
-                                        event: 'chat',
-                                        payload: { data: encryptedImage, msgId }
-                                    });
-                                    renderChatMessage(commsUser, "INCOMING IMAGE INTEL", true, compressedBase64);
-                                } catch (e) {
-                                    window.pushTacLog("IMAGE PASTE SOCKET FAILED", "ERROR");
-                                }
-                            };
-                            img.onerror = (err) => {
-                                window.pushTacLog(`IMG ONLOAD ERROR: ${err}`, "ERROR");
-                            };
-                            window.pushTacLog(`SETTING IMG SRC...`, "SYS");
-                            img.src = originalBase64;
-                        } catch (err) {
-                            window.pushTacLog("VAULT CHAT ERROR: " + err.message, "ERROR");
-                        }
-                    }, index * 800);
+                    setTimeout(() => { window.sendVaultItemToChat(item.id); }, index * 800);
                 });
                 
                 // Uncheck boxes after sending
                 checkedBoxes.forEach(cb => cb.checked = false);
-                window.pushTacLog(`QUEUED ${itemsToSend.length} IMAGES FOR COMM CHANNEL`, "SUCCESS");
+                window.pushTacLog(`QUEUED ${itemsToSend.length} ITEMS FOR COMM CHANNEL`, "SUCCESS");
             });
         }
 
@@ -7992,6 +8295,121 @@ document.addEventListener('DOMContentLoaded', () => {
     function updateTransform() {
         zoomImg.style.transform = "scale(${currentScale})";
         zoomImg.style.transform = 'scale(' + currentScale + ')';
+    }
+
+    // Tape Save Btn Logic
+    const tapeSaveBtn = document.getElementById('tape-save-btn');
+    if (tapeSaveBtn) {
+        tapeSaveBtn.addEventListener('click', () => {
+            const tapeModal = document.getElementById('tape-modal');
+            const tapeInput = document.getElementById('tape-designation-input');
+            const designation = tapeInput ? (tapeInput.value || 'SCOPETAPE_0000') : 'SCOPETAPE_0000';
+            
+            if (window._currentTapeBlob) {
+                const reader = new FileReader();
+                reader.readAsDataURL(window._currentTapeBlob);
+                reader.onloadend = () => {
+                    if (window.saveIntelSnapshot) {
+                        window.saveIntelSnapshot(designation, reader.result, { type: 'video' });
+                        if (window.pushTacLog) window.pushTacLog("TAPE SAVED TO INTEL VAULT", "SUCCESS");
+                    }
+                    if (tapeModal) {
+                        tapeModal.classList.remove('flex');
+                        tapeModal.classList.add('hidden');
+                    }
+                    window._currentTapeBlob = null;
+                };
+            } else {
+                if (tapeModal) {
+                    tapeModal.classList.remove('flex');
+                    tapeModal.classList.add('hidden');
+                }
+            }
+        });
+    }
+
+    // Surveillance Drawing Logic
+    const survDrawCanvas = document.getElementById('surveillance-draw-canvas');
+    const survDrawBtn = document.getElementById('surveillance-draw-btn');
+    const survClearBtn = document.getElementById('surveillance-clear-btn');
+    let survCtx = null;
+    let isSurvDrawing = false;
+    let isSurvDrawMode = false;
+
+    if (survDrawCanvas && survDrawBtn && survClearBtn) {
+        const resizeSurvCanvas = () => {
+            const rect = survDrawCanvas.parentElement.getBoundingClientRect();
+            survDrawCanvas.width = rect.width;
+            survDrawCanvas.height = rect.height;
+            if (survCtx) {
+                survCtx.strokeStyle = '#ef4444'; // Red
+                survCtx.lineWidth = 3;
+                survCtx.lineCap = 'round';
+            }
+        };
+        window.addEventListener('resize', resizeSurvCanvas);
+        
+        survDrawBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            isSurvDrawMode = !isSurvDrawMode;
+            if (isSurvDrawMode) {
+                survDrawCanvas.classList.remove('pointer-events-none');
+                survDrawCanvas.classList.remove('hidden');
+                survDrawBtn.classList.replace('text-gray-300', 'text-red-500');
+                survDrawBtn.innerHTML = `<i data-lucide="pen-tool" class="w-3 h-3"></i> DRAWING`;
+                if (!survCtx) {
+                    survCtx = survDrawCanvas.getContext('2d');
+                    resizeSurvCanvas();
+                }
+            } else {
+                survDrawCanvas.classList.add('pointer-events-none');
+                survDrawBtn.classList.replace('text-red-500', 'text-gray-300');
+                survDrawBtn.innerHTML = `<i data-lucide="pen-tool" class="w-3 h-3"></i> DRAW`;
+            }
+            if (window.lucide) window.lucide.createIcons();
+        });
+
+        survClearBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (survCtx) {
+                survCtx.clearRect(0, 0, survDrawCanvas.width, survDrawCanvas.height);
+            }
+        });
+
+        const getSurvPos = (e) => {
+            const rect = survDrawCanvas.getBoundingClientRect();
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            return { x: clientX - rect.left, y: clientY - rect.top };
+        };
+
+        const startSurvDraw = (e) => {
+            if (!isSurvDrawMode) return;
+            isSurvDrawing = true;
+            const pos = getSurvPos(e);
+            survCtx.beginPath();
+            survCtx.moveTo(pos.x, pos.y);
+        };
+
+        const moveSurvDraw = (e) => {
+            if (!isSurvDrawing || !isSurvDrawMode) return;
+            if (e.type === 'touchmove' && e.cancelable) e.preventDefault();
+            const pos = getSurvPos(e);
+            survCtx.lineTo(pos.x, pos.y);
+            survCtx.stroke();
+        };
+
+        const stopSurvDraw = () => {
+            isSurvDrawing = false;
+        };
+
+        survDrawCanvas.addEventListener('mousedown', startSurvDraw);
+        survDrawCanvas.addEventListener('mousemove', moveSurvDraw);
+        survDrawCanvas.addEventListener('mouseup', stopSurvDraw);
+        survDrawCanvas.addEventListener('mouseleave', stopSurvDraw);
+        survDrawCanvas.addEventListener('touchstart', startSurvDraw, { passive: false });
+        survDrawCanvas.addEventListener('touchmove', moveSurvDraw, { passive: false });
+        survDrawCanvas.addEventListener('touchend', stopSurvDraw);
     }
 
     // Drag to pan

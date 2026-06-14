@@ -617,3 +617,54 @@ v7.27.5 - DEPLOYED 2026-06-09 19:09:42
 * Service Worker cache updated to: trc-vv7.27.5
 * All tactical systems: OPERATIONAL
 * Toast updater: ACTIVE - users will see update prompt on next app open
+
+============================================================
+v7.27.6 - DEPLOYED 2026-06-10 12:46:51
+* Version auto-bumped from v7.27.5
+* Service Worker cache updated to: trc-vv7.27.6
+* All tactical systems: OPERATIONAL
+* Toast updater: ACTIVE - users will see update prompt on next app open
+
+============================================================
+v7.27.7 - DEPLOYED 2026-06-11 14:26:00
+* Version auto-bumped from v7.27.6
+* Service Worker cache updated to: trc-vv7.27.7
+* All tactical systems: OPERATIONAL
+* Toast updater: ACTIVE - users will see update prompt on next app open
+
+============================================================
+v7.27.8 - DEPLOYED 2026-06-11 14:26:28
+* Version auto-bumped from v7.27.7
+* Service Worker cache updated to: trc-vv7.27.8
+* All tactical systems: OPERATIONAL
+* Toast updater: ACTIVE - users will see update prompt on next app open
+
+============================================================
+v7.27.9 - DEPLOYED 2026-06-11 14:31:47
+* Version auto-bumped from v7.27.8
+* Service Worker cache updated to: trc-vv7.27.9
+* All tactical systems: OPERATIONAL
+* Toast updater: ACTIVE - users will see update prompt on next app open
+
+============================================================
+v7.27.10 - DEPLOYED 2026-06-11 14:33:11
+* Version auto-bumped from v7.27.9
+* Service Worker cache updated to: trc-vv7.27.10
+* All tactical systems: OPERATIONAL
+* Toast updater: ACTIVE - users will see update prompt on next app open
+
+============================================================
+v7.27.11 - DEPLOYED 2026-06-11 15:26:36
+* Version auto-bumped from v7.27.10
+* Service Worker cache updated to: trc-vv7.27.11
+* All tactical systems: OPERATIONAL
+* Toast updater: ACTIVE - users will see update prompt on next app open
+============================================================
+v7.27.12 - DEPLOYED 2026-06-13 17:48:17
+* Version auto-bumped from v7.27.11
+* Service Worker cache updated to: trc-v7.27.12
+* Restored 1:37 PM pristine grid layout.
+* Fully implemented Map Drawing mode with dedicated CLR DRAW button.
+* Decoupled CLR TRK from drawings.
+* Fixed Vault Loader to support routeTracker and drawings.
+* Resolved update loop mechanism in PWA.

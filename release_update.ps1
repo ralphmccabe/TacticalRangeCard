@@ -77,7 +77,7 @@ $Exclusions = @(
     ".git", "twa-build", "android.keystore", "app-release-bundle.aab", 
     "app-release-signed.apk", "app-release-signed.apk.idsig", 
     "app-release-unsigned-aligned.apk", "cert.pfx", "cert.pem", "key.pem", "node_modules",
-    "run_secure_server.py", "release_update.ps1", "take_snapshot.ps1"
+    "run_secure_server.py", "release_update.ps1", "take_snapshot.ps1", "build", ".gradle", ".idea"
 )
 
 function Copy-FilteredDir ($src, $dest) {
@@ -101,7 +101,7 @@ Set-Content -Path $RecipeFile -Value $RecipeContent
 # 6. BACKUP OLD READY FOLDER AND STAGE TO "READY TO BE PUSHED"
 Write-Host "[*] Archiving old Ready to be pushed folder..." -ForegroundColor Cyan
 if (Test-Path $ProdStagingDir) {
-    $OldArchiveDir = Join-Path $ArchiveParent "Archived_Versions\Archive_$CurrentVersion_$DateStr"
+    $OldArchiveDir = Join-Path $ArchiveParent "Archived_Versions\Archive_${CurrentVersion}_${DateStr}"
     if (!(Test-Path $OldArchiveDir)) { New-Item -ItemType Directory -Path $OldArchiveDir -Force | Out-Null }
     Copy-Item -Path "$ProdStagingDir\*" -Destination $OldArchiveDir -Recurse -Force -ErrorAction SilentlyContinue
 }
