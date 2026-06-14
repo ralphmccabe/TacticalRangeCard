@@ -33,12 +33,77 @@ window.TacticalCrypto = {
             return JSON.parse(decryptedString);
         } catch (e) {
             console.error("Decryption error", e);
-            if (e.message.includes('Passcode') || e.message.includes('Malformed')) {
-                window.pushTacLog("DECRYPTION FAILED: PASSCODE MISMATCH!", "ERROR");
-            } else {
-                window.pushTacLog("DECRYPTION ERROR: " + e.message, "ERROR");
-            }
-            return null;
+        }
+    }
+};
+
+window.TacticalBinaryCrypto = {
+    _getKey: async function() {
+        let secret = localStorage.getItem('trc_team_secret') || 'default-tactical-secret-key-2026';
+        secret = secret.trim();
+        const encoder = new TextEncoder();
+        const keyMaterial = await window.crypto.subtle.importKey(
+            "raw",
+            encoder.encode(secret),
+            { name: "PBKDF2" },
+            false,
+            ["deriveBits", "deriveKey"]
+        );
+        return await window.crypto.subtle.deriveKey(
+            {
+                name: "PBKDF2",
+                salt: encoder.encode("tactical-media-salt"),
+                iterations: 100000,
+                hash: "SHA-256"
+            },
+            keyMaterial,
+            { name: "AES-GCM", length: 256 },
+            true,
+            ["encrypt", "decrypt"]
+        );
+    },
+    encryptBlob: async function(blob) {
+        try {
+            const key = await this._getKey();
+            const iv = window.crypto.getRandomValues(new Uint8Array(12));
+            const arrayBuffer = await blob.arrayBuffer();
+            
+            const encryptedBuffer = await window.crypto.subtle.encrypt(
+                { name: "AES-GCM", iv: iv },
+                key,
+                arrayBuffer
+            );
+            
+            // Prepend IV to the encrypted buffer
+            const payload = new Uint8Array(12 + encryptedBuffer.byteLength);
+            payload.set(iv, 0);
+            payload.set(new Uint8Array(encryptedBuffer), 12);
+            
+            return new Blob([payload], { type: 'application/octet-stream' });
+        } catch (e) {
+            console.error("Binary Encryption Error", e);
+            throw e;
+        }
+    },
+    decryptBlob: async function(encryptedBlob, originalType = 'video/webm') {
+        try {
+            const key = await this._getKey();
+            const arrayBuffer = await encryptedBlob.arrayBuffer();
+            const payload = new Uint8Array(arrayBuffer);
+            
+            const iv = payload.slice(0, 12);
+            const cipherBuffer = payload.slice(12);
+            
+            const decryptedBuffer = await window.crypto.subtle.decrypt(
+                { name: "AES-GCM", iv: iv },
+                key,
+                cipherBuffer
+            );
+            
+            return new Blob([decryptedBuffer], { type: originalType });
+        } catch (e) {
+            console.error("Binary Decryption Error", e);
+            throw e;
         }
     }
 };
@@ -1027,7 +1092,7 @@ function initializeTacticalDashboard1() {
         // DELAY for layout reflow and animation suppression
         setTimeout(() => {
             html2canvas(container, {
-                scale: window.innerWidth < 768 ? 1 : 2,
+                scale: Math.max(window.devicePixelRatio || 2, 2),
                 backgroundColor: '#ffffff',
                 useCORS: true,
                 logging: true,
@@ -1447,7 +1512,7 @@ function initializeTacticalDashboard1() {
 
             // NEW CODE STARTS HERE
             html2canvas(container, {
-                scale: window.innerWidth < 768 ? 1 : 2, // Prevent mobile memory crash
+                scale: Math.max(window.devicePixelRatio || 2, 2), // High-res capture for clarity
                 backgroundColor: '#ffffff',
                 useCORS: true,        // Critical for CDN icons
                 allowTaint: false,    // Security handshake
@@ -2554,7 +2619,7 @@ function initializeTacticalDashboard2() {
             document.body.classList.add('is-capturing');
 
             setTimeout(() => {
-                const scale = window.innerWidth < 768 ? 1 : 2;
+                const scale = Math.max(window.devicePixelRatio || 2, 2);
                 html2canvas(container, {
                     scale: scale,
                     backgroundColor: '#ffffff',
@@ -3523,10 +3588,6 @@ function initializeTacticalDashboard2() {
     let orbitalMap = null;
 window.eventMarkers = [];
 window.eventLines = [];
-window.allDrawings = [];
-window.isMapDrawingMode = false;
-let currentMapDrawing = null;
-let isMapPointerDown = false;
 let rallyPointLine = null;
     let mapMarkers = [];
     let mapPolyline = null;
@@ -3534,6 +3595,9 @@ let rallyPointLine = null;
     let isMultiTargetMode = false;
     let mapPolylines = [];
     let mapLabelMarkers = [];
+    let isDrawingMode = false;
+    let allDrawings = [];
+    let currentDrawPath = null;
 
     function initGeoCanvas() {
         // Redirect call from the old function name to new Map engine
@@ -3579,56 +3643,20 @@ let rallyPointLine = null;
             // 3. Add Global Map Click Listener for Vector Points
             orbitalMap.on('click', handleMapClick);
 
-            // --- MAP DRAWING LOGIC (ROBUST NATIVE TOUCH FOR MOBILE) ---
-            const mapEl = orbitalMap.getContainer();
-            
-            function getMapLatLng(e) {
-                if (e.latlng) return e.latlng;
-                const evt = e.touches && e.touches.length > 0 ? e.touches[0] : (e.changedTouches ? e.changedTouches[0] : e);
-                return orbitalMap.mouseEventToLatLng(evt);
-            }
+            orbitalMap.on('mousedown', (e) => {
+                if (!isDrawingMode) return;
+                currentDrawPath = L.polyline([e.latlng], {color: '#3b82f6', weight: 5, opacity: 0.9, smoothFactor: 1}).addTo(orbitalMap);
+                allDrawings.push(currentDrawPath);
+            });
+            orbitalMap.on('mousemove', (e) => {
+                if (!isDrawingMode || !currentDrawPath) return;
+                currentDrawPath.addLatLng(e.latlng);
+            });
+            orbitalMap.on('mouseup', (e) => {
+                if (!isDrawingMode) return;
+                currentDrawPath = null;
+            });
 
-            let lastDrawPoint = null;
-            const startDraw = (e) => {
-                if (!window.isMapDrawingMode) return;
-                if (e.type === 'touchstart') e.preventDefault(); // Stop mobile scroll
-                isMapPointerDown = true;
-                let latlng = getMapLatLng(e);
-                lastDrawPoint = latlng;
-                currentMapDrawing = L.polyline([latlng], {color: '#3b82f6', weight: 5, opacity: 0.9, smoothFactor: 1}).addTo(orbitalMap);
-            };
-
-            const moveDraw = (e) => {
-                if (!window.isMapDrawingMode || !isMapPointerDown || !currentMapDrawing) return;
-                if (e.type === 'touchmove') e.preventDefault(); // Stop mobile scroll
-                let latlng = getMapLatLng(e);
-                
-                // Throttle drawing density to prevent massive payloads crushing the chat socket
-                if (lastDrawPoint) {
-                    const p1 = orbitalMap.latLngToLayerPoint(lastDrawPoint);
-                    const p2 = orbitalMap.latLngToLayerPoint(latlng);
-                    if (p1.distanceTo(p2) < 5) return; // Drop points closer than 5 pixels
-                }
-                lastDrawPoint = latlng;
-                currentMapDrawing.addLatLng(latlng);
-            };
-
-            const stopDraw = (e) => {
-                if (!window.isMapDrawingMode || !isMapPointerDown) return;
-                isMapPointerDown = false;
-                if (currentMapDrawing) {
-                    window.allDrawings.push(currentMapDrawing);
-                    currentMapDrawing = null;
-                }
-            };
-
-            mapEl.addEventListener('mousedown', startDraw);
-            mapEl.addEventListener('mousemove', moveDraw);
-            mapEl.addEventListener('mouseup', stopDraw);
-            mapEl.addEventListener('touchstart', startDraw, { passive: false });
-            mapEl.addEventListener('touchmove', moveDraw, { passive: false });
-            mapEl.addEventListener('touchend', stopDraw);
-            mapEl.addEventListener('touchcancel', stopDraw);
 
             // Auto-Trigger initial GPS sync to find where the user currently is!
             // syncMapToGps(); // Disabled on page load to comply with Lighthouse Best Practices
@@ -3675,7 +3703,7 @@ let rallyPointLine = null;
     }
 
     function handleMapClick(e) {
-        if (window.isMapDrawingMode) return;
+        if (isDrawingMode) return;
         // Prevent accidental marker drops when clicking to expand the panel from the dashboard
         const panel = document.getElementById('panel-measuring');
         if (panel && !panel.classList.contains('is-maximized')) return;
@@ -3796,12 +3824,12 @@ let rallyPointLine = null;
         orbitalMap.fitBounds(group.getBounds().pad(0.2));
     }
 
-    window.clearMapDrawings = function() {
-        if (window.orbitalMap && window.allDrawings) {
-            window.allDrawings.forEach(d => window.orbitalMap.removeLayer(d));
-            window.allDrawings = [];
+    function clearMapDrawings() {
+        if (orbitalMap && allDrawings.length > 0) {
+            allDrawings.forEach(d => orbitalMap.removeLayer(d));
+            allDrawings = [];
         }
-    };
+    }
 
     function clearMapMeasurements() {
         // Wipe Visuals from memory
@@ -3837,7 +3865,28 @@ let rallyPointLine = null;
     if (gpsBtn) { gpsBtn.addEventListener('click', (e) => { e.stopPropagation(); syncMapToGps(); }); }
 
     const clearMapBtn = document.getElementById('geo-clear-map-btn');
-    if (clearMapBtn) { clearMapBtn.addEventListener('click', (e) => { e.stopPropagation(); clearMapMeasurements(); }); }
+    if (clearMapBtn) { clearMapBtn.addEventListener('click', (e) => { e.stopPropagation(); clearMapMeasurements(); clearMapDrawings(); }); }
+
+    const geoDrawBtn = document.getElementById('geo-draw-btn');
+    if (geoDrawBtn) {
+        geoDrawBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            isDrawingMode = !isDrawingMode;
+            if (isDrawingMode) {
+                geoDrawBtn.classList.replace('text-gray-300', 'text-blue-400');
+                geoDrawBtn.classList.replace('bg-gray-800', 'bg-blue-900');
+                geoDrawBtn.classList.add('border-blue-500');
+                orbitalMap.dragging.disable();
+                document.getElementById('live-sat-map-container').style.cursor = 'crosshair';
+            } else {
+                geoDrawBtn.classList.replace('text-blue-400', 'text-gray-300');
+                geoDrawBtn.classList.replace('bg-blue-900', 'bg-gray-800');
+                geoDrawBtn.classList.remove('border-blue-500');
+                orbitalMap.dragging.enable();
+                document.getElementById('live-sat-map-container').style.cursor = '';
+            }
+        });
+    }
 
     const geoUnitBtn = document.getElementById('geo-unit-toggle-btn');
     if (geoUnitBtn) {
@@ -3880,7 +3929,7 @@ let rallyPointLine = null;
 
                 const canvas = await html2canvas(target, {
                     useCORS: true,
-                    scale: window.innerWidth < 768 ? 1 : 2,
+                    scale: Math.max(window.devicePixelRatio || 2, 2),
                     backgroundColor: '#030712',
                     logging: false,
                     allowTaint: false, // Critical to avoid SecurityErrors
@@ -3894,6 +3943,12 @@ let rallyPointLine = null;
                         }
                         const footer = clonedDoc.getElementById('geo-ruler-footer');
                         if(footer) {
+                            if (allDrawings.length > 0) {
+                                footer.className = footer.className.replace('bg-emerald-950/90', 'bg-blue-950/90')
+                                                                   .replace('border-emerald-500/50', 'border-blue-500/50')
+                                                                   .replace('text-emerald-300', 'text-blue-300');
+                                footer.innerHTML = '📝 TACTICAL MARKUP / TEAM REVIEW REQUIRED';
+                            }
                             footer.style.fontSize = "22px";
                             footer.style.height = "50px";
                         }
@@ -3936,9 +3991,8 @@ let rallyPointLine = null;
                 if(typeof mapMarkers !== 'undefined' && mapMarkers.length >= 2) {
                     meta.markers = mapMarkers.map(m => m.getLatLng());
                 }
-                if (typeof window.allDrawings !== 'undefined' && window.allDrawings.length > 0) {
-                    // Compress into truncated arrays [lat, lng] instead of full LatLng objects to drastically reduce JSON size for chat limits
-                    meta.drawings = window.allDrawings.map(d => d.getLatLngs().map(ll => [parseFloat(ll.lat.toFixed(5)), parseFloat(ll.lng.toFixed(5))]));
+                if (typeof allDrawings !== 'undefined' && allDrawings.length > 0) {
+                    meta.drawings = allDrawings.map(d => d.getLatLngs());
                 }
                 saveIntelSnapshot("Orbital_Vector_" + Date.now().toString().slice(-4), dataUri, meta);
                 
@@ -3975,8 +4029,7 @@ let rallyPointLine = null;
             }
 
             const dbItems = await TRC_IDB.getAll('intelVault');
-            const itemsArray = dbItems ? Object.values(dbItems) : [];
-            vaultCache = itemsArray.sort((a, b) => {
+            vaultCache = Object.values(dbItems).sort((a, b) => {
                 const tsA = new Date(a.timestamp).getTime();
                 const tsB = new Date(b.timestamp).getTime();
                 return tsB - tsA;
@@ -3993,7 +4046,7 @@ let rallyPointLine = null;
     // LOAD INTEL VAULT TO MAP
     // ========================================================================
     window.loadVaultToMap = function(item) {
-        if (!item || (!item.markers && !item.originLat && !item.drawings && !item.routeTracker)) {
+        if (!item || (!item.markers && !item.originLat && !item.drawings)) {
             alert("This snapshot does not contain valid map coordinates or drawings.");
             return;
         }
@@ -4007,7 +4060,6 @@ let rallyPointLine = null;
         // 2. Clear Existing Map
         if (typeof clearMapMeasurements === 'function') clearMapMeasurements();
         if (typeof clearMapDrawings === 'function') clearMapDrawings();
-        if (typeof clearTrack === 'function') clearTrack();
 
         // 3. Inject Markers
         if (item.markers && Array.isArray(item.markers)) {
@@ -4034,25 +4086,28 @@ let rallyPointLine = null;
             document.getElementById('geo-mode-label').textContent = 'SINGLE';
         }
 
+        // 3.5. Inject Drawings
+        if (item.drawings && Array.isArray(item.drawings)) {
+            item.drawings.forEach(points => {
+                const newDraw = L.polyline(points, {color: '#3b82f6', weight: 5, opacity: 0.9, smoothFactor: 1}).addTo(orbitalMap);
+                allDrawings.push(newDraw);
+            });
+        }
+
         // 4. Draw Line
         if (typeof drawMapLine === 'function') drawMapLine();
 
         // 5. Pan and Zoom to bounds
-        if (orbitalMap && mapMarkers.length > 0) {
-            orbitalMap.fitBounds(L.featureGroup(mapMarkers).getBounds(), { padding: [50, 50], maxZoom: 18 });
-        }
-
-        // 6. Restore Drawings
-        if (item.drawings && Array.isArray(item.drawings)) {
-            item.drawings.forEach(dLatLngs => {
-                const dLine = L.polyline(dLatLngs, {color: '#3b82f6', weight: 5, opacity: 0.9, smoothFactor: 1}).addTo(orbitalMap);
-                if (typeof allDrawings !== 'undefined') allDrawings.push(dLine);
-            });
-        }
-
-        // 7. Restore Route Tracker
-        if (item.routeTracker && Array.isArray(item.routeTracker) && typeof trackPolyline !== 'undefined') {
-            trackPolyline.setLatLngs(item.routeTracker);
+        if (orbitalMap) {
+            let boundsToFit = null;
+            if (mapMarkers.length > 0) boundsToFit = L.featureGroup(mapMarkers).getBounds();
+            if (allDrawings.length > 0) {
+                const drawBounds = L.featureGroup(allDrawings).getBounds();
+                boundsToFit = boundsToFit ? boundsToFit.extend(drawBounds) : drawBounds;
+            }
+            if (boundsToFit && boundsToFit.isValid()) {
+                orbitalMap.fitBounds(boundsToFit, { padding: [50, 50], maxZoom: 18 });
+            }
         }
     };
 
@@ -4075,7 +4130,6 @@ let rallyPointLine = null;
             ...metadata
         };
         
-        if (!vaultCache) vaultCache = [];
         vaultCache.unshift(entry);
         
         if (window.TRC_IDB) {
@@ -4097,14 +4151,58 @@ let rallyPointLine = null;
             return;
         }
 
-        vaultCache.forEach(item => {
+        vaultCache.forEach((item, index) => {
             const el = document.createElement('div');
             el.className = "bg-gray-900 rounded hover:bg-emerald-950/20 transition-all p-1 cursor-pointer group relative overflow-hidden" +
                 " border-2" +
                 " " + "vault-accent-card";
+            el.setAttribute('draggable', 'true');
+            el.dataset.vaultIndex = index;
+
+            el.addEventListener('dragstart', (e) => {
+                e.dataTransfer.setData('text/plain', index);
+                el.classList.add('opacity-50');
+            });
+
+            el.addEventListener('dragend', () => {
+                el.classList.remove('opacity-50');
+            });
+
+            el.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                el.classList.add('border-emerald-500');
+            });
+
+            el.addEventListener('dragleave', () => {
+                el.classList.remove('border-emerald-500');
+            });
+
+            el.addEventListener('drop', (e) => {
+                e.preventDefault();
+                el.classList.remove('border-emerald-500');
+                const dragIndex = parseInt(e.dataTransfer.getData('text/plain'));
+                const dropIndex = index;
+                if (dragIndex === dropIndex || isNaN(dragIndex)) return;
+
+                const draggedItem = vaultCache[dragIndex];
+                vaultCache.splice(dragIndex, 1);
+                vaultCache.splice(dropIndex, 0, draggedItem);
+
+                const now = Date.now();
+                vaultCache.forEach((vItem, vIndex) => {
+                    vItem.timestamp = now - (vIndex * 1000);
+                    if (window.TRC_IDB) TRC_IDB.set('intelVault', vItem.id.toString(), vItem);
+                });
+
+                refreshVaultGrid();
+            });
+
+            const isVideo = item.type === 'video';
+            const imgContent = isVideo ? `<i data-lucide="video" class="w-12 h-12 text-purple-500 opacity-80"></i>` : `<img src="${item.image}" class="max-w-full max-h-full object-contain opacity-90 group-hover:opacity-100 transition-all">`;
+
             el.innerHTML = `
                 <div class="aspect-square bg-black overflow-hidden relative border border-gray-800 mb-1 flex items-center justify-center">
-                    ${item.image.startsWith('data:video') ? `<div class="absolute inset-0 flex items-center justify-center bg-gray-900"><i data-lucide="play-circle" class="w-8 h-8 text-white opacity-80 group-hover:opacity-100 transition-opacity"></i></div>` : `<img src="${item.image}" class="max-w-full max-h-full object-contain opacity-90 group-hover:opacity-100 transition-all">`}
+                    ${imgContent}
                 </div>
                 <div class="text-[7px] font-mono text-gray-400 uppercase truncate pr-4">${item.label || item.missionName || 'TACTICAL BRIEF'}</div>
                 <div class="text-[6px] text-gray-600">${
@@ -4135,22 +4233,25 @@ let rallyPointLine = null;
                 </button>
                 ` : ''}
 
-                ${(item.label !== 'RECON_MAP' && (item.markers || (item.originLat && item.targetLat))) ? `
+                ${(item.label !== 'RECON_MAP' && !isVideo && (item.markers || (item.originLat && item.targetLat))) ? `
                 <button class="load-map-btn absolute bottom-7 left-1.5 bg-blue-600 text-white p-1.5 rounded border border-blue-400 shadow-lg hover:bg-blue-400 transition-all z-30" title="Load to Geo Matrix">
                     <i data-lucide="map-pin" class="w-3 h-3"></i>
                 </button>
                 ` : ''}
+
+                ${isVideo ? `
+                <button class="load-video-btn absolute bottom-7 left-1.5 bg-purple-600 text-white p-1.5 rounded border border-purple-400 shadow-lg hover:bg-purple-400 transition-all z-30" title="Play Video">
+                    <i data-lucide="play" class="w-3 h-3"></i>
+                </button>
+                ` : ''}
             `;
             
-            // Bind the entire card to selection
             el.addEventListener('click', (e) => {
-                // If they clicked the trash or checkbox or load-note specifically, don't maximize
-                if(e.target.closest('.delete-vault-btn') || e.target.closest('.vault-export-checkbox') || e.target.closest('.load-note-btn') || e.target.closest('.load-map-btn')) return;
+                if(e.target.closest('.delete-vault-btn') || e.target.closest('.vault-export-checkbox') || e.target.closest('.load-note-btn') || e.target.closest('.load-map-btn') || e.target.closest('.load-video-btn')) return;
                 e.stopPropagation();
                 selectVaultItem(item);
             });
 
-            // Bind Load Note handler
             const loadBtn = el.querySelector('.load-note-btn');
             if(loadBtn) {
                 loadBtn.addEventListener('click', (e) => {
@@ -4159,12 +4260,19 @@ let rallyPointLine = null;
                 });
             }
 
-            // Bind Load Map handler
             const loadMapBtn = el.querySelector('.load-map-btn');
             if(loadMapBtn) {
                 loadMapBtn.addEventListener('click', (e) => {
                     e.stopPropagation();
                     if(window.loadVaultToMap) window.loadVaultToMap(item);
+                });
+            }
+
+            const loadVidBtn = el.querySelector('.load-video-btn');
+            if(loadVidBtn) {
+                loadVidBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    if(window.loadVideoBackToPlayer) window.loadVideoBackToPlayer(item);
                 });
             }
 
@@ -4205,12 +4313,18 @@ let rallyPointLine = null;
         const target = document.getElementById('vault-active-display');
         if (!target) return;
 
+        const isVideo = item.type === 'video';
+        let mediaHtml = '';
+        if (isVideo) {
+            mediaHtml = `<i data-lucide="video" class="w-20 h-20 text-purple-500 opacity-80"></i>`;
+        } else {
+            mediaHtml = `<img src="${item.image}" class="w-full h-full object-contain">`;
+        }
+
         // 1. Populate Target Visualizer (Window 4)
         target.innerHTML = `
             <div class="w-full h-full relative bg-black overflow-hidden flex items-center justify-center">
-                ${item.image.startsWith('data:video') 
-                    ? `<video src="${item.image}" class="w-full h-full object-contain" controls playsinline preload="metadata"></video>` 
-                    : `<img src="${item.image}" class="w-full h-full object-contain">`}
+                ${mediaHtml}
                 <div class="absolute bottom-0 inset-x-0 h-8 bg-gradient-to-t from-black via-black/50 to-transparent pointer-events-none"></div>
                 <div class="absolute bottom-1 left-1 bg-emerald-950/80 px-1.5 py-0.5 rounded border border-emerald-500 text-[7px] font-mono text-emerald-300 uppercase tracking-widest opacity-90 z-10">
                     ${item.label}
@@ -4218,6 +4332,11 @@ let rallyPointLine = null;
                 
                 <!-- Non-Destructive Unload Actuator -->
                 <div class="absolute top-1 right-1 flex gap-1 z-10">
+                    ${isVideo ? `
+                    <button class="bg-purple-600 text-white border border-purple-400 p-1.5 rounded hover:bg-purple-500 transition-all shadow-[0_0_10px_rgba(168,85,247,0.5)] flex items-center gap-1 font-black text-[7px]" onclick="event.stopPropagation(); window.loadVideoBackToPlayerById('${item.id}')" title="Play Video">
+                        <i data-lucide="play" class="w-2.5 h-2.5"></i> PLAY VIDEO
+                    </button>
+                    ` : ''}
                     ${item.remarksText ? `
                     <button class="bg-yellow-600 text-black border border-yellow-400 p-1.5 rounded hover:bg-yellow-400 transition-all shadow-lg flex items-center gap-1 font-black text-[7px]" onclick="event.stopPropagation(); window.loadNoteBackToEditorById('${item.id}')" title="Load back to Notepad">
                         <i data-lucide="edit-3" class="w-2.5 h-2.5"></i> LOAD TO NOTEPAD
@@ -4235,9 +4354,6 @@ let rallyPointLine = null;
                     ` : ''}
                     <button class="bg-red-950/90 text-red-300 border border-red-600/50 p-1.5 rounded hover:bg-red-600 hover:text-white transition-all shadow-lg" onclick="event.stopPropagation(); window.unloadDashboardCard(4)" title="Unload Vault Item">
                         <i data-lucide="trash-2" class="w-2.5 h-2.5"></i>
-                    </button>
-                    <button class="bg-emerald-950/90 text-emerald-300 border border-emerald-600/50 p-1.5 rounded hover:bg-emerald-600 hover:text-white transition-all shadow-lg flex items-center gap-1 font-black text-[7px]" onclick="event.stopPropagation(); window.sendVaultItemToChat(${item.id})" title="Send to Team Chat">
-                        <i data-lucide="send" class="w-2.5 h-2.5"></i> SEND
                     </button>
                 </div>
             </div>
@@ -4358,8 +4474,13 @@ let rallyPointLine = null;
     // ========================================================================
     let activeStream = null;
     let currentFacingMode = "environment"; // Start with rear cam
+    let isVideoMode = false;
+    let mediaRecorder = null;
+    let recordedChunks = [];
+    let recordingTimer = null;
 
-    const activateBtn = document.getElementById('feed-activate-btn');
+    const activateScopeBtn = document.getElementById('feed-activate-scope-btn');
+    const activateVideoBtn = document.getElementById('feed-activate-video-btn');
     const switchBtn = document.getElementById('feed-switch-cam-btn');
     const killBtn = document.getElementById('feed-kill-btn');
     const videoEl = document.getElementById('surveillance-stream');
@@ -4530,16 +4651,11 @@ let rallyPointLine = null;
 
             const stream = await navigator.mediaDevices.getUserMedia(constraints);
             activeStream = stream;
-
-            // Also grab mic audio for video recording, if available
-            try {
-                const audioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                const audioTrack = audioStream.getAudioTracks()[0];
-                if (audioTrack) activeStream.addTrack(audioTrack);
-            } catch(e) {
-                console.warn('Mic not available for recording:', e);
-            }
-
+            window.activeStream = stream; // Export for flashlight
+            
+            // Re-enable autoplay for live stream
+            videoEl.autoplay = true;
+            videoEl.setAttribute('autoplay', '');
             videoEl.srcObject = stream;
             
             // Hard kick start for mobile auto-play security!
@@ -4552,42 +4668,43 @@ let rallyPointLine = null;
             
             videoEl.classList.remove('hidden');
             placeholder.classList.add('hidden');
-            hud.classList.remove('hidden');
+            
+            const captureBtn = document.getElementById('surveillance-capture-btn');
+            const recStartBtn = document.getElementById('surveillance-record-start-btn');
+            const recStopBtn = document.getElementById('surveillance-record-stop-btn');
+
+            const hudToggleBtn = document.getElementById('feed-hud-toggle-btn');
+            if (!isVideoMode) {
+                hud.classList.remove('hidden');
+                if(captureBtn) captureBtn.classList.remove('hidden');
+                if(hudToggleBtn) hudToggleBtn.classList.remove('hidden');
+                if(recStartBtn) recStartBtn.classList.add('hidden');
+                if(recStopBtn) recStopBtn.classList.add('hidden');
+                
+                // Reset toggle button state if it was toggled off previously
+                if (hudToggleBtn) {
+                    hudToggleBtn.innerHTML = '<i data-lucide="eye-off" class="w-4 h-4"></i> HUD';
+                    hudToggleBtn.classList.replace('text-gray-500', 'text-gray-300');
+                    if (window.lucide) window.lucide.createIcons();
+                }
+            } else {
+                hud.classList.add('hidden');
+                if(captureBtn) captureBtn.classList.add('hidden');
+                if(hudToggleBtn) hudToggleBtn.classList.add('hidden');
+                if(recStartBtn) recStartBtn.classList.remove('hidden');
+                if(recStopBtn) recStopBtn.classList.add('hidden');
+            }
+
             if(killBtn) killBtn.classList.remove('hidden'); // Show shutdown button
             
             // FORCE SURVEILLANCE FOOTER VISIBLE ON START (Mobile Fix)
             const survFooter = document.getElementById('surveillance-footer');
             if(survFooter) survFooter.classList.remove('hidden');
 
-            label.textContent = currentFacingMode === "environment" ? "REAR CAM" : "LOCAL HUD / FRONT";
-            
-            // Show draw tools when feed is live
-            const drawTools = document.getElementById('surveillance-draw-tools');
-            if (drawTools) {
-                drawTools.classList.remove('hidden');
-                drawTools.classList.add('flex');
-            }
+            const flipBtn = document.getElementById('feed-switch-cam-btn');
+            if(flipBtn) flipBtn.classList.remove('hidden');
 
-            // Wire HUD Toggle (each time feed starts, re-wire so it's always valid)
-            const hudToggleBtn = document.getElementById('feed-hud-toggle-btn');
-            if (hudToggleBtn && hud) {
-                // Remove old listener by replacing the element clone trick
-                const newHudBtn = hudToggleBtn.cloneNode(true);
-                hudToggleBtn.parentNode.replaceChild(newHudBtn, hudToggleBtn);
-                let hudVisible = !hud.classList.contains('hidden');
-                newHudBtn.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    hudVisible = !hudVisible;
-                    if (hudVisible) {
-                        hud.classList.remove('hidden');
-                        newHudBtn.innerHTML = `<i data-lucide="eye-off" class="w-4 h-4"></i> HUD`;
-                    } else {
-                        hud.classList.add('hidden');
-                        newHudBtn.innerHTML = `<i data-lucide="eye" class="w-4 h-4"></i> HUD`;
-                    }
-                    if (window.lucide) window.lucide.createIcons();
-                });
-            }
+            label.textContent = currentFacingMode === "environment" ? "REAR CAM" : "LOCAL HUD / FRONT";
             
             initTacticalHUD(); // START HUD LOGIC
             
@@ -4598,35 +4715,34 @@ let rallyPointLine = null;
     }
 
     function stopFeed() {
-        if (window.mediaRecorder && window.mediaRecorder.state !== 'inactive') {
-            window.mediaRecorder.stop();
-        }
-        const captureBtn = document.getElementById('surveillance-capture-btn');
-        const recStartBtn = document.getElementById('surveillance-record-start-btn');
-        const recStopBtn = document.getElementById('surveillance-record-stop-btn');
-        if (captureBtn) captureBtn.classList.add('hidden');
-        if (recStartBtn) recStartBtn.classList.add('hidden');
-        if (recStopBtn) recStopBtn.classList.add('hidden');
-
         if (activeStream) {
             activeStream.getTracks().forEach(track => track.stop());
             activeStream = null;
+            window.activeStream = null;
         }
+        if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+            mediaRecorder.stop();
+        }
+        if (recordingTimer) clearTimeout(recordingTimer);
+        // We cannot clear recTimerInterval here easily without scope, but we can reset the label
+        const label = document.getElementById('feed-label-source');
+        if (label) label.textContent = "OFFLINE";
+        
+        const recStartBtn = document.getElementById('surveillance-record-start-btn');
+        const recStopBtn = document.getElementById('surveillance-record-stop-btn');
+        if(recStartBtn) recStartBtn.classList.remove('hidden');
+        if(recStopBtn) recStopBtn.classList.add('hidden');
+
         if (videoEl) {
             videoEl.srcObject = null;
+            videoEl.src = "";
+            videoEl.controls = false;
             videoEl.classList.add('hidden');
         }
         
         placeholder.classList.remove('hidden');
         hud.classList.add('hidden');
         if(killBtn) killBtn.classList.add('hidden'); // Hide shutdown button again
-        
-        // Hide draw tools when feed is stopped
-        const drawTools = document.getElementById('surveillance-draw-tools');
-        if (drawTools) {
-            drawTools.classList.add('hidden');
-            drawTools.classList.remove('flex');
-        }
         
         // HIDE FOOTER ON STOP
         const survFooter = document.getElementById('surveillance-footer');
@@ -4637,119 +4753,19 @@ let rallyPointLine = null;
         label.textContent = "OFFLINE";
     }
 
-    const activateScopeBtn = document.getElementById('feed-activate-scope-btn');
-    const activateVideoBtn = document.getElementById('feed-activate-video-btn');
-    const _captureBtn = document.getElementById('surveillance-capture-btn');
-    const recStartBtn = document.getElementById('surveillance-record-start-btn');
-    const recStopBtn = document.getElementById('surveillance-record-stop-btn');
-
     if (activateScopeBtn) {
         activateScopeBtn.addEventListener('click', (e) => {
             e.stopPropagation();
+            isVideoMode = false;
             startFeed();
-            if (_captureBtn) _captureBtn.classList.remove('hidden');
-            if (recStartBtn) recStartBtn.classList.add('hidden');
-            if (recStopBtn) recStopBtn.classList.add('hidden');
         });
     }
 
     if (activateVideoBtn) {
         activateVideoBtn.addEventListener('click', (e) => {
             e.stopPropagation();
+            isVideoMode = true;
             startFeed();
-            if (_captureBtn) _captureBtn.classList.add('hidden');
-            if (recStartBtn) recStartBtn.classList.remove('hidden');
-            if (recStopBtn) recStopBtn.classList.add('hidden');
-        });
-    }
-
-    let recordedChunks = [];
-    if (recStartBtn && recStopBtn) {
-        recStartBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            if (!activeStream) return;
-            
-            recordedChunks = [];
-            try {
-                window.mediaRecorder = new MediaRecorder(activeStream);
-            } catch(err) {
-                // Try with a supported mime type
-                try {
-                    window.mediaRecorder = new MediaRecorder(activeStream, { mimeType: 'video/webm; codecs=vp8,opus' });
-                } catch(err2) {
-                    console.error('MediaRecorder error:', err2);
-                    if (window.pushTacLog) window.pushTacLog("VIDEO RECORDING NOT SUPPORTED", "ERROR");
-                    return;
-                }
-            }
-
-            window.mediaRecorder.ondataavailable = (event) => {
-                if (event.data.size > 0) recordedChunks.push(event.data);
-            };
-
-            window.mediaRecorder.onstop = () => {
-                const blob = new Blob(recordedChunks, { type: window.mediaRecorder.mimeType || 'video/webm' });
-                window._currentTapeBlob = blob;
-                
-                const tapeModal = document.getElementById('tape-modal');
-                const tapeInput = document.getElementById('tape-designation-input');
-                if (tapeModal && tapeInput) {
-                    tapeInput.value = 'SCOPETAPE_' + Date.now().toString().slice(-4);
-                    tapeModal.classList.remove('hidden');
-                    tapeModal.classList.add('flex');
-                } else {
-                    const reader = new FileReader();
-                    reader.readAsDataURL(blob);
-                    reader.onloadend = () => {
-                        if (window.saveIntelSnapshot) {
-                            window.saveIntelSnapshot("FEED_VIDEO_" + Date.now().toString().slice(-4), reader.result, { type: 'video' });
-                            if (window.pushTacLog) window.pushTacLog("VIDEO SAVED TO INTEL VAULT", "SUCCESS");
-                        }
-                    };
-                }
-            };
-
-            // Start recording with countdown timer
-            let recSeconds = 0;
-            const origText = recStopBtn.innerHTML;
-            const countdownInterval = setInterval(() => {
-                recSeconds++;
-                const mins = String(Math.floor(recSeconds / 60)).padStart(2, '0');
-                const secs = String(recSeconds % 60).padStart(2, '0');
-                const stopBtnEl = document.getElementById('surveillance-record-stop-btn');
-                if (stopBtnEl) {
-                    stopBtnEl.innerHTML = `<div class="w-3 h-3 bg-red-600 rounded-sm animate-pulse inline-block mr-1"></div> ${mins}:${secs}`;
-                } else {
-                    clearInterval(countdownInterval);
-                }
-                // Auto-stop at 5 minutes
-                if (recSeconds >= 300) {
-                    clearInterval(countdownInterval);
-                    const stopEl = document.getElementById('surveillance-record-stop-btn');
-                    if (stopEl) stopEl.click();
-                }
-            }, 1000);
-            window._recCountdownInterval = countdownInterval;
-
-            window.mediaRecorder.start();
-            recStartBtn.classList.add('hidden');
-            recStopBtn.classList.remove('hidden');
-            if (window.pushTacLog) window.pushTacLog("VIDEO RECORDING STARTED", "SYS");
-        });
-
-        recStopBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            if (window.mediaRecorder && window.mediaRecorder.state !== 'inactive') {
-                window.mediaRecorder.stop();
-                recStopBtn.classList.add('hidden');
-                recStartBtn.classList.remove('hidden');
-                // Clear countdown
-                if (window._recCountdownInterval) {
-                    clearInterval(window._recCountdownInterval);
-                    window._recCountdownInterval = null;
-                }
-                if (window.pushTacLog) window.pushTacLog("VIDEO RECORDING STOPPED — ENCRYPTING...", "SYS");
-            }
         });
     }
 
@@ -4757,6 +4773,25 @@ let rallyPointLine = null;
         killBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             stopFeed();
+        });
+    }
+
+    const hudToggleBtn = document.getElementById('feed-hud-toggle-btn');
+    if (hudToggleBtn) {
+        hudToggleBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (hud) {
+                hud.classList.toggle('hidden');
+                // Toggle icon
+                if (hud.classList.contains('hidden')) {
+                    hudToggleBtn.innerHTML = '<i data-lucide="eye" class="w-4 h-4"></i> HUD';
+                    hudToggleBtn.classList.replace('text-gray-300', 'text-gray-500');
+                } else {
+                    hudToggleBtn.innerHTML = '<i data-lucide="eye-off" class="w-4 h-4"></i> HUD';
+                    hudToggleBtn.classList.replace('text-gray-500', 'text-gray-300');
+                }
+                if (window.lucide) window.lucide.createIcons();
+            }
         });
     }
 
@@ -4781,14 +4816,9 @@ let rallyPointLine = null;
             canvas.height = videoEl.videoHeight || 480;
             const ctx = canvas.getContext('2d');
             ctx.drawImage(videoEl, 0, 0, canvas.width, canvas.height);
-
-            // Composite the Drawing Canvas Over the Video Feed
-            const survDrawCanvas = document.getElementById('surveillance-draw-canvas');
-            if (survDrawCanvas) {
-                ctx.drawImage(survDrawCanvas, 0, 0, canvas.width, canvas.height);
-            }
             
             // --- TACTICAL HUD FULL GRAPHIC BURN-IN ---
+            if (!hud.classList.contains('hidden')) {
             // Dynamic scaler: Mobile cameras are high resolution (1080p+), so we must scale the UI up to match
             const scale = Math.max(1, canvas.width / 400); 
             ctx.scale(scale, scale);
@@ -4916,6 +4946,7 @@ let rallyPointLine = null;
             ctx.font = "10px monospace";
             ctx.fillStyle = "rgba(52, 211, 153, 0.6)";
             ctx.fillText(dateStr, cx, ch - 15);
+            }
             // --- END BURN-IN ---
             
             // Get Base64
@@ -4927,6 +4958,135 @@ let rallyPointLine = null;
 
             // Save Directly to Window 4
             saveIntelSnapshot("Stream_Capture_" + Date.now().toString().slice(-4), shotData);
+        });
+    }
+
+    // --- VIDEO RECORDER LOGIC ---
+    let recTimerInterval = null;
+    let recSecondsRemaining = 300; // 5 minutes
+
+    const recStartBtn = document.getElementById('surveillance-record-start-btn');
+    const recStopBtn = document.getElementById('surveillance-record-stop-btn');
+    const labelSource = document.getElementById('feed-label-source');
+
+    if (recStartBtn) {
+        recStartBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (!activeStream || !isVideoMode) return;
+
+            recStartBtn.classList.add('hidden');
+            recStopBtn.classList.remove('hidden');
+
+            recordedChunks = [];
+            let options = { mimeType: 'video/webm;codecs=vp9,opus' };
+            if (!MediaRecorder.isTypeSupported(options.mimeType)) {
+                options = { mimeType: 'video/webm' };
+            }
+
+            try {
+                mediaRecorder = new MediaRecorder(activeStream, options);
+            } catch (err) {
+                console.error("MediaRecorder init failed", err);
+                mediaRecorder = new MediaRecorder(activeStream);
+            }
+
+            mediaRecorder.ondataavailable = (event) => {
+                if (event.data && event.data.size > 0) {
+                    recordedChunks.push(event.data);
+                }
+            };
+
+            mediaRecorder.onstop = () => {
+                const blob = new Blob(recordedChunks, { type: 'video/webm' });
+                const defaultLabel = `SCOPETAPE_${Math.floor(Date.now() / 1000).toString().slice(-4)}`;
+                
+                const flash = document.createElement('div');
+                flash.className = 'absolute inset-0 bg-red-500 z-[100] transition-opacity duration-500 opacity-100 pointer-events-none';
+                document.getElementById('surveillance-container').appendChild(flash);
+                setTimeout(() => { flash.style.opacity = '0'; setTimeout(()=>flash.remove(), 500); }, 100);
+
+                if (labelSource) labelSource.textContent = "LOCAL HUD / FRONT";
+                if (recTimerInterval) clearInterval(recTimerInterval);
+
+                // Delay modal slightly so the flash is visible
+                setTimeout(() => {
+                    const modal = document.createElement('div');
+                    modal.className = 'absolute inset-0 bg-black/90 z-[150] flex flex-col items-center justify-center p-4 backdrop-blur-sm pointer-events-auto';
+                    modal.innerHTML = `
+                        <div class="border border-emerald-500 bg-gray-900 p-6 rounded shadow-[0_0_30px_rgba(16,185,129,0.3)] w-full max-w-sm text-center">
+                            <h3 class="text-emerald-400 font-mono font-bold tracking-widest uppercase mb-4"><i data-lucide="video" class="inline w-4 h-4 mr-2"></i> TAPE SECURED</h3>
+                            <p class="text-[10px] text-gray-400 mb-2 uppercase tracking-widest font-mono">ENTER TAPE DESIGNATION:</p>
+                            <input type="text" id="tape-name-input" class="w-full bg-black border border-emerald-800 text-emerald-300 px-3 py-2 text-center font-mono font-bold tracking-widest uppercase mb-4 focus:outline-none focus:border-emerald-400" value="${defaultLabel}">
+                            <button id="tape-save-btn" class="w-full bg-emerald-700 hover:bg-emerald-500 text-white font-black px-4 py-3 rounded text-[12px] uppercase tracking-widest transition-all">
+                                ENCRYPT & SAVE TO VAULT
+                            </button>
+                        </div>
+                    `;
+                    document.getElementById('surveillance-container').appendChild(modal);
+                    if (window.lucide) window.lucide.createIcons();
+                    
+                    const input = document.getElementById('tape-name-input');
+                    const saveBtn = document.getElementById('tape-save-btn');
+                    
+                    input.focus();
+                    input.select();
+                    
+                    saveBtn.addEventListener('click', () => {
+                        let userLabel = input.value.trim().toUpperCase() || defaultLabel;
+                        saveIntelSnapshot(userLabel, blob, { type: 'video' });
+                        recordedChunks = [];
+                        if (window.pushTacLog) window.pushTacLog(`VIDEO TAPE [${userLabel}] SAVED TO VAULT`, "SUCCESS");
+                        modal.remove();
+                    });
+
+                    // Allow pressing Enter
+                    input.addEventListener('keydown', (e) => {
+                        if (e.key === 'Enter') {
+                            saveBtn.click();
+                        }
+                    });
+                }, 150);
+            };
+
+            mediaRecorder.start(250);
+
+            // Timer display logic
+            recSecondsRemaining = 300;
+            if (labelSource) labelSource.textContent = `REC 05:00`;
+            
+            if (recTimerInterval) clearInterval(recTimerInterval);
+            recTimerInterval = setInterval(() => {
+                recSecondsRemaining--;
+                if (recSecondsRemaining <= 0) {
+                    clearInterval(recTimerInterval);
+                } else {
+                    const m = Math.floor(recSecondsRemaining / 60).toString().padStart(2, '0');
+                    const s = (recSecondsRemaining % 60).toString().padStart(2, '0');
+                    if (labelSource) labelSource.innerHTML = `<span class="text-red-500 animate-pulse font-bold">REC</span> ${m}:${s}`;
+                }
+            }, 1000);
+
+            // Maximum 5-minute timeout (300000 ms)
+            recordingTimer = setTimeout(() => {
+                if (mediaRecorder && mediaRecorder.state === 'recording') {
+                    if (recStopBtn) recStopBtn.click();
+                }
+            }, 300000);
+        });
+    }
+
+    if (recStopBtn) {
+        recStopBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                mediaRecorder.stop();
+            }
+            if (recordingTimer) clearTimeout(recordingTimer);
+            if (recTimerInterval) clearInterval(recTimerInterval);
+            
+            recStopBtn.classList.add('hidden');
+            recStartBtn.classList.remove('hidden');
+            if (labelSource) labelSource.textContent = "LOCAL HUD / FRONT";
         });
     }
 
@@ -6065,34 +6225,6 @@ let rallyPointLine = null;
             });
       }
 
-      const drawBtn = document.getElementById('geo-draw-btn');
-      if (drawBtn) {
-          drawBtn.addEventListener('click', (e) => {
-              e.stopPropagation();
-              window.isMapDrawingMode = !window.isMapDrawingMode;
-              if (window.isMapDrawingMode) {
-                  drawBtn.innerHTML = `<i data-lucide="pen-tool" class="w-4 h-4"></i> ACTIVE`;
-                  drawBtn.classList.replace('text-gray-300', 'text-blue-400');
-                  drawBtn.classList.replace('border-gray-700', 'border-blue-500');
-                  if (window.orbitalMap) window.orbitalMap.dragging.disable();
-              } else {
-                  drawBtn.innerHTML = `<i data-lucide="pen-tool" class="w-4 h-4"></i> DRAW`;
-                  drawBtn.classList.replace('text-blue-400', 'text-gray-300');
-                  drawBtn.classList.replace('border-blue-500', 'border-gray-700');
-                  if (window.orbitalMap) window.orbitalMap.dragging.enable();
-              }
-              if (window.lucide) lucide.createIcons();
-          });
-      }
-
-      const clearDrawBtn = document.getElementById('geo-clear-draw-btn');
-      if (clearDrawBtn) {
-          clearDrawBtn.addEventListener('click', (e) => {
-              e.stopPropagation();
-              if (typeof window.clearMapDrawings === 'function') window.clearMapDrawings();
-          });
-      }
-
     const connectBtn = document.getElementById('comms-connect-btn');
     
     // Auto-fill from localStorage if available
@@ -6406,7 +6538,7 @@ let rallyPointLine = null;
                 const dec = TacticalCrypto.decrypt(payload.payload.data);
                 if (dec) {
                     window.pushTacLog(`CHAT DECRYPTED SUCCESSFULLY FROM ${dec.user.callsign}`, "SUCCESS");
-                    renderChatMessage(dec.user, dec.message, dec.user.id === commsUser.id, dec.image, dec.metadata || null);
+                    renderChatMessage(dec.user, dec.message, dec.user.id === commsUser.id, dec.image, dec.tapeUrl || null, dec.metadata || null);
                     if (dec.user.id !== commsUser.id) {
                         if (window.playChatAlert) window.playChatAlert();
                     }
@@ -6438,7 +6570,7 @@ let rallyPointLine = null;
                         const dec = TacticalCrypto.decrypt(payload.data);
                         if (dec) {
                             window.pushTacLog(`P2P CHAT RECEIVED FROM ${dec.user.callsign}`, "SUCCESS");
-                            renderChatMessage(dec.user, dec.message, false, dec.image, dec.metadata || null);
+                            renderChatMessage(dec.user, dec.message, false, dec.image, dec.tapeUrl || null, dec.metadata || null);
                             if (window.playChatAlert) window.playChatAlert();
                         }
                     } else if (payload.event === 'sos') {
@@ -6782,7 +6914,7 @@ let rallyPointLine = null;
         }
     }
 
-    function renderChatMessage(userObj, msg, isMe, imageBase64 = null, cardMetadata = null) {
+    function renderChatMessage(userObj, msg, isMe, imageBase64 = null, tapeUrl = null, tapeMetadata = null) {
         const feed = document.getElementById('chat-feed');
         if (!feed) return;
         const entry = document.createElement('div');
@@ -6790,12 +6922,51 @@ let rallyPointLine = null;
         
         let contentHtml = '';
         if (msg) contentHtml += `<div>${msg}</div>`;
-        if (imageBase64) {
-            if (imageBase64.startsWith('data:video')) {
-                contentHtml += `<video src="${imageBase64}" class="mt-1 rounded border border-gray-600 w-32 h-auto cursor-pointer" controls playsinline onclick="if(this.paused)this.play();else this.pause();"></video>`;
-            } else {
-                contentHtml += `<img src="${imageBase64}" class="mt-1 rounded border border-gray-600 w-32 h-auto cursor-pointer" onclick="window.open(this.src)">`;
-            }
+        if (imageBase64) contentHtml += `<img src="${imageBase64}" class="mt-1 rounded border border-gray-600 w-32 h-auto cursor-pointer" onclick="window.open(this.src)">`;
+        if (tapeUrl) {
+            const btnId = `btn-tape-${Math.random().toString(36).substring(2)}`;
+            contentHtml += `
+                <div class="mt-2 p-2 bg-purple-900/50 border border-purple-500/50 rounded text-center">
+                    <i data-lucide="video" class="w-6 h-6 mx-auto mb-1 text-purple-400"></i>
+                    <button id="${btnId}" class="bg-purple-700 hover:bg-purple-500 text-white text-[8px] font-black px-2 py-1 rounded w-full flex items-center justify-center gap-1">
+                        <i data-lucide="download" class="w-3 h-3"></i> DOWNLOAD TAPE
+                    </button>
+                </div>
+            `;
+            setTimeout(() => {
+                const btn = document.getElementById(btnId);
+                if (btn) {
+                    btn.onclick = async () => {
+                        if(btn.disabled) return;
+                        btn.innerHTML = `<i data-lucide="loader" class="w-3 h-3 animate-spin"></i> DECRYPTING...`;
+                        btn.disabled = true;
+                        try {
+                            const res = await fetch(tapeUrl);
+                            const encryptedBlob = await res.blob();
+                            const decryptedBlob = await window.TacticalBinaryCrypto.decryptBlob(encryptedBlob);
+                            window.pushTacLog("ENCRYPTED TAPE DECRYPTED", "SUCCESS");
+                            
+                            // Save to Vault
+                            const metadata = tapeMetadata || { label: "INCOMING_TAPE_" + Date.now().toString().slice(-4), type: "video" };
+                            metadata.image = decryptedBlob;
+                            metadata.id = Date.now() + Math.floor(Math.random() * 1000);
+                            metadata.timestamp = Date.now();
+                            metadata.isAmmo = false;
+                            
+                            vaultCache.unshift(metadata);
+                            if(window.TRC_IDB) window.TRC_IDB.set('intelVault', metadata.id.toString(), metadata);
+                            refreshVaultGrid();
+                            
+                            btn.innerHTML = `<i data-lucide="check" class="w-3 h-3 text-green-400"></i> SAVED TO VAULT`;
+                            btn.classList.replace('bg-purple-700', 'bg-green-900/50');
+                            window.pushTacLog("ENCRYPTED TAPE DECRYPTED AND SAVED", "SUCCESS");
+                        } catch (err) {
+                            btn.innerHTML = `<i data-lucide="x" class="w-3 h-3 text-red-400"></i> FAILED`;
+                            window.pushTacLog("TAPE DECRYPTION FAILED: " + err.message, "ERROR");
+                        }
+                    };
+                }
+            }, 100);
         }
 
         entry.innerHTML = `
@@ -6812,8 +6983,8 @@ let rallyPointLine = null;
         // Preserve original card metadata (label, type, etc.) if sent with the card.
         if (imageBase64 && !isMe && window.saveIntelSnapshot) {
             // Use original card label if metadata was sent, otherwise fall back to sender info
-            const label = (cardMetadata && cardMetadata.label)
-                ? cardMetadata.label
+            const label = (tapeMetadata && tapeMetadata.label)
+                ? tapeMetadata.label
                 : `COMMS_${userObj.callsign}`;
             const vaultMeta = Object.assign(
                 { source: 'comms_chat', senderCallsign: userObj.callsign, senderRole: userObj.role },
@@ -7765,6 +7936,70 @@ let rallyPointLine = null;
             if(item && item.routeTracker) window.loadRouteToMap(item.routeTracker);
         };
 
+        window.loadVideoBackToPlayerById = function(id) {
+            const item = vaultCache.find(i => i.id == id);
+            if(item) window.loadVideoBackToPlayer(item);
+        };
+
+        window.loadVideoBackToPlayer = function(item) {
+            if (!item || !item.image) return;
+
+            // Go to the camera panel
+            window.toggleFullscreen('panel-hud');
+
+            const videoEl = document.getElementById('surveillance-stream');
+            const placeholder = document.getElementById('surveillance-placeholder');
+            const hud = document.getElementById('surveillance-hud');
+            const killBtn = document.getElementById('feed-kill-btn');
+            const survFooter = document.getElementById('surveillance-footer');
+            const recStartBtn = document.getElementById('surveillance-record-start-btn');
+            const recStopBtn = document.getElementById('surveillance-record-stop-btn');
+            const captureBtn = document.getElementById('surveillance-capture-btn');
+            const label = document.getElementById('feed-label-source');
+
+            // If a live stream is running, stop it
+            const stopBtn = document.getElementById('feed-kill-btn');
+            if (stopBtn && !stopBtn.classList.contains('hidden')) {
+                stopBtn.click();
+            }
+
+            // Object URL for the blob
+            const url = URL.createObjectURL(item.image);
+            videoEl.srcObject = null;
+            
+            // Disable autoplay so it doesn't immediately play the video
+            videoEl.autoplay = false;
+            videoEl.removeAttribute('autoplay');
+            
+            videoEl.src = url;
+            videoEl.controls = true; // allow user to pause/scrub
+            
+            // Force pause explicitly
+            videoEl.pause();
+
+            videoEl.classList.remove('hidden');
+            placeholder.classList.add('hidden');
+            hud.classList.add('hidden');
+            
+            if(survFooter) survFooter.classList.remove('hidden');
+            
+            if(captureBtn) captureBtn.classList.add('hidden');
+            if(recStartBtn) recStartBtn.classList.add('hidden');
+            if(recStopBtn) recStopBtn.classList.add('hidden');
+            
+            const flipBtn = document.getElementById('feed-switch-cam-btn');
+            if(flipBtn) flipBtn.classList.add('hidden');
+            
+            const hudToggleBtn = document.getElementById('feed-hud-toggle-btn');
+            if(hudToggleBtn) hudToggleBtn.classList.add('hidden');
+
+            if(killBtn) {
+                killBtn.classList.remove('hidden');
+                // The killBtn normally calls stopFeed() which will clear videoEl.src
+            }
+            if(label) label.textContent = `PLAYING INTEL: ${item.label}`;
+        };
+
         let isSavingBriefing = false;
         if (saveInvBtn) {
             saveInvBtn.addEventListener('click', async () => {
@@ -7786,22 +8021,38 @@ let rallyPointLine = null;
                         scale: 1.5,
                         logging: false,
                         onclone: (clonedDoc) => {
-                            // Force textarea values to render as visible text in snapshot
-                            // html2canvas can miss textarea content on some browsers
-                            clonedDoc.querySelectorAll('textarea').forEach(ta => {
-                                const clone = ta;
-                                const div = clonedDoc.createElement('div');
-                                div.style.cssText = window.getComputedStyle(ta).cssText;
-                                div.style.whiteSpace = 'pre-wrap';
-                                div.style.wordBreak = 'break-word';
-                                div.style.overflow = 'visible';
-                                div.style.height = 'auto';
-                                div.textContent = ta.value;
-                                ta.parentNode.replaceChild(div, ta);
+                            // Safely copy all textarea values
+                            Array.from(targetEl.querySelectorAll('textarea')).forEach(originalTa => {
+                                if (!originalTa.id) return;
+                                const cloneTa = clonedDoc.getElementById(originalTa.id);
+                                if (cloneTa) {
+                                    const div = clonedDoc.createElement('div');
+                                    div.style.cssText = window.getComputedStyle(cloneTa).cssText;
+                                    div.style.whiteSpace = 'pre-wrap';
+                                    div.style.wordBreak = 'break-word';
+                                    div.style.overflow = 'visible';
+                                    div.style.height = 'auto';
+                                    div.textContent = originalTa.value;
+                                    cloneTa.parentNode.replaceChild(div, cloneTa);
+                                }
                             });
-                            // Force input values to show as text too
-                            clonedDoc.querySelectorAll('input[type=text], input:not([type])').forEach(inp => {
-                                inp.setAttribute('value', inp.value);
+                            
+                            // Safely copy all input values
+                            Array.from(targetEl.querySelectorAll('input[type=text], input:not([type])')).forEach(originalInp => {
+                                if (!originalInp.id) return;
+                                const cloneInp = clonedDoc.getElementById(originalInp.id);
+                                if (cloneInp) {
+                                    const div = clonedDoc.createElement('div');
+                                    div.style.cssText = window.getComputedStyle(cloneInp).cssText;
+                                    div.style.display = 'flex';
+                                    div.style.alignItems = 'center';
+                                    div.style.paddingTop = '0px';
+                                    div.style.paddingBottom = '0px';
+                                    div.style.whiteSpace = 'nowrap';
+                                    div.style.overflow = 'visible';
+                                    div.textContent = originalInp.value;
+                                    cloneInp.parentNode.replaceChild(div, cloneInp);
+                                }
                             });
                         }
                     });
@@ -8036,87 +8287,6 @@ let rallyPointLine = null;
             toVaultBtnBottom.addEventListener('click', (e) => handleVaultClick(e, toVaultBtnBottom));
         }
 
-        // SEND INDIVIDUAL VAULT ITEM TO CHAT (used by SEND button in selectVaultItem)
-        window.sendVaultItemToChat = function(itemId) {
-            if (!commsChannel) {
-                alert('Connect to Tactical Comms first!');
-                return;
-            }
-            const item = vaultCache.find(i => i.id == itemId);
-            if (!item) return;
-
-            window.pushTacLog(`TRANSMITTING VAULT ITEM TO COMMS...`, "SYS");
-
-            const isVideo = item.image && item.image.startsWith('data:video');
-
-            if (isVideo) {
-                // Video path: send metadata reference + flag. Video blob too large for Supabase realtime.
-                // We send a compact notification with the label so the other device knows a video was shared.
-                try {
-                    const metaPayload = { 
-                        message: `🎥 VIDEO INTEL INCOMING: ${item.label}`, 
-                        user: commsUser, 
-                        timestamp: Date.now(),
-                        isVideo: true,
-                        videoLabel: item.label
-                    };
-                    const encrypted = TacticalCrypto.encrypt(metaPayload);
-                    const msgId = Math.random().toString(36).substring(2, 9);
-                    window.receivedMsgIds.add(msgId);
-                    commsChannel.send({ type: 'broadcast', event: 'chat', payload: { data: encrypted, msgId } });
-                    renderChatMessage(commsUser, `🎥 VIDEO INTEL: ${item.label}`, false, null);
-                    window.pushTacLog(`VIDEO METADATA BROADCAST SENT`, "SUCCESS");
-                } catch(e) {
-                    window.pushTacLog("VIDEO BROADCAST FAILED: " + e.message, "ERROR");
-                }
-            } else {
-                // Image path: compress and send
-                const img = new Image();
-                img.onload = () => {
-                    let w = img.width, h = img.height;
-                    const MAX_DIM = 400;
-                    if (w > MAX_DIM || h > MAX_DIM) {
-                        if (w > h) { h = Math.floor(h * (MAX_DIM / w)); w = MAX_DIM; }
-                        else { w = Math.floor(w * (MAX_DIM / h)); h = MAX_DIM; }
-                    }
-                    const canvas = document.createElement('canvas');
-                    canvas.width = w; canvas.height = h;
-                    canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-                    const compressedBase64 = canvas.toDataURL('image/jpeg', 0.5);
-                    try {
-                        const metadataObj = Object.assign({}, item);
-                        delete metadataObj.image;
-                        delete metadataObj.snapshot;
-                        delete metadataObj.bgImage;
-                        delete metadataObj.id;
-                        delete metadataObj.routeTracker;
-                        const encryptedImage = TacticalCrypto.encrypt({ 
-                            message: "INCOMING IMAGE INTEL", 
-                            image: compressedBase64, 
-                            user: commsUser,
-                            metadata: metadataObj
-                        });
-                        const msgId = Math.random().toString(36).substring(2, 9);
-                        window.receivedMsgIds.add(msgId);
-                        if (window.dataChannels) {
-                            Object.values(window.dataChannels).forEach(dc => {
-                                if (dc && dc.readyState === 'open') {
-                                    try { dc.send(JSON.stringify({ event: 'chat', data: encryptedImage, msgId })); } catch(e2) {}
-                                }
-                            });
-                        }
-                        commsChannel.send({ type: 'broadcast', event: 'chat', payload: { data: encryptedImage, msgId } });
-                        renderChatMessage(commsUser, "INCOMING IMAGE INTEL", true, compressedBase64);
-                        window.pushTacLog(`IMAGE INTEL SENT TO COMMS`, "SUCCESS");
-                    } catch(e) {
-                        window.pushTacLog("VAULT SEND FAILED: " + e.message, "ERROR");
-                    }
-                };
-                img.onerror = () => window.pushTacLog('IMG LOAD ERR FOR VAULT SEND', 'ERROR');
-                img.src = item.image;
-            }
-        };
-
         const vaultChatsBtn = document.getElementById('vault-chats-btn');
         if (vaultChatsBtn) {
             vaultChatsBtn.addEventListener('click', (e) => {
@@ -8128,12 +8298,138 @@ let rallyPointLine = null;
                 const itemsToSend = vaultCache.filter(item => selectedIds.includes(item.id.toString()));
                 
                 itemsToSend.forEach((item, index) => {
-                    setTimeout(() => { window.sendVaultItemToChat(item.id); }, index * 800);
+                    if (item.type === 'video') {
+                        window.pushTacLog("ENCRYPTING SECURE TAPE FOR TRANSMISSION...", "SYS");
+                        if (!window.TacticalBinaryCrypto) {
+                            window.pushTacLog("ENCRYPTION ENGINE NOT READY", "ERROR");
+                            return;
+                        }
+                        window.TacticalBinaryCrypto.encryptBlob(item.image).then(encryptedBlob => {
+                            const fileName = `secure_tape_${Date.now()}_${Math.random().toString(36).substring(2,7)}.bin`;
+                            window.supabaseClient.storage.from('Tactical-media').upload(fileName, encryptedBlob, {
+                                cacheControl: '3600',
+                                upsert: false
+                            }).then(({ data, error }) => {
+                                if (error) {
+                                    window.pushTacLog("TAPE UPLOAD FAILED: " + error.message, "ERROR");
+                                    return;
+                                }
+                                const publicUrlResp = window.supabaseClient.storage.from('Tactical-media').getPublicUrl(fileName);
+                                const publicUrl = publicUrlResp.data.publicUrl;
+                                
+                                const metadataObj = Object.assign({}, item);
+                                delete metadataObj.image;
+                                
+                                const encryptedMessage = TacticalCrypto.encrypt({ 
+                                    message: "[SECURE_TAPE_INCOMING]", 
+                                    tapeUrl: publicUrl,
+                                    user: commsUser,
+                                    metadata: metadataObj
+                                });
+                                
+                                const msgId = Math.random().toString(36).substring(2, 9);
+                                window.receivedMsgIds.add(msgId);
+                                
+                                if (window.dataChannels) {
+                                    Object.values(window.dataChannels).forEach(dc => {
+                                        if (dc && dc.readyState === 'open') {
+                                            try { dc.send(JSON.stringify({ event: 'chat', data: encryptedMessage, msgId })); } catch(e){}
+                                        }
+                                    });
+                                }
+                                
+                                commsChannel.send({
+                                    type: 'broadcast',
+                                    event: 'chat',
+                                    payload: { data: encryptedMessage, msgId }
+                                });
+                                
+                                window.pushTacLog("SECURE TAPE TRANSMITTED", "SUCCESS");
+                                renderChatMessage(commsUser, "SECURE TAPE TRANSMITTED TO TEAM", true, null, publicUrl);
+                            });
+                        }).catch(err => {
+                            window.pushTacLog("TAPE ENCRYPTION FAILED: " + err.message, "ERROR");
+                        });
+                        return; // skip the image logic
+                    }
+
+                    setTimeout(() => {
+                        try {
+                            const originalBase64 = item.image;
+                            const metadataObj = Object.assign({}, item);
+                            // Strip ALL large base64 blobs from metadata before broadcast
+                            // (DOPE_CARD / RECON_MAP embed a full 'snapshot' in their metadata
+                            //  which would cause Supabase to reject the oversized payload)
+                            delete metadataObj.image;
+                            delete metadataObj.snapshot;
+                            delete metadataObj.bgImage;
+                            delete metadataObj.id;
+                            delete metadataObj.routeTracker;
+                            
+                            const img = new Image();
+                            img.onload = () => {
+                                let w = img.width;
+                                let h = img.height;
+                                const MAX_DIM = 400;
+                                
+                                if (w > MAX_DIM || h > MAX_DIM) {
+                                    if (w > h) { h = Math.floor(h * (MAX_DIM / w)); w = MAX_DIM; }
+                                    else { w = Math.floor(w * (MAX_DIM / h)); h = MAX_DIM; }
+                                }
+                                const canvas = document.createElement('canvas');
+                                canvas.width = w;
+                                canvas.height = h;
+                                canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+                                
+                                const compressedBase64 = canvas.toDataURL('image/jpeg', 0.5);
+                                
+                                try {
+                                    const encryptedImage = TacticalCrypto.encrypt({ 
+                                        message: "INCOMING IMAGE INTEL", 
+                                        image: compressedBase64, 
+                                        user: commsUser,
+                                        metadata: metadataObj
+                                    });
+                                    const msgId = Math.random().toString(36).substring(2, 9);
+                                    window.receivedMsgIds.add(msgId);
+                                    
+                                    // P2P Image Paste
+                                    if (window.dataChannels) {
+                                        Object.values(window.dataChannels).forEach(dc => {
+                                            if (dc && dc.readyState === 'open') {
+                                                try {
+                                                    dc.send(JSON.stringify({ event: 'chat', data: encryptedImage, msgId }));
+                                                } catch (err) {
+                                                    window.pushTacLog("P2P IMG PASTE ERR: " + err.message, "ERROR");
+                                                }
+                                            }
+                                        });
+                                    }
+
+                                    commsChannel.send({
+                                        type: 'broadcast',
+                                        event: 'chat',
+                                        payload: { data: encryptedImage, msgId }
+                                    });
+                                    renderChatMessage(commsUser, "INCOMING IMAGE INTEL", true, compressedBase64);
+                                } catch (e) {
+                                    window.pushTacLog("IMAGE PASTE SOCKET FAILED", "ERROR");
+                                }
+                            };
+                            img.onerror = (err) => {
+                                window.pushTacLog(`IMG ONLOAD ERROR: ${err}`, "ERROR");
+                            };
+                            window.pushTacLog(`SETTING IMG SRC...`, "SYS");
+                            img.src = originalBase64;
+                        } catch (err) {
+                            window.pushTacLog("VAULT CHAT ERROR: " + err.message, "ERROR");
+                        }
+                    }, index * 800);
                 });
                 
                 // Uncheck boxes after sending
                 checkedBoxes.forEach(cb => cb.checked = false);
-                window.pushTacLog(`QUEUED ${itemsToSend.length} ITEMS FOR COMM CHANNEL`, "SUCCESS");
+                window.pushTacLog(`QUEUED ${itemsToSend.length} IMAGES FOR COMM CHANNEL`, "SUCCESS");
             });
         }
 
@@ -8295,121 +8591,6 @@ document.addEventListener('DOMContentLoaded', () => {
     function updateTransform() {
         zoomImg.style.transform = "scale(${currentScale})";
         zoomImg.style.transform = 'scale(' + currentScale + ')';
-    }
-
-    // Tape Save Btn Logic
-    const tapeSaveBtn = document.getElementById('tape-save-btn');
-    if (tapeSaveBtn) {
-        tapeSaveBtn.addEventListener('click', () => {
-            const tapeModal = document.getElementById('tape-modal');
-            const tapeInput = document.getElementById('tape-designation-input');
-            const designation = tapeInput ? (tapeInput.value || 'SCOPETAPE_0000') : 'SCOPETAPE_0000';
-            
-            if (window._currentTapeBlob) {
-                const reader = new FileReader();
-                reader.readAsDataURL(window._currentTapeBlob);
-                reader.onloadend = () => {
-                    if (window.saveIntelSnapshot) {
-                        window.saveIntelSnapshot(designation, reader.result, { type: 'video' });
-                        if (window.pushTacLog) window.pushTacLog("TAPE SAVED TO INTEL VAULT", "SUCCESS");
-                    }
-                    if (tapeModal) {
-                        tapeModal.classList.remove('flex');
-                        tapeModal.classList.add('hidden');
-                    }
-                    window._currentTapeBlob = null;
-                };
-            } else {
-                if (tapeModal) {
-                    tapeModal.classList.remove('flex');
-                    tapeModal.classList.add('hidden');
-                }
-            }
-        });
-    }
-
-    // Surveillance Drawing Logic
-    const survDrawCanvas = document.getElementById('surveillance-draw-canvas');
-    const survDrawBtn = document.getElementById('surveillance-draw-btn');
-    const survClearBtn = document.getElementById('surveillance-clear-btn');
-    let survCtx = null;
-    let isSurvDrawing = false;
-    let isSurvDrawMode = false;
-
-    if (survDrawCanvas && survDrawBtn && survClearBtn) {
-        const resizeSurvCanvas = () => {
-            const rect = survDrawCanvas.parentElement.getBoundingClientRect();
-            survDrawCanvas.width = rect.width;
-            survDrawCanvas.height = rect.height;
-            if (survCtx) {
-                survCtx.strokeStyle = '#ef4444'; // Red
-                survCtx.lineWidth = 3;
-                survCtx.lineCap = 'round';
-            }
-        };
-        window.addEventListener('resize', resizeSurvCanvas);
-        
-        survDrawBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            isSurvDrawMode = !isSurvDrawMode;
-            if (isSurvDrawMode) {
-                survDrawCanvas.classList.remove('pointer-events-none');
-                survDrawCanvas.classList.remove('hidden');
-                survDrawBtn.classList.replace('text-gray-300', 'text-red-500');
-                survDrawBtn.innerHTML = `<i data-lucide="pen-tool" class="w-3 h-3"></i> DRAWING`;
-                if (!survCtx) {
-                    survCtx = survDrawCanvas.getContext('2d');
-                    resizeSurvCanvas();
-                }
-            } else {
-                survDrawCanvas.classList.add('pointer-events-none');
-                survDrawBtn.classList.replace('text-red-500', 'text-gray-300');
-                survDrawBtn.innerHTML = `<i data-lucide="pen-tool" class="w-3 h-3"></i> DRAW`;
-            }
-            if (window.lucide) window.lucide.createIcons();
-        });
-
-        survClearBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            if (survCtx) {
-                survCtx.clearRect(0, 0, survDrawCanvas.width, survDrawCanvas.height);
-            }
-        });
-
-        const getSurvPos = (e) => {
-            const rect = survDrawCanvas.getBoundingClientRect();
-            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-            return { x: clientX - rect.left, y: clientY - rect.top };
-        };
-
-        const startSurvDraw = (e) => {
-            if (!isSurvDrawMode) return;
-            isSurvDrawing = true;
-            const pos = getSurvPos(e);
-            survCtx.beginPath();
-            survCtx.moveTo(pos.x, pos.y);
-        };
-
-        const moveSurvDraw = (e) => {
-            if (!isSurvDrawing || !isSurvDrawMode) return;
-            if (e.type === 'touchmove' && e.cancelable) e.preventDefault();
-            const pos = getSurvPos(e);
-            survCtx.lineTo(pos.x, pos.y);
-            survCtx.stroke();
-        };
-
-        const stopSurvDraw = () => {
-            isSurvDrawing = false;
-        };
-
-        survDrawCanvas.addEventListener('mousedown', startSurvDraw);
-        survDrawCanvas.addEventListener('mousemove', moveSurvDraw);
-        survDrawCanvas.addEventListener('mouseup', stopSurvDraw);
-        survDrawCanvas.addEventListener('mouseleave', stopSurvDraw);
-        survDrawCanvas.addEventListener('touchstart', startSurvDraw, { passive: false });
-        survDrawCanvas.addEventListener('touchmove', moveSurvDraw, { passive: false });
-        survDrawCanvas.addEventListener('touchend', stopSurvDraw);
     }
 
     // Drag to pan
@@ -8791,11 +8972,75 @@ document.getElementById('btn-matrix-to-vault').addEventListener('click', async (
     btn.innerHTML = `<i data-lucide="loader" class="w-4 h-4 animate-spin"></i> SAVING...`;
     
     try {
-        const canvas = await html2canvas(targetEl, {
+        const tbody = document.getElementById('matrix-tbody');
+        const origTable = document.getElementById('matrix-table');
+        const allRows = Array.from(tbody.querySelectorAll('tr'));
+        
+        // -------------------------------------------------------------
+        // MULTI-COLUMN MAGIC FOR MASSIVE DOPE CARDS
+        // We split tall matrices into side-by-side columns on a single card
+        // -------------------------------------------------------------
+        const MAX_ROWS_PER_COL = 26; 
+        const numCols = Math.ceil(allRows.length / MAX_ROWS_PER_COL) || 1;
+        
+        const origDisplay = origTable.style.display;
+        origTable.style.display = 'none'; // hide original table
+        
+        // Build the physical layout container
+        const multiColContainer = document.createElement('div');
+        multiColContainer.style.display = 'flex';
+        multiColContainer.style.flexDirection = 'row';
+        multiColContainer.style.gap = '16px';
+        multiColContainer.style.padding = '12px';
+        multiColContainer.style.backgroundColor = '#000000';
+        multiColContainer.style.width = 'max-content';
+        
+        for (let i = 0; i < numCols; i++) {
+            const newTable = origTable.cloneNode(true);
+            newTable.id = ''; 
+            newTable.style.display = 'table';
+            newTable.style.width = 'max-content'; 
+            newTable.style.tableLayout = 'auto';
+            newTable.classList.remove('hidden', 'w-full');
+            
+            const newTbody = newTable.querySelector('tbody');
+            newTbody.innerHTML = '';
+            
+            const chunk = allRows.slice(i * MAX_ROWS_PER_COL, (i + 1) * MAX_ROWS_PER_COL);
+            chunk.forEach(row => {
+                const rowClone = row.cloneNode(true);
+                rowClone.querySelectorAll('td, th').forEach(c => {
+                    c.style.whiteSpace = 'nowrap';
+                    c.style.fontSize = '12px';
+                    c.style.padding = '6px 12px';
+                    c.style.border = '1px solid #1f2937'; // gray-800
+                });
+                newTbody.appendChild(rowClone);
+            });
+            
+            newTable.querySelectorAll('thead th').forEach(th => {
+                th.style.whiteSpace = 'nowrap';
+                th.style.fontSize = '12px';
+                th.style.padding = '6px 12px';
+                th.style.border = '1px solid #1f2937';
+            });
+            
+            multiColContainer.appendChild(newTable);
+        }
+        
+        targetEl.appendChild(multiColContainer);
+        await new Promise(r => setTimeout(r, 100)); // reflow
+        
+        const canvas = await html2canvas(multiColContainer, {
             backgroundColor: '#000000',
-            scale: window.innerWidth < 768 ? 1 : 2,
+            scale: Math.max(window.devicePixelRatio || 2, 2),
             logging: false
         });
+        
+        // Cleanup DOM instantly
+        multiColContainer.remove();
+        origTable.style.display = origDisplay;
+        
         const imgData = canvas.toDataURL('image/jpeg', 0.85);
         
         // Formulate a clean intel record name
@@ -8806,16 +9051,16 @@ document.getElementById('btn-matrix-to-vault').addEventListener('click', async (
         const min = String(now.getMinutes()).padStart(2, '0');
         const timeStr = `${mm}${dd}-${hh}${min}`;
         
-        saveIntelSnapshot(`MATRIX-${timeStr}`, imgData);
+        window.saveIntelSnapshot(`MATRIX-${timeStr}`, imgData);
         
         btn.innerHTML = `<i data-lucide="check" class="w-4 h-4"></i> SAVED!`;
         if (window.pushTacLog) window.pushTacLog("BALLISTIC MATRIX SAVED TO INTEL VAULT", "SUCCESS");
         
-        setTimeout(() => { btn.innerHTML = originalText; lucide.createIcons(); }, 2000);
+        setTimeout(() => { btn.innerHTML = originalText; if (window.lucide) window.lucide.createIcons(); }, 2000);
     } catch (e) {
         console.error("Matrix save error", e);
         btn.innerHTML = `<i data-lucide="alert-triangle" class="w-4 h-4"></i> ERROR`;
-        setTimeout(() => { btn.innerHTML = originalText; lucide.createIcons(); }, 2000);
+        setTimeout(() => { btn.innerHTML = originalText; if (window.lucide) window.lucide.createIcons(); }, 2000);
     }
 });
 
@@ -8832,7 +9077,7 @@ document.getElementById('btn-weather-to-vault').addEventListener('click', async 
     try {
         const canvas = await window.html2canvas(targetEl, {
             backgroundColor: '#000000',
-            scale: window.innerWidth < 768 ? 1 : 2,
+            scale: Math.max(window.devicePixelRatio || 2, 2),
             logging: false
         });
         const imgData = canvas.toDataURL('image/jpeg', 0.85);
@@ -8872,7 +9117,7 @@ if (btnBallisticToVault) {
             
             const canvas = await window.html2canvas(targetEl, {
                 backgroundColor: '#000000',
-                scale: window.innerWidth < 768 ? 1 : 2,
+                scale: Math.max(window.devicePixelRatio || 2, 2),
                 logging: false,
                 windowWidth: targetEl.scrollWidth,
                 windowHeight: targetEl.scrollHeight,
@@ -9158,6 +9403,3 @@ setTimeout(() => {
         });
     }
 }, 1000);
-
-
-

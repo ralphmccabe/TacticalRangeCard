@@ -1663,15 +1663,7 @@
                     <span class="dash-panel-title font-mono bg-black/80 px-2 py-1 rounded border border-gray-800 text-emerald-100 text-[10px] flex items-center gap-1.5 shadow-[0_0_10px_rgba(0,0,0,0.5)]">
                         <span class="w-1.5 h-1.5 rounded-full bg-red-500 inline-block animate-pulse"></span> FEED_01: <span id="feed-label-source">OFFLINE</span>
                     </span>
-                    <div id="surveillance-draw-tools" class="hidden flex items-center gap-2 ml-2">
-                        <button id="surveillance-draw-btn" class="bg-gray-800 border border-gray-700 text-gray-300 text-[9px] px-2 py-1 rounded font-black uppercase flex items-center gap-1.5 hover:text-blue-400 hover:border-blue-500 transition-all">
-                            <i data-lucide="pen-tool" class="w-3 h-3"></i> DRAW
-                        </button>
-                        <button id="surveillance-clear-btn" class="bg-red-950/20 border border-red-900 text-red-500 text-[9px] px-2 py-1 rounded font-black uppercase hover:bg-red-900/40 transition-all">
-                            CLEAR
-                        </button>
-                    </div>
-                    <div class="flex flex-row items-center gap-1.5 z-30 relative ml-auto">
+                    <div class="flex flex-row items-center gap-1.5 z-30 relative">
                         <button class="maximize-btn text-gray-500 hover:text-emerald-400 flex items-center p-2 m-[-5px] ml-1" onclick="event.stopPropagation(); window.toggleFullscreen('panel-mainview')" aria-label="Action Button">
                             <span class="close-label font-black text-[9px] uppercase tracking-widest bg-emerald-950/80 px-2 py-1 rounded border border-emerald-600/50 text-emerald-400 mr-2" style="display:none;">CLOSE</span>
                             <i data-lucide="maximize-2" class="w-5 h-5"></i>
@@ -1680,13 +1672,10 @@
                 </div>
 
                 <!-- VIDEO SURVEILLANCE INTERFACE -->
-                <div class="w-full flex-1 bg-black relative flex items-center justify-center group overflow-hidden border-t border-gray-900" id="surveillance-container">
+                <div class="w-full h-full bg-black relative flex items-center justify-center group overflow-hidden" id="surveillance-container">
                     
                     <!-- The Real Video Stream Target -->
                     <video id="surveillance-stream" autoplay playsinline webkit-playsinline muted class="w-full h-full object-cover hidden z-0"></video>
-                    
-                    <!-- Drawing Canvas Overlay -->
-                    <canvas id="surveillance-draw-canvas" class="absolute inset-0 w-full h-full z-10 pointer-events-none hidden"></canvas>
                     
                     <!-- Fallback / Placeholder -->
                     <div id="surveillance-placeholder" class="absolute inset-0 flex flex-col items-center justify-center text-center z-0">
@@ -1895,9 +1884,6 @@
                                     </button>
                                     <button id="geo-clear-tracks-btn" class="bg-gray-800 border border-gray-700 text-gray-300 text-[11px] px-3 py-2 rounded font-black uppercase hover:text-white hover:bg-gray-700 transition-all" aria-label="Action Button">
                                         CLR TRK
-                                    </button>
-                                    <button id="geo-clear-draw-btn" class="bg-gray-800 border border-gray-700 text-gray-300 text-[11px] px-3 py-2 rounded font-black uppercase hover:text-white hover:bg-gray-700 transition-all" aria-label="Action Button">
-                                        CLR DRAW
                                     </button>
                                     <button id="geo-draw-btn" class="bg-gray-800 border border-gray-700 text-gray-300 text-[11px] px-3 py-2 rounded font-black uppercase flex items-center gap-1.5 hover:text-blue-400 hover:border-blue-500 transition-all" aria-label="Action Button">
                                         <i data-lucide="pen-tool" class="w-4 h-4"></i> DRAW
@@ -2624,27 +2610,8 @@
             });
         });
     </script>
-    <!-- TAPE DESIGNATION MODAL -->
-    <div id="tape-modal" class="hidden fixed inset-0 z-[9999] items-center justify-center bg-black/90 px-4">
-        <div class="bg-[#030712] border border-cyan-800 rounded-lg p-6 max-w-sm w-full shadow-[0_0_30px_rgba(6,182,212,0.2)] relative flex flex-col gap-4 text-center">
-            <h2 class="text-cyan-400 font-mono text-sm uppercase flex items-center justify-center gap-2 tracking-[0.2em]">
-                <i data-lucide="video" class="w-5 h-5"></i> TAPE SECURED
-            </h2>
-            <div class="text-[10px] text-gray-500 font-mono uppercase mt-2 tracking-widest">
-                ENTER TAPE DESIGNATION:
-            </div>
-            <input type="text" id="tape-designation-input" class="w-full bg-[#0a192f] border border-emerald-500/50 text-emerald-400 font-mono font-black text-center p-3 rounded focus:outline-none focus:ring-1 focus:ring-emerald-400 tracking-wider shadow-inner" value="SCOPETAPE_" autocomplete="off">
-            
-            <button id="tape-save-btn" class="w-full mt-4 bg-transparent border border-white text-white hover:bg-white/10 font-bold font-mono text-[10px] py-3 rounded uppercase transition-colors tracking-widest">
-                ENCRYPT & SAVE TO VAULT
-            </button>
-        </div>
-    </div>
-
 </body>
 </html>
-
-
 
 
 

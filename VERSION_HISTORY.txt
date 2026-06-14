@@ -659,12 +659,10 @@ v7.27.11 - DEPLOYED 2026-06-11 15:26:36
 * Service Worker cache updated to: trc-vv7.27.11
 * All tactical systems: OPERATIONAL
 * Toast updater: ACTIVE - users will see update prompt on next app open
+
 ============================================================
-v7.27.12 - DEPLOYED 2026-06-13 17:48:17
+v7.27.12 - DEPLOYED 2026-06-13 13:37:07
 * Version auto-bumped from v7.27.11
-* Service Worker cache updated to: trc-v7.27.12
-* Restored 1:37 PM pristine grid layout.
-* Fully implemented Map Drawing mode with dedicated CLR DRAW button.
-* Decoupled CLR TRK from drawings.
-* Fixed Vault Loader to support routeTracker and drawings.
-* Resolved update loop mechanism in PWA.
+* Service Worker cache updated to: trc-vv7.27.12
+* All tactical systems: OPERATIONAL
+* Toast updater: ACTIVE - users will see update prompt on next app open
