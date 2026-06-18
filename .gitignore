@@ -1,4 +1,21 @@
+# Custom Sandbox Rules
 cert.pfx
 run_secure_server.py
 *.pfx
 serve.ps1
+
+# Node.js / NPM
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Android & Gradle Build Files
+.gradle/
+build/
+app/build/
+local.properties
+
+# IDEs
+.idea/
+*.iml
+.vscode/

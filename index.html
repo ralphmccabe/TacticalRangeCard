@@ -44,6 +44,7 @@
     <link rel="stylesheet" href="lib/leaflet.css" media="print" onload="this.media='all'">
     <noscript><link rel="stylesheet" href="lib/leaflet.css"></noscript>
     <script src="lib/leaflet.js" defer></script>
+    <script src="lib/Sortable.min.js" defer></script>
     <!-- tesseract: lazy-loaded on first OCR scan only — not needed at startup -->
 
     <!-- DEFER GOOGLE FONTS -->
@@ -197,6 +198,8 @@
     <style>
         :root { --accent-color: #22c55e; --accent-rgb: 34, 197, 94; --neon-green: #4ade80; }
         
+        .dash-panel.is-maximized .dashboard-only-overlay { display: none !important; }
+        
         /* 100/100 ACCESSIBILITY: Forced High Contrast Overrides for Audit Robots */
         aside .text-gray-500, #libraryModal .text-gray-500 { color: #f9fafb !important; }
         aside:not(:has(.bg-white)) .text-blue-800, #libraryModal .text-blue-800 { color: #93c5fd !important; }
@@ -307,6 +310,12 @@
 
 <body class="bg-gray-800 text-gray-100 min-h-screen font-sans selection:bg-neon-green selection:text-black overflow-x-hidden">
 
+    <!-- SOS FLASH OVERLAY & TOAST -->
+    <div id="sos-flash-overlay" class="hidden fixed inset-0 z-[9999] pointer-events-none transition-colors duration-300"></div>
+    <div id="sos-notification-toast" class="hidden fixed top-20 left-1/2 -translate-x-1/2 z-[10000] bg-red-950/95 border-2 border-red-500 text-white px-6 py-4 rounded-lg shadow-[0_0_30px_rgba(239,68,68,0.9)] font-black uppercase text-center pointer-events-none flex-col items-center justify-center min-w-[250px]">
+        <i data-lucide="alert-triangle" class="w-10 h-10 text-red-500 mb-2 animate-pulse"></i>
+        <span id="sos-toast-text" class="text-xl tracking-widest"></span>
+    </div>
     
 
     <div id="mainLayout" class="flex flex-col lg:flex-row h-screen lg:overflow-hidden">
@@ -1888,6 +1897,15 @@
                                     <button id="geo-draw-btn" class="bg-gray-800 border border-gray-700 text-gray-300 text-[11px] px-3 py-2 rounded font-black uppercase flex items-center gap-1.5 hover:text-blue-400 hover:border-blue-500 transition-all" aria-label="Action Button">
                                         <i data-lucide="pen-tool" class="w-4 h-4"></i> DRAW
                                     </button>
+                                    <button id="geo-compass-btn" class="bg-gray-800 border border-gray-700 text-gray-300 text-[11px] px-3 py-2 rounded font-black uppercase flex items-center gap-1.5 hover:text-pink-400 hover:border-pink-500 transition-all" aria-label="Toggle Compass Overlay">
+                                        <i data-lucide="compass" class="w-4 h-4"></i> COMPASS
+                                    </button>
+                                    <button id="geo-clear-draw-btn" class="bg-gray-800 border border-gray-700 text-red-400 text-[11px] px-3 py-2 rounded font-black uppercase flex items-center gap-1.5 hover:bg-red-950 hover:border-red-500 hover:text-red-300 transition-all" aria-label="Clear map drawings">
+                                        <i data-lucide="eraser" class="w-4 h-4"></i> CLR DRAW
+                                    </button>
+                                    <button id="geo-reset-map-btn" class="bg-red-950/80 border border-red-700 text-red-400 text-[11px] px-3 py-2 rounded font-black uppercase flex items-center gap-1.5 hover:bg-red-600 hover:text-white transition-all shadow-[0_0_10px_rgba(239,68,68,0.2)]" aria-label="Reset entire map">
+                                        <i data-lucide="trash-2" class="w-4 h-4"></i> RESET MAP
+                                    </button>
                                     <button id="geo-snapshot-btn" class="bg-yellow-950/80 border border-yellow-700 text-yellow-500 text-[11px] px-3 py-2 rounded font-black uppercase flex items-center gap-1.5 hover:bg-yellow-600 hover:text-black transition-all shadow-[0_0_10px_rgba(234,179,8,0.2)]" aria-label="Action Button">
                                         <i data-lucide="camera" class="w-4 h-4"></i> CAPTURE
                                     </button>
@@ -1911,12 +1929,51 @@
                             </div>
 
                             <!-- INTERACTIVE LIVE MAP WORKSPACE -->
-                            <div class="flex-1 relative z-0 flex min-h-0 h-full w-full">
+                            <div class="flex-1 relative z-0 flex min-h-0 h-full w-full overflow-hidden">
                                 <div class="w-full h-full relative z-0 bg-gray-900" id="live-sat-map-container"></div>
+                                
                                 <div class="absolute text-pink-500 font-black text-2xl drop-shadow-md pointer-events-none" style="z-index: 1000; top: 1rem; left: 50%; transform: translateX(-50%);">N</div>
                                 <div class="absolute text-pink-500 font-black text-2xl drop-shadow-md pointer-events-none" style="z-index: 1000; bottom: 1rem; left: 50%; transform: translateX(-50%);">S</div>
                                 <div class="absolute text-pink-500 font-black text-2xl drop-shadow-md pointer-events-none" style="z-index: 1000; right: 1rem; top: 50%; transform: translateY(-50%);">E</div>
                                 <div class="absolute text-pink-500 font-black text-2xl drop-shadow-md pointer-events-none" style="z-index: 1000; left: 1rem; top: 50%; transform: translateY(-50%);">W</div>
+
+                                <!-- Compass Overlay (Hidden by Default) -->
+                                <div id="compass-overlay" class="hidden absolute inset-0 pointer-events-none flex items-center justify-center transition-transform duration-300 ease-out" style="z-index: 999;">
+                                    <div class="compass-ring-container relative flex items-center justify-center drop-shadow-[0_0_20px_rgba(0,0,0,0.8)] w-full h-full p-2 sm:p-4">
+                                        <svg viewBox="0 0 1000 1000" class="w-full h-full opacity-80" style="filter: drop-shadow(0 0 10px rgba(59,130,246,0.5)); max-width: 900px; max-height: 900px;">
+                                            <!-- Outer Rings -->
+                                            <circle cx="500" cy="500" r="480" fill="none" stroke="#1e3a8a" stroke-width="4" />
+                                            <circle cx="500" cy="500" r="460" fill="none" stroke="#3b82f6" stroke-width="2" />
+                                            <circle cx="500" cy="500" r="440" fill="none" stroke="#1e3a8a" stroke-width="1" />
+                                            
+                                            <!-- Degree Ticks (360 ticks on r=460 -> circumference 2890.26) -->
+                                            <circle cx="500" cy="500" r="460" fill="none" stroke="#60a5fa" stroke-width="20" stroke-dasharray="2 6.0285" />
+                                            <!-- Major Ticks (every 10 degrees) -->
+                                            <circle cx="500" cy="500" r="460" fill="none" stroke="#fff" stroke-width="30" stroke-dasharray="4 76.285" />
+                                            
+                                            <!-- The Rotatable Star -->
+                                            <g id="compass-rose-group">
+                                                <!-- Small Center Crosshair (Optional, minimal obstruction) -->
+                                                <line x1="490" y1="500" x2="510" y2="500" stroke="#3b82f6" stroke-width="2" />
+                                                <line x1="500" y1="490" x2="500" y2="510" stroke="#3b82f6" stroke-width="2" />
+                                                
+                                                <!-- Cardinal Texts -->
+                                                <g class="compass-text-group">
+                                                    <text x="500" y="80" font-family="Arial, sans-serif" font-weight="900" font-size="80" fill="#fff" text-anchor="middle" dominant-baseline="central">N</text>
+                                                    <text x="500" y="930" font-family="Arial, sans-serif" font-weight="900" font-size="80" fill="#fff" text-anchor="middle" dominant-baseline="central">S</text>
+                                                    <text x="930" y="500" font-family="Arial, sans-serif" font-weight="900" font-size="80" fill="#fff" text-anchor="middle" dominant-baseline="central">E</text>
+                                                    <text x="70" y="500" font-family="Arial, sans-serif" font-weight="900" font-size="80" fill="#fff" text-anchor="middle" dominant-baseline="central">W</text>
+                                                    
+                                                    <!-- Degree Text -->
+                                                    <text x="500" y="140" font-family="Courier, monospace" font-weight="bold" font-size="30" fill="#93c5fd" text-anchor="middle">0°</text>
+                                                    <text x="500" y="880" font-family="Courier, monospace" font-weight="bold" font-size="30" fill="#93c5fd" text-anchor="middle">180°</text>
+                                                    <text x="860" y="510" font-family="Courier, monospace" font-weight="bold" font-size="30" fill="#93c5fd" text-anchor="middle">90°</text>
+                                                    <text x="140" y="510" font-family="Courier, monospace" font-weight="bold" font-size="30" fill="#93c5fd" text-anchor="middle">270°</text>
+                                                </g>
+                                            </g>
+                                        </svg>
+                                    </div>
+                                </div>
                             </div>
                             
                             <!-- Live Readout Footer (Style Hardened for Mobile Visibility) -->
@@ -1994,7 +2051,7 @@
                     <span class="dash-panel-title flex items-center gap-1.5"><i data-lucide="radio" class="w-2.5 h-2.5 text-emerald-500"></i> 5. Tactical Comms Link</span>
                     <div class="flex items-center gap-2">
 
-                        <button id="comms-terminate-link-btn" class="hidden relative z-50 text-[10px] sm:text-[8px] uppercase tracking-widest bg-red-950/80 px-3 py-2 sm:px-2 sm:py-0.5 rounded border border-red-600/50 text-red-400 hover:bg-red-900 hover:text-white transition-colors font-black" aria-label="Action Button">Disconnect</button>
+                        <button id="comms-terminate-link-btn" class="hidden relative z-50 text-[9px] uppercase tracking-widest bg-red-950/80 px-2 py-1 rounded border border-red-600/50 text-red-400 hover:bg-red-900 hover:text-white transition-colors font-black pointer-events-auto" style="touch-action:manipulation;" aria-label="Disconnect from comms">DISCONNECT</button>
                         <button class="maximize-btn text-gray-500 hover:text-emerald-400 flex items-center p-4 m-[-10px]" onclick="event.stopPropagation(); toggleFullscreen('panel-comms')" aria-label="Action Button"><span class="close-label font-black text-[9px] uppercase tracking-widest bg-emerald-950/80 px-2 py-1 rounded border border-emerald-600/50 text-emerald-400 mr-2">CLOSE WINDOW</span><i data-lucide="maximize-2" class="w-6 h-6"></i></button>
                     </div>
                 </div>
@@ -2166,7 +2223,7 @@
     <!-- PWA SERVICE WORKER REGISTRATION & API UPDATE CHECK -->
 
     <script>
-        window.APP_VERSION = 'v7.27.12';
+        window.APP_VERSION = 'v7.27.15';
         if(document.getElementById('header-version-display')) {
             document.getElementById('header-version-display').innerText = window.APP_VERSION;
         }
@@ -2612,6 +2669,10 @@
     </script>
 </body>
 </html>
+
+
+
+
 
 
 

@@ -3643,6 +3643,7 @@ let rallyPointLine = null;
             // 3. Add Global Map Click Listener for Vector Points
             orbitalMap.on('click', handleMapClick);
 
+            // Desktop drawing — Leaflet mouse events (reliable on PC)
             orbitalMap.on('mousedown', (e) => {
                 if (!isDrawingMode) return;
                 currentDrawPath = L.polyline([e.latlng], {color: '#3b82f6', weight: 5, opacity: 0.9, smoothFactor: 1}).addTo(orbitalMap);
@@ -3652,10 +3653,41 @@ let rallyPointLine = null;
                 if (!isDrawingMode || !currentDrawPath) return;
                 currentDrawPath.addLatLng(e.latlng);
             });
-            orbitalMap.on('mouseup', (e) => {
+            orbitalMap.on('mouseup', () => {
                 if (!isDrawingMode) return;
                 currentDrawPath = null;
             });
+
+            // Mobile drawing — native DOM touch events on the map container
+            // Leaflet's own touch event system does NOT populate e.latlng reliably on mobile
+            const mapContainer = orbitalMap.getContainer();
+
+            function getTouchLatLng(touch) {
+                const rect = mapContainer.getBoundingClientRect();
+                const x = touch.clientX - rect.left;
+                const y = touch.clientY - rect.top;
+                return orbitalMap.containerPointToLatLng(L.point(x, y));
+            }
+
+            mapContainer.addEventListener('touchstart', (e) => {
+                if (!isDrawingMode) return;
+                e.preventDefault(); // stop map pan
+                const latlng = getTouchLatLng(e.touches[0]);
+                currentDrawPath = L.polyline([latlng], {color: '#3b82f6', weight: 5, opacity: 0.9, smoothFactor: 1}).addTo(orbitalMap);
+                allDrawings.push(currentDrawPath);
+            }, { passive: false });
+
+            mapContainer.addEventListener('touchmove', (e) => {
+                if (!isDrawingMode || !currentDrawPath) return;
+                e.preventDefault(); // stop map pan while drawing
+                const latlng = getTouchLatLng(e.touches[0]);
+                currentDrawPath.addLatLng(latlng);
+            }, { passive: false });
+
+            mapContainer.addEventListener('touchend', (e) => {
+                if (!isDrawingMode) return;
+                currentDrawPath = null;
+            }, { passive: true });
 
 
             // Auto-Trigger initial GPS sync to find where the user currently is!
@@ -3865,7 +3897,7 @@ let rallyPointLine = null;
     if (gpsBtn) { gpsBtn.addEventListener('click', (e) => { e.stopPropagation(); syncMapToGps(); }); }
 
     const clearMapBtn = document.getElementById('geo-clear-map-btn');
-    if (clearMapBtn) { clearMapBtn.addEventListener('click', (e) => { e.stopPropagation(); clearMapMeasurements(); clearMapDrawings(); }); }
+    if (clearMapBtn) { clearMapBtn.addEventListener('click', (e) => { e.stopPropagation(); clearMapMeasurements(); }); }
 
     const geoDrawBtn = document.getElementById('geo-draw-btn');
     if (geoDrawBtn) {
@@ -3884,6 +3916,75 @@ let rallyPointLine = null;
                 geoDrawBtn.classList.remove('border-blue-500');
                 orbitalMap.dragging.enable();
                 document.getElementById('live-sat-map-container').style.cursor = '';
+            }
+        });
+    }
+
+    const geoCompassBtn = document.getElementById('geo-compass-btn');
+    if (geoCompassBtn) {
+        geoCompassBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const overlay = document.getElementById('compass-overlay');
+            if (overlay) {
+                const isHidden = overlay.classList.contains('hidden');
+                if (isHidden) {
+                    overlay.classList.remove('hidden');
+                    geoCompassBtn.classList.replace('text-gray-300', 'text-pink-400');
+                    geoCompassBtn.classList.replace('bg-gray-800', 'bg-pink-900');
+                    geoCompassBtn.classList.add('border-pink-500');
+                } else {
+                    overlay.classList.add('hidden');
+                    geoCompassBtn.classList.replace('text-pink-400', 'text-gray-300');
+                    geoCompassBtn.classList.replace('bg-pink-900', 'bg-gray-800');
+                    geoCompassBtn.classList.remove('border-pink-500');
+                }
+            }
+        });
+    }
+
+    const geoClearDrawBtn = document.getElementById('geo-clear-draw-btn');
+    if (geoClearDrawBtn) {
+        geoClearDrawBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            clearMapDrawings();
+            // Also exit draw mode if active
+            if (isDrawingMode) {
+                isDrawingMode = false;
+                if (geoDrawBtn) {
+                    geoDrawBtn.classList.replace('text-blue-400', 'text-gray-300');
+                    geoDrawBtn.classList.replace('bg-blue-900', 'bg-gray-800');
+                    geoDrawBtn.classList.remove('border-blue-500');
+                }
+                orbitalMap.dragging.enable();
+                document.getElementById('live-sat-map-container').style.cursor = '';
+            }
+        });
+    }
+
+    const geoResetMapBtn = document.getElementById('geo-reset-map-btn');
+    if (geoResetMapBtn) {
+        geoResetMapBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (confirm("Reset map: Clear all drawings, markers, and imported overlays?")) {
+                clearMapDrawings();
+                clearMapMeasurements();
+                if (window.importedImageOverlay && typeof orbitalMap !== 'undefined') {
+                    orbitalMap.removeLayer(window.importedImageOverlay);
+                    window.importedImageOverlay = null;
+                }
+                if (isDrawingMode && geoDrawBtn) geoDrawBtn.click();
+                
+                // Hide compass if visible
+                const overlay = document.getElementById('compass-overlay');
+                const compassBtn = document.getElementById('geo-compass-btn');
+                if (overlay && !overlay.classList.contains('hidden')) {
+                    overlay.classList.add('hidden');
+                    if (compassBtn) {
+                        compassBtn.classList.replace('text-pink-400', 'text-gray-300');
+                        compassBtn.classList.replace('bg-pink-900', 'bg-gray-800');
+                        compassBtn.classList.remove('border-pink-500');
+                    }
+                }
             }
         });
     }
@@ -3915,93 +4016,122 @@ let rallyPointLine = null;
     if (mapSnapBtn) {
         mapSnapBtn.addEventListener('click', async (e) => {
             e.stopPropagation();
-            
+
             const originalHtml = mapSnapBtn.innerHTML;
-            mapSnapBtn.innerHTML = `<span class="animate-pulse">📸 RENDERING...</span>`;
+            mapSnapBtn.innerHTML = `<span class="animate-pulse">📸 SAVING...</span>`;
             mapSnapBtn.disabled = true;
 
+            // Always capture geo metadata first — works even if screenshot fails
+            let meta = {};
+            if (typeof mapMarkers !== 'undefined' && mapMarkers.length >= 2) {
+                meta.markers = mapMarkers.map(m => m.getLatLng());
+            }
+            if (typeof allDrawings !== 'undefined' && allDrawings.length > 0) {
+                meta.drawings = allDrawings.map(d => d.getLatLngs());
+            }
+            const distVal = document.getElementById('live-map-dist')?.textContent || '';
+            if (distVal) meta.distance = distVal + ' ' + geoDistanceUnit;
+
+            const label = "GEO_" + Date.now().toString().slice(-4);
+
+            // Build a fallback canvas in case html2canvas hangs (common on mobile due to tile CORS)
+            function buildFallbackCanvas() {
+                const fb = document.createElement('canvas');
+                fb.width = 800; fb.height = 500;
+                const ctx = fb.getContext('2d');
+                ctx.fillStyle = '#030712';
+                ctx.fillRect(0, 0, fb.width, fb.height);
+                // Draw a green grid
+                ctx.strokeStyle = 'rgba(16,185,129,0.15)';
+                ctx.lineWidth = 1;
+                for (let x = 0; x < fb.width; x += 40) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,fb.height); ctx.stroke(); }
+                for (let y = 0; y < fb.height; y += 40) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(fb.width,y); ctx.stroke(); }
+                // Distance readout
+                ctx.fillStyle = '#10b981';
+                ctx.font = '900 52px monospace';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(distVal ? `DISTANCE: ${distVal} ${geoDistanceUnit}` : 'GEO INTEL CAPTURED', fb.width/2, fb.height/2 - 30);
+                // Markers count
+                ctx.font = '600 28px monospace';
+                ctx.fillStyle = '#ff1493';
+                ctx.fillText(`MARKERS: ${meta.markers ? meta.markers.length : 0}   DRAWINGS: ${meta.drawings ? meta.drawings.length : 0}`, fb.width/2, fb.height/2 + 40);
+                // Label
+                ctx.font = '400 18px monospace';
+                ctx.fillStyle = '#6b7280';
+                ctx.fillText(label + ' | TACTICAL GEO MATRIX', fb.width/2, fb.height - 30);
+                return fb;
+            }
+
             try {
-                // Capture JUST the full map workplace specifically including footer readout
                 const target = document.getElementById('geo-measure-stage');
-                
-                // Apply a quick forced background inline style just to be ultra-sure
                 target.style.background = '#030712';
 
-                const canvas = await html2canvas(target, {
+                // Race html2canvas against a 4-second timeout — mobile tiles block CORS rendering
+                const html2canvasPromise = html2canvas(target, {
                     useCORS: true,
-                    scale: Math.max(window.devicePixelRatio || 2, 2),
+                    scale: Math.min(window.devicePixelRatio || 1, 2), // cap scale on mobile
                     backgroundColor: '#030712',
                     logging: false,
-                    allowTaint: false, // Critical to avoid SecurityErrors
+                    allowTaint: true, // allow cross-origin tiles to render without throwing
                     onclone: (clonedDoc) => {
-                        // Force cloned text to display strongly in clone before snapshot
                         const distSpan = clonedDoc.getElementById('live-map-dist');
-                        if(distSpan) {
-                            distSpan.style.color = "#ffffff";
-                            distSpan.style.fontSize = "28px";
-                            distSpan.style.fontWeight = "bold";
-                        }
+                        if(distSpan) { distSpan.style.color="#ffffff"; distSpan.style.fontSize="28px"; distSpan.style.fontWeight="bold"; }
                         const footer = clonedDoc.getElementById('geo-ruler-footer');
                         if(footer) {
                             if (allDrawings.length > 0) {
-                                footer.className = footer.className.replace('bg-emerald-950/90', 'bg-blue-950/90')
-                                                                   .replace('border-emerald-500/50', 'border-blue-500/50')
-                                                                   .replace('text-emerald-300', 'text-blue-300');
+                                footer.className = footer.className.replace('bg-emerald-950/90','bg-blue-950/90').replace('border-emerald-500/50','border-blue-500/50').replace('text-emerald-300','text-blue-300');
                                 footer.innerHTML = '📝 TACTICAL MARKUP / TEAM REVIEW REQUIRED';
                             }
-                            footer.style.fontSize = "22px";
-                            footer.style.height = "50px";
+                            footer.style.fontSize="22px"; footer.style.height="50px";
                         }
                         const unitSpan = clonedDoc.getElementById('live-map-unit');
-                        if(unitSpan) {
-                            unitSpan.style.fontSize = "22px";
-                        }
+                        if(unitSpan) unitSpan.style.fontSize="22px";
                     }
                 });
-                
-                // --- INJECT MASSIVE WATERMARK SO IT IS ALWAYS READABLE IN THUMBNAILS ---
-                const ctx = canvas.getContext('2d');
-                const bannerHeight = window.innerWidth < 768 ? 120 : 160; 
-                
-                // Draw semi-transparent black banner at the very top
-                ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
-                ctx.fillRect(0, 0, canvas.width, bannerHeight);
-                
-                // Draw massive neon text inside the banner
-                ctx.fillStyle = '#10b981'; // Emerald
-                ctx.font = '900 ' + (bannerHeight * 0.5) + 'px monospace';
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-                const distVal = document.getElementById('live-map-dist')?.textContent || "--.--";
-                const massiveText = `DISTANCE: ${distVal} ${geoDistanceUnit}`;
-                
-                // Add a black drop shadow
-                ctx.shadowColor = "black";
-                ctx.shadowBlur = 10;
-                ctx.lineWidth = 4;
-                ctx.strokeText(massiveText, canvas.width / 2, bannerHeight / 2);
-                ctx.shadowBlur = 0;
-                ctx.fillText(massiveText, canvas.width / 2, bannerHeight / 2);
-                // -----------------------------------------------------------------------
 
-                const dataUri = canvas.toDataURL('image/jpeg', 0.9);
-                
-                // Deliver directly to Vault system
-                let meta = {};
-                if(typeof mapMarkers !== 'undefined' && mapMarkers.length >= 2) {
-                    meta.markers = mapMarkers.map(m => m.getLatLng());
+                const timeoutPromise = new Promise((_, reject) =>
+                    setTimeout(() => reject(new Error('RENDER_TIMEOUT')), 4000)
+                );
+
+                let canvas;
+                try {
+                    canvas = await Promise.race([html2canvasPromise, timeoutPromise]);
+                    // Inject distance watermark banner
+                    const ctx = canvas.getContext('2d');
+                    const bannerH = window.innerWidth < 768 ? 120 : 160;
+                    ctx.fillStyle = 'rgba(0,0,0,0.8)';
+                    ctx.fillRect(0, 0, canvas.width, bannerH);
+                    ctx.fillStyle = '#10b981';
+                    ctx.font = '900 ' + (bannerH * 0.5) + 'px monospace';
+                    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                    ctx.shadowColor = 'black'; ctx.shadowBlur = 10; ctx.lineWidth = 4;
+                    ctx.strokeText(`DISTANCE: ${distVal} ${geoDistanceUnit}`, canvas.width/2, bannerH/2);
+                    ctx.shadowBlur = 0;
+                    ctx.fillText(`DISTANCE: ${distVal} ${geoDistanceUnit}`, canvas.width/2, bannerH/2);
+                } catch (renderErr) {
+                    // Timeout or CORS failure — use fallback canvas, geo data still intact
+                    window.pushTacLog('MAP SCREENSHOT TIMED OUT — SAVING GEO DATA ONLY', 'SYS');
+                    canvas = buildFallbackCanvas();
                 }
-                if (typeof allDrawings !== 'undefined' && allDrawings.length > 0) {
-                    meta.drawings = allDrawings.map(d => d.getLatLngs());
-                }
-                saveIntelSnapshot("Orbital_Vector_" + Date.now().toString().slice(-4), dataUri, meta);
-                
-                mapSnapBtn.innerHTML = `<i data-lucide="check" class="w-3 h-3"></i> SAVED TO VAULT`;
+
+                const dataUri = canvas.toDataURL('image/jpeg', 0.85);
+                saveIntelSnapshot(label, dataUri, meta);
+
+                mapSnapBtn.innerHTML = `<i data-lucide="check" class="w-3 h-3"></i> SAVED`;
                 setTimeout(() => { mapSnapBtn.innerHTML = originalHtml; mapSnapBtn.disabled = false; if(window.lucide) lucide.createIcons(); }, 2000);
+
             } catch (err) {
                 console.error(err);
-                mapSnapBtn.innerHTML = `❌ FAIL`;
-                setTimeout(() => { mapSnapBtn.innerHTML = originalHtml; mapSnapBtn.disabled = false; if(window.lucide) lucide.createIcons(); }, 2000);
+                // Last resort — save with fallback canvas so geo data is never lost
+                try {
+                    const dataUri = buildFallbackCanvas().toDataURL('image/jpeg', 0.85);
+                    saveIntelSnapshot(label, dataUri, meta);
+                    mapSnapBtn.innerHTML = `<i data-lucide="check" class="w-3 h-3"></i> SAVED (GEO)`;
+                } catch(e2) {
+                    mapSnapBtn.innerHTML = `❌ FAIL`;
+                }
+                setTimeout(() => { mapSnapBtn.innerHTML = originalHtml; mapSnapBtn.disabled = false; if(window.lucide) lucide.createIcons(); }, 2500);
             }
             if(window.lucide) lucide.createIcons();
         });
@@ -4046,8 +4176,8 @@ let rallyPointLine = null;
     // LOAD INTEL VAULT TO MAP
     // ========================================================================
     window.loadVaultToMap = function(item) {
-        if (!item || (!item.markers && !item.originLat && !item.drawings)) {
-            alert("This snapshot does not contain valid map coordinates or drawings.");
+        if (!item || (!item.markers && !item.originLat && !item.drawings && !item.image)) {
+            alert("This snapshot does not contain valid map data or images.");
             return;
         }
 
@@ -4060,6 +4190,24 @@ let rallyPointLine = null;
         // 2. Clear Existing Map
         if (typeof clearMapMeasurements === 'function') clearMapMeasurements();
         if (typeof clearMapDrawings === 'function') clearMapDrawings();
+
+        // 2.5 Remove any existing Image Backgrounds to prevent 'hologram' effect
+        if (window.importedImageOverlay && window.orbitalMap) {
+            window.orbitalMap.removeLayer(window.importedImageOverlay);
+            window.importedImageOverlay = null;
+        }
+
+        // 2.6 Restore Compass Vector
+        const compassOverlay = document.getElementById('compass-overlay');
+        const compassBtn = document.getElementById('geo-compass-btn');
+        if (compassOverlay && compassOverlay.classList.contains('hidden')) {
+            compassOverlay.classList.remove('hidden');
+            if (compassBtn) {
+                compassBtn.classList.replace('text-gray-300', 'text-pink-400');
+                compassBtn.classList.replace('bg-gray-800', 'bg-pink-900');
+                compassBtn.classList.add('border-pink-500');
+            }
+        }
 
         // 3. Inject Markers
         if (item.markers && Array.isArray(item.markers)) {
@@ -4153,9 +4301,20 @@ let rallyPointLine = null;
 
         vaultCache.forEach((item, index) => {
             const el = document.createElement('div');
-            el.className = "bg-gray-900 rounded hover:bg-emerald-950/20 transition-all p-1 cursor-pointer group relative overflow-hidden" +
-                " border-2" +
-                " " + "vault-accent-card";
+            el.className = "bg-gray-900 rounded hover:bg-emerald-950/20 transition-all p-1 cursor-pointer group relative overflow-hidden border-2 vault-accent-card";
+            
+            // Critical CSS for Mobile Chrome Native Drag
+            el.style.webkitTouchCallout = 'none';
+            el.style.webkitUserSelect = 'none';
+            el.style.userSelect = 'none';
+            el.style.webkitUserDrag = 'element';
+            
+            // Absolutely block Edge/Chrome from opening long-press context menus
+            el.addEventListener('contextmenu', (e) => {
+                e.preventDefault();
+            });
+
+            // Add Native HTML5 Drag as an indestructible fallback for Desktop
             el.setAttribute('draggable', 'true');
             el.dataset.vaultIndex = index;
 
@@ -4197,8 +4356,115 @@ let rallyPointLine = null;
                 refreshVaultGrid();
             });
 
+            // ==========================================
+            // RAW MOBILE TOUCH DRAG POLYFILL (AD-BLOCKER PROOF)
+            // ==========================================
+            let touchTimer = null;
+            let isTouchDragging = false;
+            let initialY = 0;
+            let initialX = 0;
+            let cloneEl = null;
+
+            el.addEventListener('touchstart', (e) => {
+                if(e.target.closest('button') || e.target.closest('input')) return;
+                const touch = e.touches[0];
+                initialX = touch.clientX;
+                initialY = touch.clientY;
+                
+                // Wait 300ms to distinguish from scroll
+                touchTimer = setTimeout(() => {
+                    isTouchDragging = true;
+                    el.classList.add('opacity-50', 'border-emerald-500', 'scale-105');
+                    
+                    // Create floating clone
+                    cloneEl = el.cloneNode(true);
+                    cloneEl.style.position = 'fixed';
+                    cloneEl.style.width = el.offsetWidth + 'px';
+                    cloneEl.style.height = el.offsetHeight + 'px';
+                    cloneEl.style.top = (initialY - el.offsetHeight/2) + 'px';
+                    cloneEl.style.left = (initialX - el.offsetWidth/2) + 'px';
+                    cloneEl.style.zIndex = '9999';
+                    cloneEl.style.pointerEvents = 'none'; // so we can detect elements underneath
+                    cloneEl.style.opacity = '0.9';
+                    document.body.appendChild(cloneEl);
+                    
+                    if (navigator.vibrate) navigator.vibrate(50); // Haptic feedback
+                }, 300);
+            }, {passive: true});
+
+            el.addEventListener('touchmove', (e) => {
+                if (!isTouchDragging) {
+                    // If they moved their finger before 300ms, it's a scroll. Cancel drag.
+                    const touch = e.touches[0];
+                    if (Math.abs(touch.clientY - initialY) > 10 || Math.abs(touch.clientX - initialX) > 10) {
+                        clearTimeout(touchTimer);
+                    }
+                    return;
+                }
+                
+                // We are dragging! Prevent scrolling.
+                e.preventDefault();
+                const touch = e.touches[0];
+                
+                if (cloneEl) {
+                    cloneEl.style.top = (touch.clientY - el.offsetHeight/2) + 'px';
+                    cloneEl.style.left = (touch.clientX - el.offsetWidth/2) + 'px';
+                }
+                
+                // Highlight drop target
+                const elemBelow = document.elementFromPoint(touch.clientX, touch.clientY);
+                const dropTarget = elemBelow ? elemBelow.closest('.vault-accent-card') : null;
+                
+                document.querySelectorAll('.vault-accent-card').forEach(card => card.classList.remove('border-emerald-500'));
+                if (dropTarget && dropTarget !== el) {
+                    dropTarget.classList.add('border-emerald-500');
+                }
+            }, {passive: false});
+
+            el.addEventListener('touchend', (e) => {
+                clearTimeout(touchTimer);
+                if (!isTouchDragging) return;
+                
+                isTouchDragging = false;
+                el.classList.remove('opacity-50', 'border-emerald-500', 'scale-105');
+                if (cloneEl) {
+                    cloneEl.remove();
+                    cloneEl = null;
+                }
+                
+                const touch = e.changedTouches[0];
+                const elemBelow = document.elementFromPoint(touch.clientX, touch.clientY);
+                const dropTarget = elemBelow ? elemBelow.closest('.vault-accent-card') : null;
+                
+                document.querySelectorAll('.vault-accent-card').forEach(card => card.classList.remove('border-emerald-500'));
+                
+                if (dropTarget && dropTarget !== el) {
+                    const dragIndex = index;
+                    const dropIndex = parseInt(dropTarget.dataset.vaultIndex);
+                    
+                    const draggedItem = vaultCache[dragIndex];
+                    vaultCache.splice(dragIndex, 1);
+                    vaultCache.splice(dropIndex, 0, draggedItem);
+
+                    const now = Date.now();
+                    vaultCache.forEach((vItem, vIndex) => {
+                        vItem.timestamp = now - (vIndex * 1000);
+                        if (window.TRC_IDB) TRC_IDB.set('intelVault', vItem.id.toString(), vItem);
+                    });
+
+                    refreshVaultGrid();
+                }
+            });
+            
+            el.addEventListener('touchcancel', () => {
+                clearTimeout(touchTimer);
+                isTouchDragging = false;
+                el.classList.remove('opacity-50', 'border-emerald-500', 'scale-105');
+                if (cloneEl) cloneEl.remove();
+            });
+
             const isVideo = item.type === 'video';
-            const imgContent = isVideo ? `<i data-lucide="video" class="w-12 h-12 text-purple-500 opacity-80"></i>` : `<img src="${item.image}" class="max-w-full max-h-full object-contain opacity-90 group-hover:opacity-100 transition-all">`;
+            const imgContent = isVideo ? `<i data-lucide="video" class="w-12 h-12 text-purple-500 opacity-80 pointer-events-none"></i>` : `<div style="background-image: url('${item.image}'); background-size: contain; background-repeat: no-repeat; background-position: center; width: 100%; height: 100%;" class="opacity-90 group-hover:opacity-100 transition-all pointer-events-none"></div>`;
 
             el.innerHTML = `
                 <div class="aspect-square bg-black overflow-hidden relative border border-gray-800 mb-1 flex items-center justify-center">
@@ -4233,7 +4499,7 @@ let rallyPointLine = null;
                 </button>
                 ` : ''}
 
-                ${(item.label !== 'RECON_MAP' && !isVideo && (item.markers || (item.originLat && item.targetLat))) ? `
+                ${(item.label && item.label.startsWith('GEO_')) ? `
                 <button class="load-map-btn absolute bottom-7 left-1.5 bg-blue-600 text-white p-1.5 rounded border border-blue-400 shadow-lg hover:bg-blue-400 transition-all z-30" title="Load to Geo Matrix">
                     <i data-lucide="map-pin" class="w-3 h-3"></i>
                 </button>
@@ -4287,6 +4553,7 @@ let rallyPointLine = null;
 
             container.appendChild(el);
         });
+
         if(window.lucide) lucide.createIcons();
     }
 
@@ -4997,7 +5264,7 @@ let rallyPointLine = null;
             };
 
             mediaRecorder.onstop = () => {
-                const blob = new Blob(recordedChunks, { type: 'video/webm' });
+                const blob = new Blob(recordedChunks, { type: mediaRecorder.mimeType || 'video/webm' });
                 const defaultLabel = `SCOPETAPE_${Math.floor(Date.now() / 1000).toString().slice(-4)}`;
                 
                 const flash = document.createElement('div');
@@ -5033,10 +5300,22 @@ let rallyPointLine = null;
                     
                     saveBtn.addEventListener('click', () => {
                         let userLabel = input.value.trim().toUpperCase() || defaultLabel;
-                        saveIntelSnapshot(userLabel, blob, { type: 'video' });
-                        recordedChunks = [];
-                        if (window.pushTacLog) window.pushTacLog(`VIDEO TAPE [${userLabel}] SAVED TO VAULT`, "SUCCESS");
-                        modal.remove();
+                        saveBtn.disabled = true;
+                        saveBtn.textContent = 'ENCRYPTING...';
+                        // Convert Blob → base64 data URL before saving
+                        const reader = new FileReader();
+                        reader.onloadend = () => {
+                            saveIntelSnapshot(userLabel, reader.result, { type: 'video' });
+                            recordedChunks = [];
+                            if (window.pushTacLog) window.pushTacLog(`VIDEO TAPE [${userLabel}] SAVED TO VAULT`, "SUCCESS");
+                            modal.remove();
+                        };
+                        reader.onerror = () => {
+                            if (window.pushTacLog) window.pushTacLog('VIDEO ENCODE FAILED', 'ERROR');
+                            saveBtn.disabled = false;
+                            saveBtn.textContent = 'ENCRYPT & SAVE TO VAULT';
+                        };
+                        reader.readAsDataURL(blob);
                     });
 
                     // Allow pressing Enter
@@ -6444,32 +6723,7 @@ let rallyPointLine = null;
                       window.pushTacLog("S.O.S. RECEIVED FROM " + data.user.callsign + "!", "ALERT");
                       
                       // ── RECEIVED SOS BAR INDICATOR ──────────────────────────────────
-                      // Tag the bar with who sent SOS so cancel can find and clear it
-                      window.showReceivedSosBar = window.showReceivedSosBar || function(callsign, userId) {
-                          const sosBarEl = document.getElementById('comms-sos-bar');
-                          if (!sosBarEl) return;
-                          if (!sosBarEl.dataset.receivedSosUsers) sosBarEl.dataset.receivedSosUsers = '';
-                          // Track all active SOS senders (could be multiple)
-                          const senders = sosBarEl.dataset.receivedSosUsers ? sosBarEl.dataset.receivedSosUsers.split(',') : [];
-                          if (!senders.includes(userId)) senders.push(userId);
-                          sosBarEl.dataset.receivedSosUsers = senders.join(',');
-                          // Style the bar red
-                          sosBarEl.classList.add('bg-red-950', 'border-red-600', 'animate-pulse');
-                          sosBarEl.classList.remove('bg-gray-950', 'border-gray-800');
-                          // Show or update the received label
-                          let lbl = document.getElementById('received-sos-label');
-                          if (!lbl) {
-                              lbl = document.createElement('div');
-                              lbl.id = 'received-sos-label';
-                              lbl.className = 'w-full text-center text-red-300 font-black text-sm uppercase tracking-widest py-1 flex items-center justify-center gap-2';
-                              sosBarEl.insertBefore(lbl, sosBarEl.firstChild);
-                          }
-                          const allNames = (sosBarEl.dataset.receivedSosCallsigns || '').split(',').filter(Boolean);
-                          if (!allNames.includes(callsign)) allNames.push(callsign);
-                          sosBarEl.dataset.receivedSosCallsigns = allNames.join(',');
-                          lbl.innerHTML = `⚠ DISTRESS SIGNAL: ${allNames.join(' & ')} ⚠`;
-                      };
-                      window.showReceivedSosBar(data.user.callsign, data.user.id);
+                      if (window.showReceivedSosBar) window.showReceivedSosBar(data.user.callsign, data.user.id);
 
                       // Red map marker removed — banner-only SOS indicator
                       if (window.playChatAlert) {
@@ -6500,30 +6754,7 @@ let rallyPointLine = null;
                 });
             }
             // ── CLEAR RECEIVED SOS BAR ──────────────────────────────────────
-            // Remove this sender from the active SOS list. If nobody else is
-            // still in distress, wipe the red bar completely.
-            window.clearReceivedSosBar = window.clearReceivedSosBar || function(userId, callsign) {
-                const sosBarEl = document.getElementById('comms-sos-bar');
-                if (!sosBarEl) return;
-                let senders = sosBarEl.dataset.receivedSosUsers ? sosBarEl.dataset.receivedSosUsers.split(',').filter(Boolean) : [];
-                let names   = sosBarEl.dataset.receivedSosCallsigns ? sosBarEl.dataset.receivedSosCallsigns.split(',').filter(Boolean) : [];
-                senders = senders.filter(id => id !== userId);
-                names   = names.filter(n => n !== callsign);
-                sosBarEl.dataset.receivedSosUsers     = senders.join(',');
-                sosBarEl.dataset.receivedSosCallsigns = names.join(',');
-                if (senders.length === 0) {
-                    // Nobody left in distress — kill the bar indicator entirely
-                    sosBarEl.classList.remove('bg-red-950', 'border-red-600', 'animate-pulse');
-                    sosBarEl.classList.add('bg-gray-950', 'border-gray-800');
-                    const lbl = document.getElementById('received-sos-label');
-                    if (lbl) lbl.remove();
-                } else {
-                    // Others still in distress — update the label
-                    const lbl = document.getElementById('received-sos-label');
-                    if (lbl) lbl.innerHTML = `⚠ DISTRESS SIGNAL: ${names.join(' & ')} ⚠`;
-                }
-            };
-            window.clearReceivedSosBar(data.user.id, data.user.callsign);
+            if (window.clearReceivedSosBar) window.clearReceivedSosBar(data.user.id, data.user.callsign);
             window.pushTacLog("S.O.S. CANCELLED BY " + data.user.callsign, "SYS");
         });
 
@@ -6554,6 +6785,94 @@ let rallyPointLine = null;
         window.peerConnections = window.peerConnections || {};
         window.dataChannels = window.dataChannels || {};
         window.receivedMsgIds = window.receivedMsgIds || new Set();
+
+        // --- 3-COLOR SOS DISTRESS FLASH SYSTEM ---
+        window.triggerSosFlashSequence = window.triggerSosFlashSequence || function() {
+            const sosBarEl = document.getElementById('comms-sos-bar');
+            if (sosBarEl && sosBarEl.dataset.receivedSosCallsigns) {
+                const callsigns = sosBarEl.dataset.receivedSosCallsigns.split(',').filter(Boolean);
+                if (callsigns.length > 0) {
+                    const overlay = document.getElementById('sos-flash-overlay');
+                    const toast = document.getElementById('sos-notification-toast');
+                    const toastText = document.getElementById('sos-toast-text');
+                    
+                    if (toast && toastText) {
+                        toastText.innerText = `⚠ DISTRESS SIGNAL: ${callsigns.join(' & ')} ⚠`;
+                        toast.classList.remove('hidden');
+                        toast.style.display = 'flex';
+                    }
+                    
+                    if (overlay) {
+                        overlay.classList.remove('hidden');
+                        let step = 0;
+                        const colors = ['rgba(239, 68, 68, 0.4)', 'rgba(249, 115, 22, 0.4)', 'rgba(234, 179, 8, 0.4)', 'transparent'];
+                        const flashStep = () => {
+                            if (step < colors.length) {
+                                overlay.style.backgroundColor = colors[step];
+                                step++;
+                                setTimeout(flashStep, 400);
+                            } else {
+                                overlay.classList.add('hidden');
+                                // The toast remains visible until SOS is explicitly canceled.
+                            }
+                        };
+                        flashStep();
+                    }
+                }
+            }
+        };
+
+        if (!window.sosFlashInterval) {
+            window.sosFlashInterval = setInterval(window.triggerSosFlashSequence, 30000);
+        }
+
+        window.showReceivedSosBar = window.showReceivedSosBar || function(callsign, userId) {
+            const sosBarEl = document.getElementById('comms-sos-bar');
+            if (!sosBarEl) return;
+            if (!sosBarEl.dataset.receivedSosUsers) sosBarEl.dataset.receivedSosUsers = '';
+            const senders = sosBarEl.dataset.receivedSosUsers ? sosBarEl.dataset.receivedSosUsers.split(',') : [];
+            if (!senders.includes(userId)) senders.push(userId);
+            sosBarEl.dataset.receivedSosUsers = senders.join(',');
+            sosBarEl.classList.add('bg-red-950', 'border-red-600', 'animate-pulse');
+            sosBarEl.classList.remove('bg-gray-950', 'border-gray-800');
+            let lbl = document.getElementById('received-sos-label');
+            if (!lbl) {
+                lbl = document.createElement('div');
+                lbl.id = 'received-sos-label';
+                lbl.className = 'w-full text-center text-red-300 font-black text-sm uppercase tracking-widest py-1 flex items-center justify-center gap-2';
+                sosBarEl.insertBefore(lbl, sosBarEl.firstChild);
+            }
+            const allNames = (sosBarEl.dataset.receivedSosCallsigns || '').split(',').filter(Boolean);
+            if (!allNames.includes(callsign)) allNames.push(callsign);
+            sosBarEl.dataset.receivedSosCallsigns = allNames.join(',');
+            lbl.innerHTML = `⚠ DISTRESS SIGNAL: ${allNames.join(' & ')} ⚠`;
+            if (window.triggerSosFlashSequence) window.triggerSosFlashSequence();
+        };
+
+        window.clearReceivedSosBar = window.clearReceivedSosBar || function(userId, callsign) {
+            const sosBarEl = document.getElementById('comms-sos-bar');
+            if (!sosBarEl) return;
+            let senders = sosBarEl.dataset.receivedSosUsers ? sosBarEl.dataset.receivedSosUsers.split(',').filter(Boolean) : [];
+            let names   = sosBarEl.dataset.receivedSosCallsigns ? sosBarEl.dataset.receivedSosCallsigns.split(',').filter(Boolean) : [];
+            senders = senders.filter(id => id !== userId);
+            names   = names.filter(n => n !== callsign);
+            sosBarEl.dataset.receivedSosUsers     = senders.join(',');
+            sosBarEl.dataset.receivedSosCallsigns = names.join(',');
+            if (senders.length === 0) {
+                sosBarEl.classList.remove('bg-red-950', 'border-red-600', 'animate-pulse');
+                sosBarEl.classList.add('bg-gray-950', 'border-gray-800');
+                const lbl = document.getElementById('received-sos-label');
+                if (lbl) lbl.remove();
+                
+                const overlay = document.getElementById('sos-flash-overlay');
+                const toast = document.getElementById('sos-notification-toast');
+                if (overlay) overlay.classList.add('hidden');
+                if (toast) toast.classList.add('hidden');
+            } else {
+                const lbl = document.getElementById('received-sos-label');
+                if (lbl) lbl.innerHTML = `⚠ DISTRESS SIGNAL: ${names.join(' & ')} ⚠`;
+            }
+        };
         
         function setupDataChannel(peerId, dc) {
             window.dataChannels[peerId] = dc;
@@ -6922,8 +7241,45 @@ let rallyPointLine = null;
         
         let contentHtml = '';
         if (msg) contentHtml += `<div>${msg}</div>`;
-        if (imageBase64) contentHtml += `<img src="${imageBase64}" class="mt-1 rounded border border-gray-600 w-32 h-auto cursor-pointer" onclick="window.open(this.src)">`;
-        if (tapeUrl) {
+        if (tapeMetadata && tapeMetadata.isPristineImage && tapeUrl) {
+            const imgId = `pristine-${Math.random().toString(36).substring(2)}`;
+            contentHtml += `<img id="${imgId}" src="${imageBase64}" class="mt-1 rounded border border-gray-600 w-32 h-auto cursor-pointer" style="opacity: 0.6;" onclick="window.open(this.src)">`;
+            contentHtml += `<div id="${imgId}-status" class="text-[8px] text-blue-400 mt-1 animate-pulse">DECRYPTING HIGH-RES INTEL...</div>`;
+            
+            setTimeout(async () => {
+                try {
+                    const res = await fetch(tapeUrl);
+                    const encryptedText = await res.text();
+                    const decryptedObj = TacticalCrypto.decrypt(encryptedText);
+                    const pristineB64 = decryptedObj.image || decryptedObj;
+                    
+                    const imgEl = document.getElementById(imgId);
+                    if (imgEl) {
+                        imgEl.src = pristineB64;
+                        imgEl.style.opacity = '1';
+                    }
+                    const statusEl = document.getElementById(`${imgId}-status`);
+                    if (statusEl) statusEl.remove();
+                    
+                    if (!isMe && window.saveIntelSnapshot) {
+                        const vaultMeta = Object.assign(
+                            { source: 'comms_chat', senderCallsign: userObj.callsign, senderRole: userObj.role },
+                            tapeMetadata || {}
+                        );
+                        delete vaultMeta.isPristineImage;
+                        window.saveIntelSnapshot(tapeMetadata.label || `COMMS_${userObj.callsign}`, pristineB64, vaultMeta);
+                        window.pushTacLog("HIGH-RES INTEL SECURED TO VAULT", "SUCCESS");
+                    }
+                } catch (e) {
+                    const statusEl = document.getElementById(`${imgId}-status`);
+                    if (statusEl) { statusEl.className = "text-[8px] text-red-400 mt-1"; statusEl.innerText = "DECRYPTION FAILED"; }
+                }
+            }, 100);
+        } else if (imageBase64) {
+            contentHtml += `<img src="${imageBase64}" class="mt-1 rounded border border-gray-600 w-32 h-auto cursor-pointer" onclick="window.open(this.src)">`;
+        }
+
+        if (tapeUrl && !(tapeMetadata && tapeMetadata.isPristineImage)) {
             const btnId = `btn-tape-${Math.random().toString(36).substring(2)}`;
             contentHtml += `
                 <div class="mt-2 p-2 bg-purple-900/50 border border-purple-500/50 rounded text-center">
@@ -6943,20 +7299,31 @@ let rallyPointLine = null;
                         try {
                             const res = await fetch(tapeUrl);
                             const encryptedBlob = await res.blob();
-                            const decryptedBlob = await window.TacticalBinaryCrypto.decryptBlob(encryptedBlob);
+                            // Use original mime type from sender metadata so iOS mp4 plays correctly
+                            const originalMime = (tapeMetadata && tapeMetadata.mimeType) ? tapeMetadata.mimeType : 'video/webm';
+                            const decryptedBlob = await window.TacticalBinaryCrypto.decryptBlob(encryptedBlob, originalMime);
                             window.pushTacLog("ENCRYPTED TAPE DECRYPTED", "SUCCESS");
                             
-                            // Save to Vault
-                            const metadata = tapeMetadata || { label: "INCOMING_TAPE_" + Date.now().toString().slice(-4), type: "video" };
-                            metadata.image = decryptedBlob;
-                            metadata.id = Date.now() + Math.floor(Math.random() * 1000);
-                            metadata.timestamp = Date.now();
-                            metadata.isAmmo = false;
-                            
-                            vaultCache.unshift(metadata);
-                            if(window.TRC_IDB) window.TRC_IDB.set('intelVault', metadata.id.toString(), metadata);
-                            refreshVaultGrid();
-                            
+                            // Convert decrypted Blob → base64 data URL so vault can store and play it
+                            const tapeReader = new FileReader();
+                            tapeReader.onloadend = () => {
+                                const metadata = tapeMetadata ? Object.assign({}, tapeMetadata) : { label: "INCOMING_TAPE_" + Date.now().toString().slice(-4), type: "video" };
+                                metadata.image = tapeReader.result;
+                                metadata.id = Date.now() + Math.floor(Math.random() * 1000);
+                                metadata.timestamp = Date.now();
+                                metadata.isAmmo = false;
+                                
+                                vaultCache.unshift(metadata);
+                                if(window.TRC_IDB) window.TRC_IDB.set('intelVault', metadata.id.toString(), metadata);
+                                refreshVaultGrid();
+                                
+                                btn.innerHTML = `<i data-lucide="check" class="w-3 h-3 text-green-400"></i> SAVED TO VAULT`;
+                                btn.classList.replace('bg-purple-700', 'bg-green-900/50');
+                                window.pushTacLog("TAPE DECRYPTED & SAVED TO VAULT", "SUCCESS");
+                            };
+                            tapeReader.onerror = () => { throw new Error('FileReader failed on decrypted tape'); };
+                            tapeReader.readAsDataURL(decryptedBlob);
+                            return; // FileReader is async — vault save happens in callback above
                             btn.innerHTML = `<i data-lucide="check" class="w-3 h-3 text-green-400"></i> SAVED TO VAULT`;
                             btn.classList.replace('bg-purple-700', 'bg-green-900/50');
                             window.pushTacLog("ENCRYPTED TAPE DECRYPTED AND SAVED", "SUCCESS");
@@ -6981,14 +7348,14 @@ let rallyPointLine = null;
         // ── AUTO-SAVE INCOMING IMAGES TO INTEL VAULT ──────────────────────
         // Only save images received FROM others (not our own outgoing images)
         // Preserve original card metadata (label, type, etc.) if sent with the card.
-        if (imageBase64 && !isMe && window.saveIntelSnapshot) {
-            // Use original card label if metadata was sent, otherwise fall back to sender info
+        if (imageBase64 && !isMe && window.saveIntelSnapshot && !(tapeMetadata && tapeMetadata.isPristineImage)) {
             const label = (tapeMetadata && tapeMetadata.label)
                 ? tapeMetadata.label
                 : `COMMS_${userObj.callsign}`;
+            // tapeMetadata carries the original geo markers, drawings, type, etc.
             const vaultMeta = Object.assign(
                 { source: 'comms_chat', senderCallsign: userObj.callsign, senderRole: userObj.role },
-                cardMetadata || {}
+                tapeMetadata || {}
             );
             window.saveIntelSnapshot(label, imageBase64, vaultMeta);
             window.pushTacLog(`INTEL CARD FROM ${userObj.callsign} → VAULT: ${label}`, "SUCCESS");
@@ -7375,6 +7742,7 @@ let rallyPointLine = null;
                     // Red map marker removed — banner-only SOS indicator
                 }
             } else {
+                window.isDistressActive = false;
                 if (sosBtn) sosBtn.classList.add('hidden');
                 if (sosToggle) {
                     sosToggle.classList.remove('hidden');
@@ -7460,7 +7828,8 @@ let rallyPointLine = null;
         Object.keys(state).forEach(userId => {
             const presences = state[userId];
             if (presences.length > 0) {
-                const p = presences[presences.length - 1];
+                const sorted = [...presences].sort((a,b) => (new Date(b.online_at).getTime() || 0) - (new Date(a.online_at).getTime() || 0));
+                const p = sorted[0];
                 if (p.user && !seenUsers.has(p.user.id)) {
                     seenUsers.add(p.user.id);
                     const tag = document.createElement('span');
@@ -7484,7 +7853,8 @@ let rallyPointLine = null;
         Object.keys(state).forEach(userId => {
             const presences = state[userId];
             if (presences.length > 0) {
-                const p = presences[presences.length - 1];
+                const sorted = [...presences].sort((a,b) => (new Date(b.online_at).getTime() || 0) - (new Date(a.online_at).getTime() || 0));
+                const p = sorted[0];
                 if (p.location && p.user) {
                     currentActiveUsers.add(p.user.id);
                     const isMe = p.user.id === commsUser.id;
@@ -7501,23 +7871,15 @@ let rallyPointLine = null;
 
                     // Tooltip above unit: plain callsign text. Distress shown via banner, not on map.
                     const tooltipText = `${p.user.callsign} [${p.user.role}]`;
-                    const tooltipClass = isDistress ? 'tactical-tooltip distress-tooltip' : 'tactical-tooltip';
+                    const tooltipClass = 'tactical-tooltip'; // Distress shown via banner ONLY, not on map.
 
                     if (!teamMarkers[p.user.id]) {
                         teamMarkers[p.user.id] = L.marker([p.location.lat, p.location.lng], { icon: icon }).addTo(commsMapInstance);
                         teamMarkers[p.user.id].bindTooltip(tooltipText, { permanent: true, direction: 'top', className: tooltipClass, interactive: false });
-                        teamMarkers[p.user.id]._isDistress = isDistress;
                     } else {
-                        if (teamMarkers[p.user.id]._isDistress !== isDistress) {
-                            commsMapInstance.removeLayer(teamMarkers[p.user.id]);
-                            delete teamMarkers[p.user.id];
-                            
-                            teamMarkers[p.user.id] = L.marker([p.location.lat, p.location.lng], { icon: icon }).addTo(commsMapInstance);
-                            teamMarkers[p.user.id].bindTooltip(tooltipText, { permanent: true, direction: 'top', className: tooltipClass, interactive: false });
-                            teamMarkers[p.user.id]._isDistress = isDistress;
-                        } else {
-                            teamMarkers[p.user.id].setLatLng([p.location.lat, p.location.lng]);
-                        }
+                        teamMarkers[p.user.id].setLatLng([p.location.lat, p.location.lng]);
+                        // Update tooltip if needed
+                        teamMarkers[p.user.id].setTooltipContent(tooltipText);
                     }
                 }
             }
@@ -7963,16 +8325,28 @@ let rallyPointLine = null;
                 stopBtn.click();
             }
 
-            // Object URL for the blob
-            const url = URL.createObjectURL(item.image);
+            // Convert base64 data URL → Blob → Object URL for playback (browsers can't play large base64 src)
+            let playUrl;
+            if (item.image.startsWith('data:')) {
+                const mime = item.image.split(';')[0].replace('data:', '') || 'video/webm';
+                const b64 = item.image.split(',')[1];
+                const byteChars = atob(b64);
+                const byteArr = new Uint8Array(byteChars.length);
+                for (let i = 0; i < byteChars.length; i++) byteArr[i] = byteChars.charCodeAt(i);
+                const videoBlob = new Blob([byteArr], { type: mime });
+                playUrl = URL.createObjectURL(videoBlob);
+            } else {
+                playUrl = item.image; // already a blob: or http: URL
+            }
+
             videoEl.srcObject = null;
             
-            // Disable autoplay so it doesn't immediately play the video
+            // Disable autoplay so it starts paused
             videoEl.autoplay = false;
             videoEl.removeAttribute('autoplay');
             
-            videoEl.src = url;
-            videoEl.controls = true; // allow user to pause/scrub
+            videoEl.src = playUrl;
+            videoEl.controls = true;
             
             // Force pause explicitly
             videoEl.pause();
@@ -8286,6 +8660,136 @@ let rallyPointLine = null;
         if (toVaultBtnBottom) {
             toVaultBtnBottom.addEventListener('click', (e) => handleVaultClick(e, toVaultBtnBottom));
         }
+        // -----------------------------------------------------------------------
+        // SEND VAULT ITEM TO CHAT (called from viewer SEND button & CHATS button)
+        // -----------------------------------------------------------------------
+        window.sendVaultItemToChat = function(itemId) {
+            if (!commsChannel) {
+                alert('Connect to Tactical Comms first to send intel!');
+                return;
+            }
+            const item = vaultCache.find(i => i.id == itemId);
+            if (!item) { window.pushTacLog('VAULT ITEM NOT FOUND', 'ERROR'); return; }
+
+            const isVideo = item.image && item.image.startsWith('data:video');
+
+            if (isVideo) {
+                // Convert base64 data URL -> Blob, then encrypt and upload
+                window.pushTacLog("ENCRYPTING SECURE TAPE FOR TRANSMISSION...", "SYS");
+                try {
+                    const base64 = item.image.split(',')[1];
+                    const mimeType = item.image.split(';')[0].replace('data:', '') || 'video/webm';
+                    const byteChars = atob(base64);
+                    const byteNums = new Array(byteChars.length);
+                    for (let i = 0; i < byteChars.length; i++) byteNums[i] = byteChars.charCodeAt(i);
+                    const videoBlob = new Blob([new Uint8Array(byteNums)], { type: mimeType });
+
+                    window.TacticalBinaryCrypto.encryptBlob(videoBlob).then(encryptedBlob => {
+                        const fileName = `secure_tape_${Date.now()}_${Math.random().toString(36).substring(2,7)}.bin`;
+                        window.supabaseClient.storage.from('Tactical-media').upload(fileName, encryptedBlob, {
+                            cacheControl: '3600', upsert: false
+                        }).then(({ data, error }) => {
+                            if (error) { window.pushTacLog("TAPE UPLOAD FAILED: " + error.message, "ERROR"); return; }
+                            const publicUrl = window.supabaseClient.storage.from('Tactical-media').getPublicUrl(fileName).data.publicUrl;
+                            const metadataObj = Object.assign({}, item);
+                            delete metadataObj.image;
+                            const encryptedMessage = TacticalCrypto.encrypt({
+                                message: "[SECURE_TAPE_INCOMING]",
+                                tapeUrl: publicUrl,
+                                user: commsUser,
+                                metadata: Object.assign({}, metadataObj, { mimeType: mimeType })
+                            });
+                            const msgId = Math.random().toString(36).substring(2, 9);
+                            window.receivedMsgIds.add(msgId);
+                            if (window.dataChannels) {
+                                Object.values(window.dataChannels).forEach(dc => {
+                                    if (dc && dc.readyState === 'open') {
+                                        try { dc.send(JSON.stringify({ event: 'chat', data: encryptedMessage, msgId })); } catch(e2) {}
+                                    }
+                                });
+                            }
+                            commsChannel.send({ type: 'broadcast', event: 'chat', payload: { data: encryptedMessage, msgId } });
+                            renderChatMessage(commsUser, `🎥 SECURE TAPE: ${item.label}`, true, null, publicUrl);
+                            window.pushTacLog("SECURE TAPE TRANSMITTED TO TEAM", "SUCCESS");
+                        });
+                    }).catch(err => window.pushTacLog("TAPE ENCRYPT FAILED: " + err.message, "ERROR"));
+                } catch(e) {
+                    window.pushTacLog("TAPE CONVERSION FAILED: " + e.message, "ERROR");
+                }
+            } else {
+                // Guard: if image is actually a video data URL, route it back through video path
+                if (item.image && item.image.startsWith('data:video')) {
+                    item.type = 'video'; // fix type mismatch
+                    window.sendVaultItemToChat(item.id);
+                    return;
+                }
+                if (!item.image) {
+                    window.pushTacLog('VAULT ITEM HAS NO IMAGE DATA TO SEND', 'ERROR');
+                    return;
+                }
+                // Image: Bypass WebRTC limits by securely uploading pristine image to Storage
+                // and sending a tiny thumbnail over the Data Channel
+                window.pushTacLog("SECURING HIGH-RES IMAGE FOR TRANSMISSION...", "SYS");
+                const img = new Image();
+                img.onload = async () => {
+                    // 1. Generate tiny thumbnail for chat feed
+                    let w = img.width, h = img.height;
+                    const MAX_DIM = 400; // Tiny thumbnail bypasses all WebRTC payload limits safely
+                    if (w > MAX_DIM || h > MAX_DIM) {
+                        if (w > h) { h = Math.floor(h * (MAX_DIM / w)); w = MAX_DIM; }
+                        else { w = Math.floor(w * (MAX_DIM / h)); h = MAX_DIM; }
+                    }
+                    const canvas = document.createElement('canvas');
+                    canvas.width = w; canvas.height = h;
+                    canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+                    const thumbnailBase64 = canvas.toDataURL('image/jpeg', 0.5);
+                    
+                    // 2. Encrypt pristine image using HTTP-safe TacticalCrypto (no subtle crypto)
+                    try {
+                        const encryptedStr = TacticalCrypto.encrypt({ image: item.image });
+                        const encryptedBlob = new Blob([encryptedStr], { type: 'text/plain' });
+                        const fileName = `secure_img_${Date.now()}_${Math.random().toString(36).substring(2,7)}.txt`;
+                        
+                        // 4. Upload to Storage
+                        const { data, error } = await window.supabaseClient.storage.from('Tactical-media').upload(fileName, encryptedBlob, {
+                            cacheControl: '3600', upsert: false
+                        });
+                        if (error) { window.pushTacLog("IMAGE SECURE UPLOAD FAILED: " + error.message, "ERROR"); return; }
+                        
+                        const publicUrl = window.supabaseClient.storage.from('Tactical-media').getPublicUrl(fileName).data.publicUrl;
+                        
+                        // 5. Send message
+                        const metadataObj = Object.assign({}, item);
+                        delete metadataObj.image; delete metadataObj.snapshot;
+                        delete metadataObj.bgImage; delete metadataObj.id;
+                        metadataObj.isPristineImage = true;
+                        
+                        const encryptedImage = TacticalCrypto.encrypt({
+                            message: "INCOMING SECURE HIGH-RES INTEL",
+                            image: thumbnailBase64,
+                            tapeUrl: publicUrl,
+                            user: commsUser,
+                            metadata: metadataObj
+                        });
+                        
+                        const msgId = Math.random().toString(36).substring(2, 9);
+                        window.receivedMsgIds.add(msgId);
+                        if (window.dataChannels) {
+                            Object.values(window.dataChannels).forEach(dc => {
+                                if (dc && dc.readyState === 'open') {
+                                    try { dc.send(JSON.stringify({ event: 'chat', data: encryptedImage, msgId })); } catch(e2) {}
+                                }
+                            });
+                        }
+                        commsChannel.send({ type: 'broadcast', event: 'chat', payload: { data: encryptedImage, msgId } });
+                        renderChatMessage(commsUser, "INCOMING SECURE HIGH-RES INTEL", true, thumbnailBase64);
+                        window.pushTacLog(`SECURE INTEL SENT TO COMMS`, "SUCCESS");
+                    } catch(e) { window.pushTacLog("IMAGE SECURE SEND FAILED: " + e.message, "ERROR"); }
+                };
+                img.onerror = () => window.pushTacLog('IMAGE LOAD ERR FOR VAULT SEND', 'ERROR');
+                img.src = item.image;
+            }
+        };
 
         const vaultChatsBtn = document.getElementById('vault-chats-btn');
         if (vaultChatsBtn) {
@@ -8298,138 +8802,13 @@ let rallyPointLine = null;
                 const itemsToSend = vaultCache.filter(item => selectedIds.includes(item.id.toString()));
                 
                 itemsToSend.forEach((item, index) => {
-                    if (item.type === 'video') {
-                        window.pushTacLog("ENCRYPTING SECURE TAPE FOR TRANSMISSION...", "SYS");
-                        if (!window.TacticalBinaryCrypto) {
-                            window.pushTacLog("ENCRYPTION ENGINE NOT READY", "ERROR");
-                            return;
-                        }
-                        window.TacticalBinaryCrypto.encryptBlob(item.image).then(encryptedBlob => {
-                            const fileName = `secure_tape_${Date.now()}_${Math.random().toString(36).substring(2,7)}.bin`;
-                            window.supabaseClient.storage.from('Tactical-media').upload(fileName, encryptedBlob, {
-                                cacheControl: '3600',
-                                upsert: false
-                            }).then(({ data, error }) => {
-                                if (error) {
-                                    window.pushTacLog("TAPE UPLOAD FAILED: " + error.message, "ERROR");
-                                    return;
-                                }
-                                const publicUrlResp = window.supabaseClient.storage.from('Tactical-media').getPublicUrl(fileName);
-                                const publicUrl = publicUrlResp.data.publicUrl;
-                                
-                                const metadataObj = Object.assign({}, item);
-                                delete metadataObj.image;
-                                
-                                const encryptedMessage = TacticalCrypto.encrypt({ 
-                                    message: "[SECURE_TAPE_INCOMING]", 
-                                    tapeUrl: publicUrl,
-                                    user: commsUser,
-                                    metadata: metadataObj
-                                });
-                                
-                                const msgId = Math.random().toString(36).substring(2, 9);
-                                window.receivedMsgIds.add(msgId);
-                                
-                                if (window.dataChannels) {
-                                    Object.values(window.dataChannels).forEach(dc => {
-                                        if (dc && dc.readyState === 'open') {
-                                            try { dc.send(JSON.stringify({ event: 'chat', data: encryptedMessage, msgId })); } catch(e){}
-                                        }
-                                    });
-                                }
-                                
-                                commsChannel.send({
-                                    type: 'broadcast',
-                                    event: 'chat',
-                                    payload: { data: encryptedMessage, msgId }
-                                });
-                                
-                                window.pushTacLog("SECURE TAPE TRANSMITTED", "SUCCESS");
-                                renderChatMessage(commsUser, "SECURE TAPE TRANSMITTED TO TEAM", true, null, publicUrl);
-                            });
-                        }).catch(err => {
-                            window.pushTacLog("TAPE ENCRYPTION FAILED: " + err.message, "ERROR");
-                        });
-                        return; // skip the image logic
-                    }
-
-                    setTimeout(() => {
-                        try {
-                            const originalBase64 = item.image;
-                            const metadataObj = Object.assign({}, item);
-                            // Strip ALL large base64 blobs from metadata before broadcast
-                            // (DOPE_CARD / RECON_MAP embed a full 'snapshot' in their metadata
-                            //  which would cause Supabase to reject the oversized payload)
-                            delete metadataObj.image;
-                            delete metadataObj.snapshot;
-                            delete metadataObj.bgImage;
-                            delete metadataObj.id;
-                            delete metadataObj.routeTracker;
-                            
-                            const img = new Image();
-                            img.onload = () => {
-                                let w = img.width;
-                                let h = img.height;
-                                const MAX_DIM = 400;
-                                
-                                if (w > MAX_DIM || h > MAX_DIM) {
-                                    if (w > h) { h = Math.floor(h * (MAX_DIM / w)); w = MAX_DIM; }
-                                    else { w = Math.floor(w * (MAX_DIM / h)); h = MAX_DIM; }
-                                }
-                                const canvas = document.createElement('canvas');
-                                canvas.width = w;
-                                canvas.height = h;
-                                canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-                                
-                                const compressedBase64 = canvas.toDataURL('image/jpeg', 0.5);
-                                
-                                try {
-                                    const encryptedImage = TacticalCrypto.encrypt({ 
-                                        message: "INCOMING IMAGE INTEL", 
-                                        image: compressedBase64, 
-                                        user: commsUser,
-                                        metadata: metadataObj
-                                    });
-                                    const msgId = Math.random().toString(36).substring(2, 9);
-                                    window.receivedMsgIds.add(msgId);
-                                    
-                                    // P2P Image Paste
-                                    if (window.dataChannels) {
-                                        Object.values(window.dataChannels).forEach(dc => {
-                                            if (dc && dc.readyState === 'open') {
-                                                try {
-                                                    dc.send(JSON.stringify({ event: 'chat', data: encryptedImage, msgId }));
-                                                } catch (err) {
-                                                    window.pushTacLog("P2P IMG PASTE ERR: " + err.message, "ERROR");
-                                                }
-                                            }
-                                        });
-                                    }
-
-                                    commsChannel.send({
-                                        type: 'broadcast',
-                                        event: 'chat',
-                                        payload: { data: encryptedImage, msgId }
-                                    });
-                                    renderChatMessage(commsUser, "INCOMING IMAGE INTEL", true, compressedBase64);
-                                } catch (e) {
-                                    window.pushTacLog("IMAGE PASTE SOCKET FAILED", "ERROR");
-                                }
-                            };
-                            img.onerror = (err) => {
-                                window.pushTacLog(`IMG ONLOAD ERROR: ${err}`, "ERROR");
-                            };
-                            window.pushTacLog(`SETTING IMG SRC...`, "SYS");
-                            img.src = originalBase64;
-                        } catch (err) {
-                            window.pushTacLog("VAULT CHAT ERROR: " + err.message, "ERROR");
-                        }
-                    }, index * 800);
+                    // Delegate to the unified send function with a stagger for multiple items
+                    setTimeout(() => window.sendVaultItemToChat(item.id), index * 1200);
                 });
                 
                 // Uncheck boxes after sending
                 checkedBoxes.forEach(cb => cb.checked = false);
-                window.pushTacLog(`QUEUED ${itemsToSend.length} IMAGES FOR COMM CHANNEL`, "SUCCESS");
+                window.pushTacLog(`QUEUED ${itemsToSend.length} ITEM(S) FOR COMM CHANNEL`, "SUCCESS");
             });
         }
 
@@ -9076,9 +9455,24 @@ document.getElementById('btn-weather-to-vault').addEventListener('click', async 
     
     try {
         const canvas = await window.html2canvas(targetEl, {
-            backgroundColor: '#000000',
+            backgroundColor: '#030712', // Use very dark gray instead of pure black
             scale: Math.max(window.devicePixelRatio || 2, 2),
-            logging: false
+            logging: false,
+            onclone: (clonedDoc) => {
+                const clonedTarget = clonedDoc.getElementById('weather-panel-content');
+                if (clonedTarget) {
+                    clonedTarget.style.height = 'max-content';
+                    clonedTarget.style.width = targetEl.offsetWidth + 'px';
+                    // Fix Tailwind CSS opacity classes that html2canvas fails to parse
+                    const fixClasses = clonedTarget.querySelectorAll('.bg-black\\/50, .bg-black\\/40, .from-black\\/40, .border-gray-800\\/50');
+                    fixClasses.forEach(el => {
+                        if(el.classList.contains('bg-black/50') || el.classList.contains('bg-black/40')) el.style.backgroundColor = 'rgba(0,0,0,0.5)';
+                        if(el.classList.contains('from-black/40')) el.style.backgroundColor = 'rgba(0,0,0,0.4)';
+                        if(el.classList.contains('border-gray-800/50')) { el.style.borderColor = 'rgba(31,41,55,0.5)'; el.style.borderWidth = '1px'; }
+                        el.style.backgroundImage = 'none'; // remove gradients
+                    });
+                }
+            }
         });
         const imgData = canvas.toDataURL('image/jpeg', 0.85);
         
@@ -9089,7 +9483,7 @@ document.getElementById('btn-weather-to-vault').addEventListener('click', async 
         const min = String(now.getMinutes()).padStart(2, '0');
         const timeStr = `${mm}${dd}-${hh}${min}`;
         
-        window.saveIntelSnapshot(`WEATHER-${timeStr}`, imgData);
+        await window.saveIntelSnapshot(`WEATHER-${timeStr}`, imgData);
         
         btn.innerHTML = `<i data-lucide="check" class="w-3 h-3"></i> SAVED!`;
         if (window.pushTacLog) window.pushTacLog("WEATHER SNAPSHOT SAVED TO INTEL VAULT", "SUCCESS");
@@ -9125,7 +9519,18 @@ if (btnBallisticToVault) {
                     const clonedTarget = clonedDoc.getElementById('ballistic-panel-content');
                     if (clonedTarget) {
                         clonedTarget.style.height = 'max-content';
+                        clonedTarget.style.width = targetEl.offsetWidth + 'px';
                         clonedTarget.style.overflow = 'visible';
+                        
+                        // Fix Tailwind CSS opacity classes that html2canvas fails to parse
+                        const fixClasses = clonedTarget.querySelectorAll('.bg-black\\/50, .bg-gray-800\\/50, .bg-gray-900\\/80, .border-gray-800\\/50');
+                        fixClasses.forEach(el => {
+                            if(el.classList.contains('bg-black/50')) el.style.backgroundColor = 'rgba(0,0,0,0.5)';
+                            if(el.classList.contains('bg-gray-800/50') || el.classList.contains('bg-gray-900/80')) el.style.backgroundColor = 'rgba(17,24,39,0.8)';
+                            if(el.classList.contains('border-gray-800/50')) { el.style.borderColor = 'rgba(31,41,55,0.5)'; el.style.borderWidth = '1px'; }
+                            el.style.backgroundImage = 'none'; // remove gradients
+                        });
+
                         const scrollDiv = clonedTarget.querySelector('.overflow-y-auto');
                         if (scrollDiv) {
                             scrollDiv.style.height = 'max-content';
@@ -9403,3 +9808,31 @@ setTimeout(() => {
         });
     }
 }, 1000);
+
+// Device Orientation (Compass Spin) for Tactical Map Overlay
+if (window.DeviceOrientationEvent) {
+    window.addEventListener("deviceorientation", function(event) {
+        let alpha = event.webkitCompassHeading || Math.abs(event.alpha - 360);
+        if (alpha !== null && alpha !== undefined) {
+            const compass = document.getElementById('compass-overlay');
+            if (compass && !compass.classList.contains('hidden')) {
+                // Rotate the SVG compass star based on device heading
+                const ring = compass.querySelector('#compass-rose-group');
+                if (ring) {
+                    ring.style.transformOrigin = '500px 500px';
+                    ring.style.transform = `rotate(${-alpha}deg)`;
+                    // Counter-rotate the cardinal points so text stays upright
+                    const textElements = ring.querySelectorAll('.compass-text-group text');
+                    textElements.forEach(textEl => {
+                        // The text elements are positioned relative to the 1000x1000 SVG viewBox
+                        // To counter-rotate them in place, we set their transform origin to their own center.
+                        const x = textEl.getAttribute('x');
+                        const y = textEl.getAttribute('y');
+                        textEl.style.transformOrigin = `${x}px ${y}px`;
+                        textEl.style.transform = `rotate(${alpha}deg)`;
+                    });
+                }
+            }
+        }
+    }, true);
+}
