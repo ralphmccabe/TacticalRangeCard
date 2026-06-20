@@ -7251,7 +7251,9 @@ let rallyPointLine = null;
                 initCommsMap();
 
                 // Track presence
-                commsChannel.track({ online_at: new Date().toISOString(), user: commsUser, distress: window.isDistressActive });
+                if (commsChannel) {
+                    commsChannel.track({ online_at: new Date().toISOString(), user: commsUser, distress: window.isDistressActive }).catch(e => console.warn(e));
+                }
             }
         });
         } catch (error) {
@@ -7696,12 +7698,14 @@ let rallyPointLine = null;
                     if (now - lastTrackTime > 3000) {
                         lastTrackTime = now;
                         // Update Presence with location
-                        commsChannel.track({ 
-                            online_at: new Date().toISOString(),
-                            location: { lat: latitude, lng: longitude },
-                            user: commsUser,
-                            distress: window.isDistressActive
-                        }).catch(e => console.warn("Track rate limit:", e));
+                        if (commsChannel) {
+                            commsChannel.track({ 
+                                online_at: new Date().toISOString(),
+                                location: { lat: latitude, lng: longitude },
+                                user: commsUser,
+                                distress: window.isDistressActive
+                            }).catch(e => console.warn("Track rate limit:", e));
+                        }
                     }
                 }, (err) => {
                     console.warn("Main GPS Error:", err);

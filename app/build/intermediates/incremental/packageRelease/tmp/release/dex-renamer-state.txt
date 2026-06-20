@@ -1,4 +1,4 @@
-#Thu Jun 18 16:58:38 CDT 2026
+#Fri Jun 19 19:48:03 CDT 2026
 base.0=C\:\\Users\\RalphMccabe\\.gemini\\antigravity\\scratch\\TacticalRangeCard\\app\\build\\intermediates\\dex\\release\\minifyReleaseWithR8\\classes.dex
 renamed.0=classes.dex
 path.0=classes.dex
