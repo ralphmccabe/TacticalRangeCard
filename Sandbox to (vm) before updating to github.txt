@@ -16,3 +16,4 @@ insert a banner:        then remove before update
 git add .
 git commit -m "Release v7.27.15 - Compass Bug Fixes"
 git push
+git push --force
