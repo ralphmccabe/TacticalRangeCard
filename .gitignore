@@ -14,6 +14,10 @@ yarn-error.log
 build/
 app/build/
 local.properties
+*.apk
+*.aab
+*.idsig
+android.keystore
 
 # IDEs
 .idea/

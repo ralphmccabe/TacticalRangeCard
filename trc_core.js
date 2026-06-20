@@ -9083,6 +9083,11 @@ window.toggleAISpotter = function() {
     }
 
     // Turn on
+    if (window.activeMicStream) {
+        alert("MICROPHONE CONFLICT: You are currently connected to Squad Comms.\n\nThe Walkie-Talkie system is holding the microphone open for instant transmission. Please DISCONNECT from Comms first to use the AI Spotter.");
+        return;
+    }
+
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) {
         alert("Voice commands are not supported on this browser. Please use Chrome on Android or Desktop.");
