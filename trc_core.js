@@ -134,7 +134,7 @@ function initializeTacticalDashboard1() {
             window.loadScript('lib/tesseract.min.js').then(resolve).catch(reject);
         });
     };
-    // ─────────────────────────────────────────────────────────────────────────
+    // Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡
 
     // === 0. Global Security & Layout Protection ===
     // Enforce a 25-character limit on ALL text boxes to prevent layout breakage
@@ -2945,7 +2945,7 @@ function initializeTacticalDashboard2() {
                 row.className = "p-3 bg-gray-900 hover:bg-orange-900/20 border border-gray-800 hover:border-orange-500/50 rounded cursor-pointer flex items-center justify-between transition-all group";
                 
                 const meta = profiles[name].isReconScenario 
-                    ? `RECON • ${profiles[name].timestamp ? new Date(profiles[name].timestamp).toLocaleDateString() : 'Date Unknown'}` 
+                    ? `RECON • ${profiles[name].timestamp ? new Date(profiles[name].timestamp).toLocaleDateString() : 'Date Unknown'}`
                     : `${profiles[name].caliber || 'NO CALIBER'} • ${profiles[name].date || '--'}`;
 
                 row.innerHTML = `
@@ -4007,7 +4007,7 @@ let rallyPointLine = null;
             e.stopPropagation();
             isMultiTargetMode = !isMultiTargetMode;
             document.getElementById('geo-mode-label').textContent = isMultiTargetMode ? 'MULTI' : 'SINGLE';
-            if (typeof clearMapMeasurements === 'function') clearMapMeasurements();
+            
         });
     }
 
@@ -7251,9 +7251,7 @@ let rallyPointLine = null;
                 initCommsMap();
 
                 // Track presence
-                if (commsChannel) {
-                    commsChannel.track({ online_at: new Date().toISOString(), user: commsUser, distress: window.isDistressActive }).catch(e => console.warn(e));
-                }
+                commsChannel.track({ online_at: new Date().toISOString(), user: commsUser, distress: window.isDistressActive });
             }
         });
         } catch (error) {
@@ -7698,14 +7696,12 @@ let rallyPointLine = null;
                     if (now - lastTrackTime > 3000) {
                         lastTrackTime = now;
                         // Update Presence with location
-                        if (commsChannel) {
-                            commsChannel.track({ 
-                                online_at: new Date().toISOString(),
-                                location: { lat: latitude, lng: longitude },
-                                user: commsUser,
-                                distress: window.isDistressActive
-                            }).catch(e => console.warn("Track rate limit:", e));
-                        }
+                        commsChannel.track({ 
+                            online_at: new Date().toISOString(),
+                            location: { lat: latitude, lng: longitude },
+                            user: commsUser,
+                            distress: window.isDistressActive
+                        }).catch(e => console.warn("Track rate limit:", e));
                     }
                 }, (err) => {
                     console.warn("Main GPS Error:", err);
@@ -8739,7 +8735,11 @@ let rallyPointLine = null;
                                     }
                                 });
                             }
-                            commsChannel.send({ type: 'broadcast', event: 'chat', payload: { data: encryptedMessage, msgId } });
+                            if (commsChannel) {
+                                commsChannel.send({ type: 'broadcast', event: 'chat', payload: { data: encryptedMessage, msgId } });
+                            } else {
+                                window.pushTacLog("COMMS CHANNEL OFFLINE - TAPE SECURED BUT NOT BROADCASTED", "WARNING");
+                            }
                             renderChatMessage(commsUser, `🎥 SECURE TAPE: ${item.label}`, true, null, publicUrl);
                             window.pushTacLog("SECURE TAPE TRANSMITTED TO TEAM", "SUCCESS");
                         });
@@ -8812,7 +8812,11 @@ let rallyPointLine = null;
                                 }
                             });
                         }
-                        commsChannel.send({ type: 'broadcast', event: 'chat', payload: { data: encryptedImage, msgId } });
+                        if (commsChannel) {
+                            commsChannel.send({ type: 'broadcast', event: 'chat', payload: { data: encryptedImage, msgId } });
+                        } else {
+                            window.pushTacLog("COMMS CHANNEL OFFLINE - INTEL SECURED BUT NOT BROADCASTED", "WARNING");
+                        }
                         renderChatMessage(commsUser, "INCOMING SECURE HIGH-RES INTEL", true, thumbnailBase64);
                         window.pushTacLog(`SECURE INTEL SENT TO COMMS`, "SUCCESS");
                     } catch(e) { window.pushTacLog("IMAGE SECURE SEND FAILED: " + e.message, "ERROR"); }
@@ -8999,7 +9003,6 @@ document.addEventListener('DOMContentLoaded', () => {
     resetBtn.addEventListener('click', () => { currentScale = 1; updateTransform(); });
 
     function updateTransform() {
-        zoomImg.style.transform = "scale(${currentScale})";
         zoomImg.style.transform = 'scale(' + currentScale + ')';
     }
 
@@ -9064,6 +9067,7 @@ function aiSpeak(text) {
         const msg = new SpeechSynthesisUtterance(text);
         msg.pitch = 0.9;
         msg.rate = 1.1;
+        window._activeUtterance = msg; // FIX FOR ANDROID BUG: Prevents the voice from being deleted from memory before it finishes speaking
         window.speechSynthesis.speak(msg);
     }
 }
@@ -9083,11 +9087,6 @@ window.toggleAISpotter = function() {
     }
 
     // Turn on
-    if (window.activeMicStream) {
-        alert("MICROPHONE CONFLICT: You are currently connected to Squad Comms.\n\nThe Walkie-Talkie system is holding the microphone open for instant transmission. Please DISCONNECT from Comms first to use the AI Spotter.");
-        return;
-    }
-
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) {
         alert("Voice commands are not supported on this browser. Please use Chrome on Android or Desktop.");
@@ -9154,13 +9153,7 @@ window.toggleAISpotter = function() {
                 aiSpeak("Yes");
             }
             else if (command.includes("new dope") || command.includes("new target")) {
-                if ('speechSynthesis' in window) {
-                    window.speechSynthesis.cancel();
-                    const msg = new SpeechSynthesisUtterance("Ready");
-                    msg.rate = 2.0; // Super fast so it finishes before they speak
-                    msg.pitch = 1.2;
-                    window.speechSynthesis.speak(msg);
-                }
+                aiSpeak("Ready");
                 aiSpotterState = 'WAITING_FOR_DOPE';
                 window.dopeCommandBuffer = command.substring(command.indexOf("new dope") + 8).trim();
             }
@@ -9181,7 +9174,7 @@ window.toggleAISpotter = function() {
                 }
                 
                 // 2. Parse Wind Speed
-                let wMatch = fullCommand.match(/(?:wind|speed)\s*(\d+)/) || fullCommand.match(/(\d+)\s*(?:mph|miles per hour)/);
+                let wMatch = fullCommand.match(/wind(?:\s+is)?\s*(\d+)/i) || fullCommand.match(/(\d+)\s*(?:mile|miles|mph)/i);
                 if (wMatch) {
                     const wInput = document.getElementById('bal-input-wind');
                     if (wInput && wInput.value !== wMatch[1]) { wInput.value = wMatch[1]; updated = true; }
@@ -9189,9 +9182,7 @@ window.toggleAISpotter = function() {
                 
                 // Helper for Cardinal Directions
                 const parseDirection = (str) => {
-                    if (!str) return null;
-                    const s = str.toLowerCase().replace(/[^a-z0-9]/g, '');
-                    // Full/half cardinal
+                    const s = str.toLowerCase();
                     if (s.includes('north') && s.includes('east')) return '45';
                     if (s.includes('north') && s.includes('west')) return '315';
                     if (s.includes('south') && s.includes('east')) return '135';

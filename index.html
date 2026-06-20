@@ -1031,7 +1031,7 @@
         <!-- INNER HUD SELECTOR MODAL (Hidden by default) -->
         <div id="hudAssetSelectorOverlay" class="fixed inset-0 bg-black/90 z-[200] hidden items-center justify-center p-4">
             <div class="bg-gray-900 border border-orange-500/50 w-full max-w-md rounded-lg flex flex-col max-h-[80vh] shadow-[0_0_40px_rgba(249,115,22,0.15)] overflow-hidden">
-                <div class="p-3 border-b border-gray-800 bg-black flex justify-between items-center cursor-pointer hover:bg-gray-900" onclick="document.getElementById('hudSelectorModal').classList.add('hidden')">
+                <div class="p-3 border-b border-gray-800 bg-black flex justify-between items-center cursor-pointer hover:bg-gray-900" onclick="document.getElementById('hudAssetSelectorOverlay').classList.add('hidden'); document.getElementById('hudAssetSelectorOverlay').classList.remove('flex');">
                     <h3 id="hudSelectorTitle" class="text-xs font-black text-orange-400 uppercase tracking-wider">Select Asset</h3>
                     <button id="closeHudSelectorBtn" aria-label="Close HUD" class="text-gray-400 hover:text-white p-4"><i data-lucide="x" class="w-8 h-8"></i></button>
                 </div>
@@ -2246,7 +2246,7 @@
     <!-- PWA SERVICE WORKER REGISTRATION & API UPDATE CHECK -->
 
     <script>
-        window.APP_VERSION = 'v7.27.18';
+        window.APP_VERSION = 'v7.27.19';
         if(document.getElementById('header-version-display')) {
             document.getElementById('header-version-display').innerText = window.APP_VERSION;
         }
@@ -2692,6 +2692,7 @@
     </script>
 </body>
 </html>
+
 
 
 
