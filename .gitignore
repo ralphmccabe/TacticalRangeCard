@@ -23,3 +23,6 @@ android.keystore
 .idea/
 *.iml
 .vscode/
+
+*.pem
+generate_cert.py
