@@ -1,5 +1,5 @@
-/* TRC-VERSION - v7.27.15 */
-const CACHE_NAME = 'trc-v7.27.15';
+/* TRC-VERSION - v7.27.16 */
+const CACHE_NAME = 'trc-v7.27.16';
 const ASSETS = [
     './',
     './index.html?v=7.27.0',
@@ -61,7 +61,7 @@ self.addEventListener('fetch', event => {
     if (event.request.method !== 'GET') return;
 
     event.respondWith(
-        caches.match(event.request, { ignoreSearch: false }).then(cachedResponse => {
+        caches.match(event.request, { ignoreSearch: true }).then(cachedResponse => {
             if (cachedResponse) {
                 // If it's in cache, return it immediately, but fetch a new one in the background if it's the main page
                 return cachedResponse;
@@ -86,12 +86,18 @@ self.addEventListener('fetch', event => {
                 return networkResponse;
             }).catch(error => {
                 console.error('[SW] Fetch failed; returning offline fallback if available.', error);
-                // Return offline fallback here if needed
+                // Fallback to cached index.html for navigation requests to prevent the Chrome offline Dinosaur screen
+                if (event.request.mode === 'navigate' || event.request.destination === 'document' || event.request.url.includes('index.html')) {
+                    return caches.match('./index.html?v=7.27.0', { ignoreSearch: true }).then(fallback => {
+                        return fallback || caches.match('./', { ignoreSearch: true });
+                    });
+                }
                 throw error;
             });
         })
     );
 });
+
 
 
 

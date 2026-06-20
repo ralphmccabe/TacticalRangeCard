@@ -8,12 +8,4 @@ insert a banner:        then remove before update
 
 
 
-
       
-.\gradlew.bat assembleRelease   -apk update timestamp
-.\gradlew.bat bundleRelease     -abb update timestamp.
-
-git add .
-git commit -m "Release v7.27.15 - Compass Bug Fixes"
-git push
-git push --force

@@ -1962,7 +1962,7 @@ function initializeTacticalDashboard2() {
             card.innerHTML = `
                 <!-- Send to Vault Checkbox -->
                 <div class="absolute top-2 left-2 z-30 bg-black/80 p-1 rounded border border-emerald-500/20">
-                    <input type="checkbox" class="ammo-vault-checkbox w-4 h-4 cursor-pointer accent-emerald-500" data-profile-name="${key}" title="Mark for Vault">
+                    <label class="sr-only">Mark Ammo Profile for Vault</label><input type="checkbox" class="ammo-vault-checkbox w-4 h-4 cursor-pointer accent-emerald-500" data-profile-name="${key}" title="Mark for Vault" aria-label="Mark Ammo Profile for Vault">
                 </div>
                 
                 <div class="space-y-3 text-left mt-3">
@@ -3260,7 +3260,7 @@ function initializeTacticalDashboard2() {
                 
                 <!-- Send to Vault Checkbox -->
                 <div class="absolute top-1 left-1 z-30 bg-black/60 p-0.5 rounded">
-                    <input type="checkbox" class="dope-vault-checkbox w-3.5 h-3.5 cursor-pointer" data-profile-name="${name}" title="Mark for Vault">
+                    <label class="sr-only">Mark Dope Card for Vault</label><input type="checkbox" class="dope-vault-checkbox w-3.5 h-3.5 cursor-pointer" data-profile-name="${name}" title="Mark for Vault" aria-label="Mark Dope Card for Vault">
                 </div>
                 
                 <!-- Delete Button -->
@@ -3378,7 +3378,7 @@ function initializeTacticalDashboard2() {
                 
                 <!-- Send to Vault Checkbox -->
                 <div class="absolute top-1 left-1 z-30 bg-black/60 p-0.5 rounded">
-                    <input type="checkbox" class="sat-vault-checkbox w-3.5 h-3.5 cursor-pointer" data-profile-name="${name}" title="Mark for Vault">
+                    <label class="sr-only">Mark Target Data for Vault</label><input type="checkbox" class="sat-vault-checkbox w-3.5 h-3.5 cursor-pointer" data-profile-name="${name}" title="Mark for Vault" aria-label="Mark Target Data for Vault">
                 </div>
                 
                 <!-- Delete Button -->
@@ -4029,6 +4029,12 @@ let rallyPointLine = null;
             if (typeof allDrawings !== 'undefined' && allDrawings.length > 0) {
                 meta.drawings = allDrawings.map(d => d.getLatLngs());
             }
+            if (typeof window.orbitalMap !== 'undefined' && window.orbitalMap) {
+                const center = window.orbitalMap.getCenter();
+                meta.centerLat = center.lat;
+                meta.centerLng = center.lng;
+                meta.zoom = window.orbitalMap.getZoom();
+            }
             const distVal = document.getElementById('live-map-dist')?.textContent || '';
             if (distVal) meta.distance = distVal + ' ' + geoDistanceUnit;
 
@@ -4245,16 +4251,22 @@ let rallyPointLine = null;
         // 4. Draw Line
         if (typeof drawMapLine === 'function') drawMapLine();
 
-        // 5. Pan and Zoom to bounds
-        if (orbitalMap) {
-            let boundsToFit = null;
-            if (mapMarkers.length > 0) boundsToFit = L.featureGroup(mapMarkers).getBounds();
-            if (allDrawings.length > 0) {
-                const drawBounds = L.featureGroup(allDrawings).getBounds();
-                boundsToFit = boundsToFit ? boundsToFit.extend(drawBounds) : drawBounds;
-            }
-            if (boundsToFit && boundsToFit.isValid()) {
-                orbitalMap.fitBounds(boundsToFit, { padding: [50, 50], maxZoom: 18 });
+        // 5. Pan and Zoom to bounds or exact center
+        if (window.orbitalMap) {
+            if (item.centerLat !== undefined && item.centerLng !== undefined && item.zoom !== undefined) {
+                // Restore exact map view from snapshot
+                window.orbitalMap.setView([item.centerLat, item.centerLng], item.zoom);
+            } else {
+                // Fallback for older snapshots without center coordinates
+                let boundsToFit = null;
+                if (mapMarkers.length > 0) boundsToFit = L.featureGroup(mapMarkers).getBounds();
+                if (allDrawings.length > 0) {
+                    const drawBounds = L.featureGroup(allDrawings).getBounds();
+                    boundsToFit = boundsToFit ? boundsToFit.extend(drawBounds) : drawBounds;
+                }
+                if (boundsToFit && boundsToFit.isValid()) {
+                    window.orbitalMap.fitBounds(boundsToFit, { padding: [50, 50], maxZoom: 18 });
+                }
             }
         }
     };
@@ -4321,10 +4333,12 @@ let rallyPointLine = null;
             el.addEventListener('dragstart', (e) => {
                 e.dataTransfer.setData('text/plain', index);
                 el.classList.add('opacity-50');
+                if (typeof cleanupClones === 'function') cleanupClones(); // Nuke touch clone if native drag overrides
             });
 
             el.addEventListener('dragend', () => {
                 el.classList.remove('opacity-50');
+                if (typeof cleanupClones === 'function') cleanupClones(); // Failsafe
             });
 
             el.addEventListener('dragover', (e) => {
@@ -4365,8 +4379,20 @@ let rallyPointLine = null;
             let initialX = 0;
             let cloneEl = null;
 
+            const cleanupClones = () => {
+                clearTimeout(touchTimer);
+                isTouchDragging = false;
+                el.classList.remove('opacity-50', 'border-emerald-500', 'scale-105');
+                if (cloneEl) { cloneEl.remove(); cloneEl = null; }
+                // Global nuke to guarantee no orphaned ghosts ever get stuck
+                document.querySelectorAll('.vault-drag-clone').forEach(ghost => ghost.remove());
+            };
+
             el.addEventListener('touchstart', (e) => {
+                if(e.touches.length > 1) return; // Prevent multi-touch bugs
                 if(e.target.closest('button') || e.target.closest('input')) return;
+                
+                cleanupClones(); // Ensure clean slate
                 const touch = e.touches[0];
                 initialX = touch.clientX;
                 initialY = touch.clientY;
@@ -4378,6 +4404,7 @@ let rallyPointLine = null;
                     
                     // Create floating clone
                     cloneEl = el.cloneNode(true);
+                    cloneEl.classList.add('vault-drag-clone'); // Special class for global destruction
                     cloneEl.style.position = 'fixed';
                     cloneEl.style.width = el.offsetWidth + 'px';
                     cloneEl.style.height = el.offsetHeight + 'px';
@@ -4395,15 +4422,17 @@ let rallyPointLine = null;
             el.addEventListener('touchmove', (e) => {
                 if (!isTouchDragging) {
                     // If they moved their finger before 300ms, it's a scroll. Cancel drag.
+                    if (!e.touches || e.touches.length === 0) return;
                     const touch = e.touches[0];
                     if (Math.abs(touch.clientY - initialY) > 10 || Math.abs(touch.clientX - initialX) > 10) {
-                        clearTimeout(touchTimer);
+                        cleanupClones();
                     }
                     return;
                 }
                 
                 // We are dragging! Prevent scrolling.
                 e.preventDefault();
+                if (!e.touches || e.touches.length === 0) return;
                 const touch = e.touches[0];
                 
                 if (cloneEl) {
@@ -4422,46 +4451,44 @@ let rallyPointLine = null;
             }, {passive: false});
 
             el.addEventListener('touchend', (e) => {
-                clearTimeout(touchTimer);
-                if (!isTouchDragging) return;
-                
-                isTouchDragging = false;
-                el.classList.remove('opacity-50', 'border-emerald-500', 'scale-105');
-                if (cloneEl) {
-                    cloneEl.remove();
-                    cloneEl = null;
+                if (!isTouchDragging) {
+                    cleanupClones();
+                    return;
                 }
                 
-                const touch = e.changedTouches[0];
-                const elemBelow = document.elementFromPoint(touch.clientX, touch.clientY);
-                const dropTarget = elemBelow ? elemBelow.closest('.vault-accent-card') : null;
+                const touch = e.changedTouches ? e.changedTouches[0] : null;
+                let dropTarget = null;
+                
+                if (touch) {
+                    const elemBelow = document.elementFromPoint(touch.clientX, touch.clientY);
+                    dropTarget = elemBelow ? elemBelow.closest('.vault-accent-card') : null;
+                }
                 
                 document.querySelectorAll('.vault-accent-card').forEach(card => card.classList.remove('border-emerald-500'));
+                
+                cleanupClones(); // Must run before refreshVaultGrid
                 
                 if (dropTarget && dropTarget !== el) {
                     const dragIndex = index;
                     const dropIndex = parseInt(dropTarget.dataset.vaultIndex);
                     
-                    const draggedItem = vaultCache[dragIndex];
-                    vaultCache.splice(dragIndex, 1);
-                    vaultCache.splice(dropIndex, 0, draggedItem);
+                    if (!isNaN(dropIndex)) {
+                        const draggedItem = vaultCache[dragIndex];
+                        vaultCache.splice(dragIndex, 1);
+                        vaultCache.splice(dropIndex, 0, draggedItem);
 
-                    const now = Date.now();
-                    vaultCache.forEach((vItem, vIndex) => {
-                        vItem.timestamp = now - (vIndex * 1000);
-                        if (window.TRC_IDB) TRC_IDB.set('intelVault', vItem.id.toString(), vItem);
-                    });
+                        const now = Date.now();
+                        vaultCache.forEach((vItem, vIndex) => {
+                            vItem.timestamp = now - (vIndex * 1000);
+                            if (window.TRC_IDB) TRC_IDB.set('intelVault', vItem.id.toString(), vItem);
+                        });
 
-                    refreshVaultGrid();
+                        refreshVaultGrid();
+                    }
                 }
             });
             
-            el.addEventListener('touchcancel', () => {
-                clearTimeout(touchTimer);
-                isTouchDragging = false;
-                el.classList.remove('opacity-50', 'border-emerald-500', 'scale-105');
-                if (cloneEl) cloneEl.remove();
-            });
+            el.addEventListener('touchcancel', cleanupClones);
 
             const isVideo = item.type === 'video';
             const imgContent = isVideo ? `<i data-lucide="video" class="w-12 h-12 text-purple-500 opacity-80 pointer-events-none"></i>` : `<div style="background-image: url('${item.image}'); background-size: contain; background-repeat: no-repeat; background-position: center; width: 100%; height: 100%;" class="opacity-90 group-hover:opacity-100 transition-all pointer-events-none"></div>`;
@@ -4485,7 +4512,7 @@ let rallyPointLine = null;
                 
                 <!-- Export Checkbox Overlay: LOCKED VISIBLE ON MOBILE -->
                 <div class="absolute top-1.5 left-1.5 z-30 bg-black/60 p-1 rounded">
-                    <input type="checkbox" class="vault-export-checkbox w-4 h-4 cursor-pointer" data-vault-id="${item.id}" title="Mark for Export">
+                    <label class="sr-only">Mark Vault Item for Export</label><input type="checkbox" class="vault-export-checkbox w-4 h-4 cursor-pointer" data-vault-id="${item.id}" title="Mark for Export" aria-label="Mark Vault Item for Export">
                 </div>
 
                 <!-- Trash Icon Button Overlay: LOCKED VISIBLE ON MOBILE -->
@@ -4977,7 +5004,7 @@ let rallyPointLine = null;
             
         } catch (err) {
             console.error("Camera failed:", err);
-            alert("Camera Access Denied. Ensure site permissions allow camera access.");
+            window.pushTacLog("CAMERA ACCESS DENIED", "ERROR");
         }
     }
 
@@ -8515,7 +8542,7 @@ let rallyPointLine = null;
                 card.innerHTML = `
                     <!-- Send to Vault Checkbox -->
                     <div class="absolute top-2 left-2 z-30 bg-black/80 p-1 rounded border border-emerald-500/20">
-                        <input type="checkbox" class="briefing-vault-checkbox w-4 h-4 cursor-pointer accent-emerald-500" data-id="${item.id}" title="Mark for Vault">
+                        <label class="sr-only">Mark Briefing for Vault</label><input type="checkbox" class="briefing-vault-checkbox w-4 h-4 cursor-pointer accent-emerald-500" data-id="${item.id}" title="Mark for Vault" aria-label="Mark Briefing for Vault">
                     </div>
                     
                     <div class="space-y-3 text-left mt-3 pointer-events-none">
@@ -9810,29 +9837,80 @@ setTimeout(() => {
 }, 1000);
 
 // Device Orientation (Compass Spin) for Tactical Map Overlay
-if (window.DeviceOrientationEvent) {
-    window.addEventListener("deviceorientation", function(event) {
-        let alpha = event.webkitCompassHeading || Math.abs(event.alpha - 360);
-        if (alpha !== null && alpha !== undefined) {
-            const compass = document.getElementById('compass-overlay');
-            if (compass && !compass.classList.contains('hidden')) {
-                // Rotate the SVG compass star based on device heading
-                const ring = compass.querySelector('#compass-rose-group');
-                if (ring) {
-                    ring.style.transformOrigin = '500px 500px';
-                    ring.style.transform = `rotate(${-alpha}deg)`;
-                    // Counter-rotate the cardinal points so text stays upright
-                    const textElements = ring.querySelectorAll('.compass-text-group text');
-                    textElements.forEach(textEl => {
-                        // The text elements are positioned relative to the 1000x1000 SVG viewBox
-                        // To counter-rotate them in place, we set their transform origin to their own center.
-                        const x = textEl.getAttribute('x');
-                        const y = textEl.getAttribute('y');
-                        textEl.style.transformOrigin = `${x}px ${y}px`;
-                        textEl.style.transform = `rotate(${alpha}deg)`;
-                    });
-                }
+let currentCompassHeading = 0;
+let lastCompassUpdate = 0;
+
+function computeTrueHeading(alpha, beta, gamma) {
+    // Convert degrees to radians
+    const dtor = Math.PI / 180;
+    const a = (alpha || 0) * dtor;
+    const b = (beta || 0) * dtor;
+    const g = (gamma || 0) * dtor;
+
+    // Standard 3D Euler to Compass projection
+    const cX = Math.cos(a) * Math.sin(b) * Math.sin(g) - Math.sin(a) * Math.cos(g);
+    const cY = Math.sin(a) * Math.sin(b) * Math.sin(g) + Math.cos(a) * Math.cos(g);
+    
+    let heading = Math.atan2(cX, cY) * (180 / Math.PI);
+    if (heading < 0) heading += 360;
+    
+    // The W3C calculation returns clockwise from North, but sometimes it's inverted based on device manufacturer
+    return heading;
+}
+
+function handleCompass(event) {
+    let targetHeading = null;
+    
+    if (event.webkitCompassHeading !== undefined) {
+        // iOS provides a perfectly calibrated heading out of the box
+        targetHeading = event.webkitCompassHeading;
+    } else if (event.alpha !== null) {
+        // Android requires 3D projection if the phone is held upright!
+        targetHeading = computeTrueHeading(event.alpha, event.beta, event.gamma);
+        
+        // Android absolute alpha sometimes varies by manufacturer (fallback inversion)
+        // If it's perfectly 180 degrees backward, this standard mathematical projection handles it correctly 
+        // by factoring in the beta/gamma tilt.
+    }
+
+    if (targetHeading !== null) {
+        // Prevent wild spinning: only update 30 times a second max
+        const now = Date.now();
+        if (now - lastCompassUpdate < 33) return;
+        lastCompassUpdate = now;
+
+        // Find shortest path to prevent 360 rewind spinning bug
+        let diff = targetHeading - currentCompassHeading;
+        while (diff > 180) diff -= 360;
+        while (diff < -180) diff += 360;
+
+        // Low pass filter for smoothing (15% per frame)
+        currentCompassHeading += diff * 0.15;
+
+        const compass = document.getElementById('compass-overlay');
+        if (compass && !compass.classList.contains('hidden')) {
+            const ring = compass.querySelector('#compass-rose-group');
+            if (ring) {
+                ring.style.transformOrigin = '500px 500px';
+                ring.style.transform = `rotate(${-currentCompassHeading}deg)`;
+                
+                // Counter-rotate the cardinal points so text stays upright
+                const textElements = ring.querySelectorAll('.compass-text-group text');
+                textElements.forEach(textEl => {
+                    const x = textEl.getAttribute('x');
+                    const y = textEl.getAttribute('y');
+                    textEl.style.transformOrigin = `${x}px ${y}px`;
+                    textEl.style.transform = `rotate(${currentCompassHeading}deg)`;
+                });
             }
         }
-    }, true);
+    }
+}
+
+if (window.DeviceOrientationEvent) {
+    if ('ondeviceorientationabsolute' in window) {
+        window.addEventListener("deviceorientationabsolute", handleCompass, true);
+    } else {
+        window.addEventListener("deviceorientation", handleCompass, true);
+    }
 }
