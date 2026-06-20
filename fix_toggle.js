@@ -1,1 +1,0 @@
-const fs = require('fs'); let c = fs.readFileSync('trc_core.js', 'utf8'); c = c.replace('if (typeof clearMapMeasurements === \'function\') clearMapMeasurements();', ''); fs.writeFileSync('trc_core.js', c, 'utf8'); console.log('Toggle fixed');

@@ -1,1 +1,0 @@
-const fs = require('fs'); const lines = fs.readFileSync('diff.txt', 'utf8').split('\n'); lines.forEach(l => { if ((l.startsWith('+') || l.startsWith('-')) && !l.startsWith('++') && !l.startsWith('--') && !l.includes('commsChannel') && !l.match(/[^\x00-\x7F]/)) console.log(l); });
