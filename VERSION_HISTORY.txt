@@ -729,3 +729,24 @@ v7.27.21 - DEPLOYED 2026-06-21 20:12:03
 * Service Worker cache updated to: trc-vv7.27.21
 * All tactical systems: OPERATIONAL
 * Toast updater: ACTIVE - users will see update prompt on next app open
+
+============================================================
+v7.27.23 - DEPLOYED 2026-06-22 12:24:56
+* Version auto-bumped from v7.27.22
+* Service Worker cache updated to: trc-vv7.27.23
+* All tactical systems: OPERATIONAL
+* Toast updater: ACTIVE - users will see update prompt on next app open
+
+============================================================
+v7.27.24 - DEPLOYED 2026-06-22 12:28:19
+* Version auto-bumped from v7.27.23
+* Service Worker cache updated to: trc-vv7.27.24
+* All tactical systems: OPERATIONAL
+* Toast updater: ACTIVE - users will see update prompt on next app open
+
+============================================================
+v7.27.25 - DEPLOYED 2026-06-22 12:36:50
+* Version auto-bumped from v7.27.24
+* Service Worker cache updated to: trc-vv7.27.25
+* All tactical systems: OPERATIONAL
+* Toast updater: ACTIVE - users will see update prompt on next app open

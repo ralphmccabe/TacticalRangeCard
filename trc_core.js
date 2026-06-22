@@ -3638,21 +3638,27 @@ function initializeTacticalDashboard2() {
             }
 
             mapContainer.addEventListener('touchstart', (e) => {
+                if (e.touches && e.touches.length === 3) {
+                    const panel = document.getElementById('panel-measuring');
+                    if (panel && panel.classList.contains('is-maximized')) {
+                        window.toggleFullscreen('panel-measuring');
+                        window.pushTacLog('GEO-MATRIX MINIMIZED', 'SYS');
+                    }
+                    return;
+                }
                 if (!isDrawingMode) return;
-                if (e.touches.length > 1) return; // Allow pinch-zoom
-                e.preventDefault(); // stop map pan
+                if (e.touches && e.touches.length > 1) return; // Allow pinch-zoom
                 const latlng = getTouchLatLng(e.touches[0]);
                 currentDrawPath = L.polyline([latlng], {color: '#3b82f6', weight: 5, opacity: 0.9, smoothFactor: 1}).addTo(orbitalMap);
                 allDrawings.push(currentDrawPath);
-            }, { passive: false });
+            }, { passive: true });
 
             mapContainer.addEventListener('touchmove', (e) => {
                 if (!isDrawingMode || !currentDrawPath) return;
-                if (e.touches.length > 1) return; // Allow pinch-zoom
-                e.preventDefault(); // stop map pan while drawing
+                if (e.touches && e.touches.length > 1) { currentDrawPath = null; return; } // Allow pinch-zoom
                 const latlng = getTouchLatLng(e.touches[0]);
                 currentDrawPath.addLatLng(latlng);
-            }, { passive: false });
+            }, { passive: true });
 
             mapContainer.addEventListener('touchend', (e) => {
                 if (!isDrawingMode) return;
@@ -3878,12 +3884,14 @@ function initializeTacticalDashboard2() {
                 geoDrawBtn.classList.add('border-blue-500');
                 orbitalMap.dragging.disable();
                 document.getElementById('live-sat-map-container').style.cursor = 'crosshair';
+                document.getElementById('live-sat-map-container').style.touchAction = 'pinch-zoom';
             } else {
                 geoDrawBtn.classList.replace('text-blue-400', 'text-gray-300');
                 geoDrawBtn.classList.replace('bg-blue-900', 'bg-gray-800');
                 geoDrawBtn.classList.remove('border-blue-500');
                 orbitalMap.dragging.enable();
                 document.getElementById('live-sat-map-container').style.cursor = '';
+                document.getElementById('live-sat-map-container').style.touchAction = '';
             }
         });
     }
@@ -4640,6 +4648,11 @@ function initializeTacticalDashboard2() {
                         <i data-lucide="clipboard-list" class="w-2.5 h-2.5"></i> REWORK BRIEFING
                     </button>
                     ` : ''}
+                    ${item.type === 'operational_calendar' ? `
+                    <button class="bg-blue-600 text-white border border-blue-400 p-1.5 rounded hover:bg-blue-500 transition-all shadow-[0_0_10px_rgba(59,130,246,0.5)] flex items-center gap-1 font-black text-[7px]" onclick="event.stopPropagation(); window.loadCalendarBackToEditorById('${item.id}')" title="Load back to Form">
+                        <i data-lucide="calendar" class="w-2.5 h-2.5"></i> REWORK CALENDAR
+                    </button>
+                    ` : ''}
                     <button class="bg-red-950/90 text-red-300 border border-red-600/50 p-1.5 rounded hover:bg-red-600 hover:text-white transition-all shadow-lg" onclick="event.stopPropagation(); window.unloadDashboardCard(4)" title="Unload Vault Item">
                         <i data-lucide="trash-2" class="w-2.5 h-2.5"></i>
                     </button>
@@ -5154,7 +5167,7 @@ function initializeTacticalDashboard2() {
             // --- TACTICAL HUD FULL GRAPHIC BURN-IN ---
             if (!hud.classList.contains('hidden')) {
             // Dynamic scaler: Mobile cameras are high resolution (1080p+), so we must scale the UI up to match
-            const scale = Math.max(1, canvas.width / 400); 
+            const scale = Math.max(1, Math.min(canvas.width, canvas.height) / 400); 
             ctx.scale(scale, scale);
             
             const cw = canvas.width / scale;
@@ -5245,6 +5258,7 @@ function initializeTacticalDashboard2() {
             ctx.fillStyle = "#10b981";
             
             // Left Side: Pitch, Cosine, Temp
+            ctx.textAlign = "left";
             const tAng = document.getElementById('hud-pitch-angle')?.textContent || "A: --";
             const tCos = document.getElementById('hud-pitch-cos')?.textContent || "C: 1.00";
             const tTmp = document.getElementById('hud-tel-temp')?.textContent || "--°";
@@ -7289,7 +7303,9 @@ function initializeTacticalDashboard2() {
                 initCommsMap();
 
                 // Track presence
-                commsChannel.track({ online_at: new Date().toISOString(), user: commsUser, distress: window.isDistressActive });
+                if (commsChannel) {
+                    commsChannel.track({ online_at: new Date().toISOString(), user: commsUser, distress: window.isDistressActive }).catch(e => console.warn("Initial track failed:", e));
+                }
             }
         });
         } catch (error) {
@@ -7520,6 +7536,7 @@ function initializeTacticalDashboard2() {
     if (pttBtn) {
         const startPTT = async (e) => {
             if (e) e.preventDefault();
+            if (!commsUser || !commsUser.callsign) { alert("Log into the Comms First Before Operating the Comms"); return; }
             pttBtn.classList.add('border-emerald-500', 'bg-emerald-950/20', 'shadow-[0_0_20px_rgba(16,185,129,0.3)]');
             
             window.pushTacLog(`TRANSMITTING TO SQUAD`, "SYS");
@@ -7550,6 +7567,7 @@ function initializeTacticalDashboard2() {
 
         const stopPTT = async (e) => {
             if (e) e.preventDefault();
+            if (!commsUser || !commsUser.callsign) return;
             pttBtn.classList.remove('border-emerald-500', 'bg-emerald-950/20', 'shadow-[0_0_20px_rgba(16,185,129,0.3)]');
             
             const activeSpeaker = document.getElementById('ptt-active-speaker');
@@ -7585,6 +7603,7 @@ function initializeTacticalDashboard2() {
         const send = () => {
             const msg = chatInput.value.trim();
             if (!msg) return;
+            if (!commsUser || !commsUser.callsign) { alert("Log into the Comms First Before Operating the Comms"); return; }
             
             try {
                 const encrypted = TacticalCrypto.encrypt({ message: msg, user: commsUser, timestamp: Date.now() });
@@ -7630,6 +7649,7 @@ function initializeTacticalDashboard2() {
             chatImageUpload.addEventListener('change', (e) => {
                 const file = e.target.files[0];
                 if (!file) return;
+                if (!commsUser || !commsUser.callsign) { alert("Log into the Comms First Before Operating the Comms"); return; }
                 const reader = new FileReader();
                 reader.onload = function(event) {
                     const img = new Image();
@@ -7734,12 +7754,14 @@ function initializeTacticalDashboard2() {
                     if (now - lastTrackTime > 3000) {
                         lastTrackTime = now;
                         // Update Presence with location
-                        commsChannel.track({ 
-                            online_at: new Date().toISOString(),
-                            location: { lat: latitude, lng: longitude },
-                            user: commsUser,
-                            distress: window.isDistressActive
-                        }).catch(e => console.warn("Track rate limit:", e));
+                        if (commsChannel) {
+                            commsChannel.track({ 
+                                online_at: new Date().toISOString(),
+                                location: { lat: latitude, lng: longitude },
+                                user: commsUser,
+                                distress: window.isDistressActive
+                            }).catch(e => console.warn("Track rate limit:", e));
+                        }
                     }
                 }, (err) => {
                     console.warn("Main GPS Error:", err);
@@ -8353,6 +8375,10 @@ function initializeTacticalDashboard2() {
             if(item) window.loadBriefingBackToEditor(item);
         };
         
+        window.getVaultItemById = function(id) {
+            return vaultCache.find(i => i.id == id);
+        };
+        
         window.loadNoteBackToEditorById = function(id) {
             const item = vaultCache.find(i => i.id == id);
             if(item) window.loadNoteBackToEditor(item);
@@ -8559,6 +8585,8 @@ function initializeTacticalDashboard2() {
             saveInvBtn.addEventListener('click', async () => {
                 if (isSavingBriefing) return;
                 isSavingBriefing = true;
+                const tsDisplay = document.getElementById('briefing-timestamp');
+                if (tsDisplay) tsDisplay.textContent = new Date().toISOString().replace('T', ' ').slice(0, 19) + 'Z';
                 const targetEl = document.getElementById('briefing-snapshot-target');
                 const originalText = `<i data-lucide="save" class="w-4 h-4"></i> SAVE TO INVENTORY`;
                 saveInvBtn.innerHTML = `<i data-lucide="loader" class="w-4 h-4 animate-spin"></i> SAVING...`;
@@ -9122,7 +9150,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Attach click listeners to all clickable images
     document.body.addEventListener('click', (e) => {
         // Target Intel Vault images, Comms feed images, etc.
-        const targetImg = e.target.closest('#intel-vault-grid img, #chat-messages img, #ammoLibraryList img, #briefingLibraryList img');
+        const targetImg = e.target.closest('#intel-vault-grid img, #chat-messages img, #ammoLibraryList img, #briefingLibraryList img, #calendarLibraryList img');
         if(targetImg) {
             e.stopPropagation();
             openZoomModal(targetImg.src);
@@ -10155,5 +10183,473 @@ document.addEventListener('DOMContentLoaded', () => {
     const sirenBtn = document.getElementById('siren-deterrent-btn');
     if (sirenBtn) {
         sirenBtn.addEventListener('click', toggleSiren);
+    }
+});
+
+// ============================================================================
+// OPERATIONAL CALENDAR SYSTEM
+// ============================================================================
+document.addEventListener('DOMContentLoaded', () => {
+    // Inventory Management
+    function getCalendarInventory() {
+        return JSON.parse(localStorage.getItem('rangeCardCalendarInventory') || '{}');
+    }
+    function saveCalendarInventory(inv) {
+        localStorage.setItem('rangeCardCalendarInventory', JSON.stringify(inv));
+    }
+
+    const modal = document.getElementById('calendarModal');
+    const closeBtn = document.getElementById('closeCalendarBtn');
+    const prevMonthBtn = document.getElementById('calendar-prev-month');
+    const nextMonthBtn = document.getElementById('calendar-next-month');
+    const monthYearDisplay = document.getElementById('calendar-month-year');
+    const grid = document.getElementById('calendar-grid');
+    const clearBtn = document.getElementById('calendar-clear-btn');
+    const saveInvBtn = document.getElementById('calendar-save-inventory-btn');
+    const libraryList = document.getElementById('calendarLibraryList');
+    const vaultBtnTop = document.getElementById('calendar-to-vault-btn-top');
+    const reworkBtn = document.getElementById('rework-calendar-btn');
+
+    let currentDate = new Date();
+    // Use the first day of the current month
+    currentDate.setDate(1);
+
+    // Keep track of what we are reworking
+    window.currentReworkCalendarId = null;
+
+    // Temporary store to keep text when switching months
+    let monthDataStore = {};
+
+    function getMonthKey(date) {
+        return `${date.getFullYear()}-${date.getMonth()}`;
+    }
+
+    function saveCurrentGridToStore() {
+        if(!grid) return;
+        const textareas = grid.querySelectorAll('textarea');
+        const key = getMonthKey(currentDate);
+        if(!monthDataStore[key]) monthDataStore[key] = {};
+        
+        textareas.forEach(ta => {
+            const day = ta.dataset.day;
+            if(day) {
+                monthDataStore[key][day] = ta.value;
+            }
+        });
+    }
+
+    function renderCalendar() {
+        if(!grid || !monthYearDisplay) return;
+        
+        const year = currentDate.getFullYear();
+        const month = currentDate.getMonth();
+        
+        const monthNames = ["JANUARY", "FEBRUARY", "MARCH", "APRIL", "MAY", "JUNE", "JULY", "AUGUST", "SEPTEMBER", "OCTOBER", "NOVEMBER", "DECEMBER"];
+        monthYearDisplay.textContent = `${monthNames[month]} ${year}`;
+        
+        grid.innerHTML = '';
+        
+        const firstDay = new Date(year, month, 1).getDay();
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+        const key = getMonthKey(currentDate);
+        
+        // Pad beginning
+        for (let i = 0; i < firstDay; i++) {
+            const emptyCell = document.createElement('div');
+            emptyCell.className = "bg-gray-900/30 border border-gray-800/50 rounded p-1 opacity-20 pointer-events-none";
+            grid.appendChild(emptyCell);
+        }
+        
+        // Days
+        const dayNamesShort = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
+        for (let day = 1; day <= daysInMonth; day++) {
+            const dayOfWeek = (firstDay + day - 1) % 7;
+            const cell = document.createElement('div');
+            cell.className = "bg-gray-800/40 border border-gray-700/50 rounded flex flex-col p-1 gap-1 focus-within:border-neon-green/50 transition-colors relative min-h-[60px]";
+            
+            const isToday = new Date().getFullYear() === year && new Date().getMonth() === month && new Date().getDate() === day;
+            const dayHeader = document.createElement('div');
+            dayHeader.className = `text-[10px] font-mono font-bold px-1 flex justify-between items-center ${isToday ? 'text-neon-green bg-neon-green/10 rounded' : 'text-gray-400'}`;
+            dayHeader.innerHTML = `<span>${day}</span><span class="opacity-40 text-[8px] uppercase tracking-widest">${dayNamesShort[dayOfWeek]}</span>`;
+            cell.appendChild(dayHeader);
+            
+            const ta = document.createElement('textarea');
+            
+            // Add dynamic header highlighting on focus
+            ta.addEventListener('focus', () => {
+                const headerParent = document.getElementById('calendar-days-header');
+                if (headerParent) {
+                    Array.from(headerParent.children).forEach((child, index) => {
+                        child.classList.remove('text-gray-500', 'text-neon-green', 'bg-neon-green/20', 'shadow-[0_0_10px_rgba(57,255,20,0.2)]', 'opacity-30', 'scale-110');
+                        if (index === dayOfWeek) {
+                            child.classList.add('text-neon-green', 'bg-neon-green/20', 'shadow-[0_0_10px_rgba(57,255,20,0.2)]', 'scale-110');
+                        } else {
+                            child.classList.add('opacity-30');
+                        }
+                    });
+                }
+            });
+            ta.addEventListener('blur', () => {
+                const headerParent = document.getElementById('calendar-days-header');
+                if (headerParent) {
+                    Array.from(headerParent.children).forEach((child) => {
+                        child.classList.remove('text-neon-green', 'bg-neon-green/20', 'shadow-[0_0_10px_rgba(57,255,20,0.2)]', 'opacity-30', 'scale-110');
+                        child.classList.add('text-gray-500');
+                    });
+                }
+            });
+            // Give it a unique ID for html2canvas
+            ta.id = `cal-${year}-${month}-${day}`;
+            ta.dataset.day = day;
+            ta.className = "flex-1 w-full bg-transparent border-none text-[8px] md:text-[10px] text-gray-300 resize-none outline-none custom-scrollbar p-1 leading-tight h-full font-mono";
+            ta.placeholder = "...";
+            ta.spellcheck = false;
+            
+            // Restore from store if exists
+            if (monthDataStore[key] && monthDataStore[key][day]) {
+                ta.value = monthDataStore[key][day];
+            }
+            
+            cell.appendChild(ta);
+            grid.appendChild(cell);
+        }
+    }
+
+    if(prevMonthBtn) {
+        prevMonthBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            saveCurrentGridToStore();
+            currentDate.setMonth(currentDate.getMonth() - 1);
+            renderCalendar();
+        });
+    }
+
+    if(nextMonthBtn) {
+        nextMonthBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            saveCurrentGridToStore();
+            currentDate.setMonth(currentDate.getMonth() + 1);
+            renderCalendar();
+        });
+    }
+
+    window.openCalendarModal = function() {
+        if(!modal) return;
+        modal.classList.remove('hidden');
+        renderCalendar();
+        window.updateCalendarList();
+    };
+
+    if(closeBtn) {
+        closeBtn.addEventListener('click', () => {
+            modal.classList.add('hidden');
+        });
+    }
+
+    if(clearBtn) {
+        clearBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            if(confirm('Clear the entire visible month?')) {
+                const key = getMonthKey(currentDate);
+                monthDataStore[key] = {};
+                renderCalendar();
+            }
+        });
+    }
+
+    // Vault Button
+    if(vaultBtnTop) {
+        vaultBtnTop.addEventListener('click', (e) => {
+            e.stopPropagation();
+            try {
+                const checkedBoxes = document.querySelectorAll('.calendar-vault-checkbox:checked');
+                if (checkedBoxes.length === 0) return;
+
+                const originalText = vaultBtnTop.innerHTML;
+                vaultBtnTop.innerHTML = `<i data-lucide="loader" class="w-4 h-4 animate-spin"></i> SENDING...`;
+                if (window.lucide) window.lucide.createIcons();
+
+                const inv = getCalendarInventory();
+                let sentCount = 0;
+
+                checkedBoxes.forEach((cb, i) => {
+                    const id = cb.dataset.vaultId;
+                    const item = inv[id];
+                    if (item) {
+                        const { image, ...metadata } = item;
+                        metadata.type = 'operational_calendar';
+                        metadata.timestamp = Date.now();
+                        const label = item.label || 'O-CALENDAR';
+                        
+                        setTimeout(() => {
+                            if (window.saveIntelSnapshot) {
+                                window.saveIntelSnapshot(label, item.image, metadata);
+                            }
+                        }, i * 50);
+                        sentCount++;
+                    }
+                });
+                
+                setTimeout(() => {
+                    vaultBtnTop.innerHTML = `<i data-lucide="check" class="w-4 h-4"></i> SENT (${sentCount})`;
+                    if (window.pushTacLog) window.pushTacLog(`SENT ${sentCount} CALENDARS TO VAULT`, "SUCCESS");
+                    
+                    checkedBoxes.forEach(box => box.checked = false);
+                    setTimeout(() => {
+                        vaultBtnTop.innerHTML = originalText;
+                        vaultBtnTop.classList.add('hidden');
+                        if (window.lucide) window.lucide.createIcons();
+                    }, 2000);
+                }, checkedBoxes.length * 50 + 500);
+
+            } catch(e) {
+                console.error("Vault Send Error:", e);
+                vaultBtnTop.innerHTML = originalText;
+                alert("Error sending to vault: " + e.message);
+            }
+        });
+    }
+
+    // Save Logic
+    let isSavingCalendar = false;
+    if(saveInvBtn) {
+        saveInvBtn.addEventListener('click', async (e) => {
+            e.preventDefault();
+            if (isSavingCalendar) return;
+            isSavingCalendar = true;
+            
+            // Force save current grid to store first
+            saveCurrentGridToStore();
+            
+            const originalText = saveInvBtn.innerHTML;
+            saveInvBtn.innerHTML = `<i data-lucide="loader" class="w-4 h-4 animate-spin"></i> SNAPSHOT...`;
+            if (window.lucide) window.lucide.createIcons();
+            
+            try {
+                if(!window.html2canvas && window.loadScript) {
+                    await window.loadScript('html2canvas.min.js');
+                }
+                
+                const targetEl = document.getElementById('calendar-snapshot-target');
+                if(!targetEl) throw new Error("Snapshot target not found");
+                
+                const canvas = await html2canvas(targetEl, {
+                    backgroundColor: '#0f172a', // slate-900
+                    scale: 1.5,
+                    logging: false,
+                    onclone: (clonedDoc) => {
+                        Array.from(targetEl.querySelectorAll('textarea')).forEach(originalTa => {
+                            if (!originalTa.id) return;
+                            const cloneTa = clonedDoc.getElementById(originalTa.id);
+                            if (cloneTa) {
+                                const div = clonedDoc.createElement('div');
+                                div.style.cssText = window.getComputedStyle(cloneTa).cssText;
+                                div.style.whiteSpace = 'pre-wrap';
+                                div.style.wordBreak = 'break-word';
+                                div.style.overflow = 'visible';
+                                div.style.height = 'auto';
+                                div.textContent = originalTa.value;
+                                cloneTa.parentNode.replaceChild(div, cloneTa);
+                            }
+                        });
+                    }
+                });
+                
+                const imgData = canvas.toDataURL('image/jpeg', 0.85);
+                const timestamp = Date.now();
+                const monthName = monthYearDisplay.innerText;
+                
+                const newItem = {
+                    id: timestamp,
+                    timestamp: timestamp,
+                    image: imgData,
+                    type: 'operational_calendar',
+                    label: monthName,
+                    storeDump: JSON.parse(JSON.stringify(monthDataStore)) // Deep copy so they can reload it later
+                };
+                
+                const inv = getCalendarInventory();
+                
+                // If we are reworking, we override the old one
+                if (window.currentReworkCalendarId && inv[window.currentReworkCalendarId]) {
+                    delete inv[window.currentReworkCalendarId];
+                }
+                window.currentReworkCalendarId = null;
+                if(reworkBtn) reworkBtn.classList.add('hidden');
+                
+                inv[timestamp] = newItem;
+                saveCalendarInventory(inv);
+                
+                window.updateCalendarList();
+                
+                saveInvBtn.innerHTML = `<i data-lucide="check" class="w-4 h-4"></i> SAVED!`;
+                if(window.pushTacLog) window.pushTacLog("CALENDAR SAVED TO INVENTORY", "SUCCESS");
+                
+                setTimeout(() => { saveInvBtn.innerHTML = originalText; if (window.lucide) window.lucide.createIcons(); }, 2000);
+            } catch(err) {
+                console.error("Calendar snapshot error:", err);
+                saveInvBtn.innerHTML = `<i data-lucide="alert-triangle" class="w-4 h-4"></i> ERROR`;
+                alert("Save Error: " + (err.message || "Unknown error occurred."));
+                setTimeout(() => { saveInvBtn.innerHTML = originalText; if (window.lucide) window.lucide.createIcons(); }, 2000);
+            } finally {
+                isSavingCalendar = false;
+            }
+        });
+    }
+
+    // List Logic
+    window.updateCalendarList = function() {
+        if (!libraryList) return;
+        libraryList.innerHTML = '';
+        
+        const inv = getCalendarInventory();
+        const keys = Object.keys(inv).sort((a, b) => b - a); // newest first
+        
+        if (keys.length === 0) {
+            libraryList.innerHTML = `<div class="col-span-full text-center py-10 text-gray-600 text-[10px] font-mono tracking-widest uppercase border border-dashed border-gray-800 rounded">No calendars found in inventory.</div>`;
+            return;
+        }
+        
+        keys.forEach(key => {
+            const item = inv[key];
+            const dateStr = new Date(parseInt(item.timestamp)).toLocaleString();
+            
+            const card = document.createElement('div');
+            card.className = "bg-gray-900 border border-gray-700 rounded-lg overflow-hidden flex flex-col group relative";
+            
+            // Checkbox for Vault export integration
+            card.innerHTML = `
+                <div class="absolute top-2 left-2 z-10">
+                    <input type="checkbox" class="calendar-vault-checkbox w-4 h-4 bg-black/50 border border-gray-500 rounded text-neon-green focus:ring-neon-green/50 cursor-pointer shadow-lg" data-vault-id="${item.id}" data-type="calendar" aria-label="Select for Export">
+                </div>
+                <div class="h-32 bg-black relative cursor-pointer" >
+                    <img src="${item.image}" class="w-full h-full object-cover opacity-60 group-hover:opacity-100 transition-opacity" alt="Calendar Snapshot">
+                    <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                        <i data-lucide="zoom-in" class="w-8 h-8 text-white drop-shadow-md"></i>
+                    </div>
+                </div>
+                <div class="p-2 flex flex-col gap-1 border-t border-gray-800 bg-gray-950">
+                    <div class="text-[10px] font-black text-white uppercase tracking-wider truncate">${item.label}</div>
+                    <div class="text-[8px] text-gray-500 font-mono">${dateStr}</div>
+                    <div class="flex gap-2 mt-2">
+                        <button class="flex-1 bg-amber-900/40 hover:bg-amber-800 text-amber-500 text-[9px] font-bold py-1.5 rounded border border-amber-700/50 transition-colors uppercase load-cal-btn" data-id="${item.id}">
+                            <i data-lucide="wrench" class="w-3 h-3 inline"></i> REWORK
+                        </button>
+                        <button class="bg-red-900/40 hover:bg-red-800 text-red-500 text-[9px] px-2 rounded border border-red-700/50 transition-colors delete-cal-btn" data-id="${item.id}">
+                            <i data-lucide="trash-2" class="w-3 h-3"></i>
+                        </button>
+                    </div>
+                </div>
+            `;
+            libraryList.appendChild(card);
+        });
+        
+        // Attach events
+        libraryList.querySelectorAll('.calendar-vault-checkbox').forEach(cb => {
+            cb.addEventListener('change', () => {
+                const checkedBoxes = document.querySelectorAll('.calendar-vault-checkbox:checked');
+                const vaultBtnTop = document.getElementById('calendar-to-vault-btn-top');
+                if(checkedBoxes.length > 0) {
+                    if(vaultBtnTop) vaultBtnTop.classList.remove('hidden');
+                } else {
+                    if(vaultBtnTop) vaultBtnTop.classList.add('hidden');
+                }
+            });
+        });
+
+        libraryList.querySelectorAll('.delete-cal-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                if(confirm("Delete this calendar from your Inventory?")) {
+                    const id = e.currentTarget.dataset.id;
+                    const inv = getCalendarInventory();
+                    delete inv[id];
+                    saveCalendarInventory(inv);
+                    window.updateCalendarList();
+                }
+            });
+        });
+        
+        libraryList.querySelectorAll('.load-cal-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const id = e.currentTarget.dataset.id;
+                window.loadCalendarBackToEditorById(id);
+            });
+        });
+        
+        if(window.lucide) window.lucide.createIcons();
+    };
+
+    window.loadCalendarBackToEditorById = function(id) {
+        const inv = getCalendarInventory();
+        let item = inv[id];
+        if(!item && window.getVaultItemById) {
+            item = window.getVaultItemById(id);
+        }
+        if(!item) {
+            alert("ERROR: Calendar data could not be found in local memory or vault cache.");
+            console.error("Item not found in calendar inventory or vault cache:", id);
+            return;
+        }
+        
+        if (!item.storeDump) {
+            alert("ERROR: This calendar card does not contain any saved text data (storeDump is missing).");
+            return;
+        }
+        
+        if(confirm("Loading this calendar will overwrite your current unsaved calendar text. Proceed?")) {
+            monthDataStore = item.storeDump || {};
+            window.currentReworkCalendarId = id;
+            if(reworkBtn) {
+                reworkBtn.classList.remove('hidden');
+                // Pulse the button so they know they are editing an existing item
+                reworkBtn.classList.add('animate-pulse');
+                setTimeout(() => reworkBtn.classList.remove('animate-pulse'), 3000);
+            }
+            
+            // To ensure they see what they just loaded, we could find the first populated month and switch to it.
+            // For simplicity, we just trigger a re-render of the current month. If they saved it in July, they might need to flip to July to see the text.
+            // Let's be smart: find the first key in the storeDump and parse the date.
+            const keys = Object.keys(monthDataStore);
+            if(keys.length > 0) {
+                const parts = keys[0].split('-');
+                if(parts.length === 2) {
+                    currentDate = new Date(parseInt(parts[0]), parseInt(parts[1]), 1);
+                }
+            }
+            
+            if(modal && modal.classList.contains('hidden')) {
+                modal.classList.remove('hidden');
+            }
+            
+            renderCalendar();
+            if(window.pushTacLog) window.pushTacLog("CALENDAR DATA LOADED INTO EDITOR", "INFO");
+        }
+    };
+});
+
+// Vault Integration Hook
+document.addEventListener('DOMContentLoaded', () => {
+    const vaultToCalBtn = document.getElementById('vault-to-cal-btn');
+    if (vaultToCalBtn) {
+        vaultToCalBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const checkedBoxes = document.querySelectorAll('.vault-export-checkbox:checked');
+            
+            if (checkedBoxes.length === 1) {
+                const id = checkedBoxes[0].dataset.vaultId;
+                if (window.loadCalendarBackToEditorById) {
+                    window.loadCalendarBackToEditorById(id);
+                }
+            } else if (checkedBoxes.length > 1) {
+                alert("Please select only ONE Calendar to load into the editor.");
+                return;
+            } else {
+                if(window.openCalendarModal) {
+                    window.openCalendarModal();
+                }
+            }
+        });
     }
 });
