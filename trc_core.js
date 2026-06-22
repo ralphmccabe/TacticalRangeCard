@@ -1309,65 +1309,48 @@ function initializeTacticalDashboard1() {
             const rect = canvas.getBoundingClientRect();
             const clientX = e.touches ? e.touches[0].clientX : e.clientX;
             const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-            return {
-                nx: (clientX - rect.left) / rect.width,
-                ny: (clientY - rect.top) / rect.height
-            };
+            return { nx: (clientX - rect.left) / rect.width, ny: (clientY - rect.top) / rect.height };
         };
 
         const start = (e) => {
             if (!pencilToggle.checked) return;
-            // Prevent default to stop scrolling IF drawing
-            if (e.type === 'touchstart' && e.cancelable) e.preventDefault();
-
+            if (e.touches && e.touches.length > 1) return; // 2 fingers = pinch-zoom
             drawing = true;
-            // SYNC: Get normalized position from the surface being touched
             const { nx, ny } = getNormalizedPos(e, e.currentTarget);
-
             canvases.forEach((canvas, idx) => {
                 const pCtx = contexts[idx];
-                pCtx.beginPath();
-                pCtx.lineWidth = 1.0;
-                pCtx.lineCap = 'round';
+                pCtx.beginPath(); pCtx.lineWidth = 1.0; pCtx.lineCap = 'round';
                 pCtx.strokeStyle = '#6b7280';
-
-                // Scale normalized pos to THIS canvas's dimensions
                 pCtx.moveTo(nx * canvas.width, ny * canvas.height);
             });
         };
 
         const move = (e) => {
+            if (e.touches && e.touches.length > 1) { drawing = false; return; } // 2 fingers = zoom
             if (!drawing) return;
-            if (e.type === 'touchmove' && e.cancelable) e.preventDefault();
-
             const { nx, ny } = getNormalizedPos(e, e.currentTarget);
-
-            // SYNC: Draw on ALL canvases
             canvases.forEach((canvas, idx) => {
                 const pCtx = contexts[idx];
-                pCtx.lineTo(nx * canvas.width, ny * canvas.height);
-                pCtx.stroke();
+                pCtx.lineTo(nx * canvas.width, ny * canvas.height); pCtx.stroke();
             });
         };
 
-        const stop = () => {
-            if (!drawing) return;
-            // SYNC: Finish path on all canvases
-            contexts.forEach(ctx => ctx.closePath());
-            drawing = false;
-        };
+        const stop = () => { if (!drawing) return; contexts.forEach(ctx => ctx.closePath()); drawing = false; };
 
         canvases.forEach(canvas => {
-            ['mousedown', 'touchstart'].forEach(ev => canvas.addEventListener(ev, start, { passive: false }));
-            ['mousemove', 'touchmove'].forEach(ev => canvas.addEventListener(ev, move, { passive: false }));
-            ['mouseup', 'mouseleave', 'touchend'].forEach(ev => canvas.addEventListener(ev, stop, { passive: false }));
+            canvas.addEventListener('mousedown', start);
+            canvas.addEventListener('mousemove', move);
+            canvas.addEventListener('mouseup', stop);
+            canvas.addEventListener('mouseleave', stop);
+            // passive:true = browser gesture pipeline stays open → pinch-zoom always works
+            canvas.addEventListener('touchstart', start, { passive: true });
+            canvas.addEventListener('touchmove', move, { passive: true });
+            canvas.addEventListener('touchend', stop, { passive: true });
         });
 
         document.getElementById('clear-pencil').addEventListener('click', () => {
             if (confirm('Clear all drawings?')) {
-                contexts.forEach((pCtx, i) => {
-                    pCtx.clearRect(0, 0, canvases[i].width, canvases[i].height);
-                });
+                contexts.forEach((pCtx, i) => pCtx.clearRect(0, 0, canvases[i].width, canvases[i].height));
             }
         });
     }
@@ -1384,79 +1367,61 @@ function initializeTacticalDashboard1() {
         const gradeContexts = gradeCanvases.map(c => c.getContext('2d'));
         let gradeDrawing = false;
 
-        // Mutual exclusion: Checking Grade Tool unchecks Pencil Tool
         gradeToggle.addEventListener('change', (e) => {
-            if (e.target.checked && pencilToggle) {
-                pencilToggle.checked = false;
-                pencilToggle.dispatchEvent(new Event('change'));
-            }
+            if (e.target.checked && pencilToggle) { pencilToggle.checked = false; pencilToggle.dispatchEvent(new Event('change')); }
             gradeCanvases.forEach(canvas => {
                 canvas.classList.toggle('pointer-events-none', !e.target.checked);
                 canvas.style.cursor = e.target.checked ? 'crosshair' : 'default';
             });
         });
 
-        // Mutual exclusion: Checking Pencil Tool unchecks Grade Tool
         if (pencilToggle) {
             pencilToggle.addEventListener('change', (e) => {
-                if (e.target.checked && gradeToggle) {
-                    gradeToggle.checked = false;
-                    gradeToggle.dispatchEvent(new Event('change'));
-                }
+                if (e.target.checked && gradeToggle) { gradeToggle.checked = false; gradeToggle.dispatchEvent(new Event('change')); }
             });
         }
 
-        const getNormalizedPos = (e, canvas) => {
+        const getNormalizedPosG = (e, canvas) => {
             const rect = canvas.getBoundingClientRect();
             const clientX = e.touches ? e.touches[0].clientX : e.clientX;
             const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-            return {
-                nx: (clientX - rect.left) / rect.width,
-                ny: (clientY - rect.top) / rect.height
-            };
+            return { nx: (clientX - rect.left) / rect.width, ny: (clientY - rect.top) / rect.height };
         };
 
         const startGrade = (e) => {
             if (!gradeToggle.checked) return;
-            if (e.type === 'touchstart' && e.cancelable) e.preventDefault();
-
+            if (e.touches && e.touches.length > 1) return; // 2 fingers = pinch-zoom
             gradeDrawing = true;
-            const { nx, ny } = getNormalizedPos(e, e.currentTarget);
-
+            const { nx, ny } = getNormalizedPosG(e, e.currentTarget);
             gradeCanvases.forEach((canvas, idx) => {
                 const gCtx = gradeContexts[idx];
-                gCtx.beginPath();
-                gCtx.lineWidth = 1.0;
-                gCtx.lineCap = 'round';
-                gCtx.strokeStyle = '#ef4444'; // Red color
-
+                gCtx.beginPath(); gCtx.lineWidth = 1.0; gCtx.lineCap = 'round';
+                gCtx.strokeStyle = '#ef4444';
                 gCtx.moveTo(nx * canvas.width, ny * canvas.height);
             });
         };
 
         const moveGrade = (e) => {
+            if (e.touches && e.touches.length > 1) { gradeDrawing = false; return; } // 2 fingers = zoom
             if (!gradeDrawing) return;
-            if (e.type === 'touchmove' && e.cancelable) e.preventDefault();
-
-            const { nx, ny } = getNormalizedPos(e, e.currentTarget);
-
+            const { nx, ny } = getNormalizedPosG(e, e.currentTarget);
             gradeCanvases.forEach((canvas, idx) => {
                 const gCtx = gradeContexts[idx];
-                gCtx.lineTo(nx * canvas.width, ny * canvas.height);
-                gCtx.stroke();
+                gCtx.lineTo(nx * canvas.width, ny * canvas.height); gCtx.stroke();
             });
         };
 
-        const stopGrade = () => {
-            if (!gradeDrawing) return;
-            gradeContexts.forEach(ctx => ctx.closePath());
-            gradeDrawing = false;
-        };
+        const stopGrade = () => { if (!gradeDrawing) return; gradeContexts.forEach(ctx => ctx.closePath()); gradeDrawing = false; };
 
         gradeCanvases.forEach(canvas => {
-            ['mousedown', 'touchstart'].forEach(ev => canvas.addEventListener(ev, startGrade, { passive: false }));
-            ['mousemove', 'touchmove'].forEach(ev => canvas.addEventListener(ev, moveGrade, { passive: false }));
-            ['mouseup', 'mouseleave', 'touchend'].forEach(ev => canvas.addEventListener(ev, stopGrade, { passive: false }));
+            canvas.addEventListener('mousedown', startGrade);
+            canvas.addEventListener('mousemove', moveGrade);
+            canvas.addEventListener('mouseup', stopGrade);
+            canvas.addEventListener('mouseleave', stopGrade);
+            // passive:true = browser gesture pipeline stays open → pinch-zoom always works
+            canvas.addEventListener('touchstart', startGrade, { passive: true });
+            canvas.addEventListener('touchmove', moveGrade, { passive: true });
+            canvas.addEventListener('touchend', stopGrade, { passive: true });
         });
 
         document.getElementById('clear-grade').addEventListener('click', () => {
@@ -1468,7 +1433,7 @@ function initializeTacticalDashboard1() {
         });
     }
 
-    document.getElementById('downloadBtn').addEventListener('click', () => {
+        document.getElementById('downloadBtn').addEventListener('click', () => {
         const isReconActive = !document.getElementById('recon-card-container').classList.contains('hidden');
         
         // Restore workspace to desktop for correct capture
@@ -2431,7 +2396,7 @@ function initializeTacticalDashboard2() {
 
         const startRDraw = (e) => {
             if (!reconPencilToggle || !reconPencilToggle.checked) return;
-            if (e.type === 'touchstart' && e.cancelable) e.preventDefault();
+            if (e.touches && e.touches.length > 1) return; // Allow pinch-zoom
             rDrawing = true;
             
             const pos = getReconPos(e, e.currentTarget);
@@ -2450,10 +2415,9 @@ function initializeTacticalDashboard2() {
             }
         };
 
-        const moveRDraw = (e) => {
+                const moveRDraw = (e) => {
+            if (e.touches && e.touches.length > 1) { rDrawing = false; return; } // Allow pinch-zoom
             if (!rDrawing) return;
-            if (e.type === 'touchmove' && e.cancelable) e.preventDefault();
-            
             const pos = getReconPos(e, e.currentTarget);
             rCtx.lineTo(pos.x, pos.y);
             rCtx.stroke();
@@ -2474,17 +2438,19 @@ function initializeTacticalDashboard2() {
         reconCanvas.addEventListener('mousedown', startRDraw);
         reconCanvas.addEventListener('mousemove', moveRDraw);
         reconCanvas.addEventListener('mouseup', stopRDraw);
-        reconCanvas.addEventListener('touchstart', startRDraw, { passive: false });
-        reconCanvas.addEventListener('touchmove', moveRDraw, { passive: false });
-        reconCanvas.addEventListener('touchend', stopRDraw);
+        reconCanvas.addEventListener('mouseleave', stopRDraw);
+        reconCanvas.addEventListener('touchstart', startRDraw, { passive: true });
+        reconCanvas.addEventListener('touchmove', moveRDraw, { passive: true });
+        reconCanvas.addEventListener('touchend', stopRDraw, { passive: true });
 
         if (mobileReconCanvas) {
             mobileReconCanvas.addEventListener('mousedown', startRDraw);
             mobileReconCanvas.addEventListener('mousemove', moveRDraw);
             mobileReconCanvas.addEventListener('mouseup', stopRDraw);
-            mobileReconCanvas.addEventListener('touchstart', startRDraw, { passive: false });
-            mobileReconCanvas.addEventListener('touchmove', moveRDraw, { passive: false });
-            mobileReconCanvas.addEventListener('touchend', stopRDraw);
+            mobileReconCanvas.addEventListener('mouseleave', stopRDraw);
+            mobileReconCanvas.addEventListener('touchstart', startRDraw, { passive: true });
+            mobileReconCanvas.addEventListener('touchmove', moveRDraw, { passive: true });
+            mobileReconCanvas.addEventListener('touchend', stopRDraw, { passive: true });
         }
 
         if (reconPencilToggle) {
@@ -2494,7 +2460,11 @@ function initializeTacticalDashboard2() {
                     label.classList.add('bg-emerald-950/40', 'border-emerald-500', 'text-emerald-400', 'shadow-lg', 'shadow-emerald-500/20');
                     label.querySelector('span').textContent = '🖊️ DRAWING ACTIVE';
                     reconCanvas.classList.remove('pointer-events-none');
-                    if (mobileReconCanvas) mobileReconCanvas.classList.remove('pointer-events-none');
+                    reconCanvas.style.touchAction = 'pinch-zoom';
+                    if (mobileReconCanvas) {
+                        mobileReconCanvas.classList.remove('pointer-events-none');
+                        mobileReconCanvas.style.touchAction = 'pinch-zoom';
+                    }
                 } else {
                     label.classList.remove('bg-emerald-950/40', 'border-emerald-500', 'text-emerald-400', 'shadow-lg', 'shadow-emerald-500/20');
                     label.querySelector('span').textContent = '🖊️ DRAW PATH';
@@ -3477,7 +3447,7 @@ function initializeTacticalDashboard2() {
                 const lat = pos.coords.latitude;
                 const lon = pos.coords.longitude;
                 
-                btn.innerHTML = `<span class="animate-pulse">☁️ STREAMING CLIMATE...</span>`;
+                btn.innerHTML = `<span class="animate-pulse">🛰️ STREAMING CLIMATE...</span>`;
 
                 // 1. Call Extended Open-Meteo API including Weather Code for Sky State
                 const apiURL = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,surface_pressure,wind_speed_10m,wind_direction_10m,weather_code&temperature_unit=fahrenheit&wind_speed_unit=mph&timezone=auto`;
@@ -3512,18 +3482,18 @@ function initializeTacticalDashboard2() {
                         else skyCond = "DUSTY/HAZY";
 
                         // 5. INJECT INTELLIGENCE INTO GRID
-                        document.getElementById('wx-temp').textContent = Math.round(tempF);
-                        document.getElementById('wx-wind-speed').textContent = Math.round(c.wind_speed_10m);
-                        document.getElementById('wx-wind-dir').textContent = `DEG ${Math.round(c.wind_direction_10m)}`;
+                        document.getElementById("wx-temp").textContent = Math.round(tempF);
+                        document.getElementById("wx-wind-speed").textContent = Math.round(c.wind_speed_10m);
+                        document.getElementById("wx-wind-dir").textContent = `DEG ${Math.round(c.wind_direction_10m)}`;
                         
                         // Push converted inHg with decimal precision
-                        document.getElementById('wx-pres').textContent = inHg.toFixed(2);
-                        document.getElementById('wx-humid').textContent = Math.round(c.relative_humidity_2m);
+                        document.getElementById("wx-pres").textContent = inHg.toFixed(2);
+                        document.getElementById("wx-humid").textContent = Math.round(c.relative_humidity_2m);
                         
                         // Push our 3 new high-level data points
-                        const condEl = document.getElementById('wx-cond');
-                        const daEl = document.getElementById('wx-da');
-                        const elevEl = document.getElementById('wx-elev');
+                        const condEl = document.getElementById("wx-cond");
+                        const daEl = document.getElementById("wx-da");
+                        const elevEl = document.getElementById("wx-elev");
                         
                         if (condEl) condEl.textContent = skyCond;
                         if (daEl) daEl.textContent = densAlt.toLocaleString();
@@ -3535,16 +3505,16 @@ function initializeTacticalDashboard2() {
                         }
                         
                         // AUTO-SYNC TO BALLISTIC SOLVER INPUTS
-                        document.getElementById('bal-input-temp').value = Math.round(tempF);
-                        document.getElementById('bal-input-baro').value = inHg.toFixed(2);
-                        document.getElementById('bal-input-wind').value = Math.round(c.wind_speed_10m);
-                        document.getElementById('bal-input-wind-dir').value = Math.round(c.wind_direction_10m);
-                        runSolverMatrix(); // Force instant re-calculation so HUD updates
+                        document.getElementById("bal-input-temp").value = Math.round(tempF);
+                        document.getElementById("bal-input-baro").value = inHg.toFixed(2);
+                        document.getElementById("bal-input-wind").value = Math.round(c.wind_speed_10m);
+                        document.getElementById("bal-input-wind-dir").value = Math.round(c.wind_direction_10m);
+                        if (typeof runSolverMatrix === "function") runSolverMatrix(); // Force instant re-calculation so HUD updates
                         
 
                         // Success State Update
-                        statusEl.textContent = 'SYNCED';
-                        statusEl.className = 'text-[7px] font-bold text-emerald-500 uppercase';
+                        statusEl.textContent = "SYNCED";
+                        statusEl.className = "text-[7px] font-bold text-emerald-500 uppercase";
                         
                         btn.innerHTML = `<i data-lucide="check" class="w-3 h-3"></i> SYSTEM CALIBRATED`;
                         btn.className = "mt-3 w-full bg-emerald-950/40 border border-emerald-900/60 py-1.5 rounded text-[8px] font-black uppercase text-emerald-400 flex items-center justify-center gap-1.5 tracking-[0.15em]";
@@ -3562,8 +3532,8 @@ function initializeTacticalDashboard2() {
                     })
                     .catch(err => {
                         console.error("WX ERROR:", err);
-                        statusEl.textContent = 'STREAM FAIL';
-                        statusEl.className = 'text-[7px] font-bold text-red-500 uppercase';
+                        statusEl.textContent = "STREAM FAIL";
+                        statusEl.className = "text-[7px] font-bold text-red-500 uppercase";
                         btn.innerHTML = `<i data-lucide="alert-triangle" class="w-3 h-3"></i> RETRY SYNC`;
                         btn.disabled = false;
                         if(window.lucide) lucide.createIcons();
@@ -3572,8 +3542,8 @@ function initializeTacticalDashboard2() {
             (error) => {
                 console.error("GPS ERROR:", error);
                 alert("Location Access Denied or Unavailable.");
-                statusEl.textContent = 'NO GPS';
-                statusEl.className = 'text-[7px] font-bold text-red-500 uppercase';
+                statusEl.textContent = "NO GPS";
+                statusEl.className = "text-[7px] font-bold text-red-500 uppercase";
                 btn.innerHTML = originalText;
                 btn.disabled = false;
                 if(window.lucide) lucide.createIcons();
@@ -3586,9 +3556,9 @@ function initializeTacticalDashboard2() {
     // GEOSPATIAL ORBITAL VECTOR MAP
     // ========================================================================
     let orbitalMap = null;
-window.eventMarkers = [];
-window.eventLines = [];
-let rallyPointLine = null;
+    window.eventMarkers = [];
+    window.eventLines = [];
+    let rallyPointLine = null;
     let mapMarkers = [];
     let mapPolyline = null;
     let mapLabelMarker = null;
@@ -3605,7 +3575,7 @@ let rallyPointLine = null;
     }
 
     function initLiveMap() {
-        const container = document.getElementById('live-sat-map-container');
+        const container = document.getElementById("live-sat-map-container");
         if (!container) return;
 
         // 1. Create the Map if it hasn't been instantiated yet
@@ -3623,7 +3593,6 @@ let rallyPointLine = null;
                 [-70, 40]   // South-East corner
             ]);
             window.orbitalMap = orbitalMap; 
-
             // Prevent grey map issue when resizing the container
             const resizeObserver = new ResizeObserver(() => {
                 if (orbitalMap) orbitalMap.invalidateSize();
@@ -3643,7 +3612,7 @@ let rallyPointLine = null;
             // 3. Add Global Map Click Listener for Vector Points
             orbitalMap.on('click', handleMapClick);
 
-            // Desktop drawing — Leaflet mouse events (reliable on PC)
+            // Desktop drawing - Leaflet mouse events (reliable on PC)
             orbitalMap.on('mousedown', (e) => {
                 if (!isDrawingMode) return;
                 currentDrawPath = L.polyline([e.latlng], {color: '#3b82f6', weight: 5, opacity: 0.9, smoothFactor: 1}).addTo(orbitalMap);
@@ -3658,8 +3627,7 @@ let rallyPointLine = null;
                 currentDrawPath = null;
             });
 
-            // Mobile drawing — native DOM touch events on the map container
-            // Leaflet's own touch event system does NOT populate e.latlng reliably on mobile
+            // Mobile drawing - native DOM touch events on the map container
             const mapContainer = orbitalMap.getContainer();
 
             function getTouchLatLng(touch) {
@@ -3671,6 +3639,7 @@ let rallyPointLine = null;
 
             mapContainer.addEventListener('touchstart', (e) => {
                 if (!isDrawingMode) return;
+                if (e.touches.length > 1) return; // Allow pinch-zoom
                 e.preventDefault(); // stop map pan
                 const latlng = getTouchLatLng(e.touches[0]);
                 currentDrawPath = L.polyline([latlng], {color: '#3b82f6', weight: 5, opacity: 0.9, smoothFactor: 1}).addTo(orbitalMap);
@@ -3679,6 +3648,7 @@ let rallyPointLine = null;
 
             mapContainer.addEventListener('touchmove', (e) => {
                 if (!isDrawingMode || !currentDrawPath) return;
+                if (e.touches.length > 1) return; // Allow pinch-zoom
                 e.preventDefault(); // stop map pan while drawing
                 const latlng = getTouchLatLng(e.touches[0]);
                 currentDrawPath.addLatLng(latlng);
@@ -3688,9 +3658,7 @@ let rallyPointLine = null;
                 if (!isDrawingMode) return;
                 currentDrawPath = null;
             }, { passive: true });
-
-
-            // Auto-Trigger initial GPS sync to find where the user currently is!
+        // Auto-Trigger initial GPS sync to find where the user currently is!
             // syncMapToGps(); // Disabled on page load to comply with Lighthouse Best Practices
             
             // Force re-renders to fix grey tile bugs on mobile layout shifts
@@ -3924,6 +3892,9 @@ let rallyPointLine = null;
     if (geoCompassBtn) {
         geoCompassBtn.addEventListener('click', (e) => {
             e.stopPropagation();
+            if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+                DeviceOrientationEvent.requestPermission().catch(err => console.log("Device orientation permission:", err));
+            }
             const overlay = document.getElementById('compass-overlay');
             if (overlay) {
                 const isHidden = overlay.classList.contains('hidden');
@@ -4017,6 +3988,10 @@ let rallyPointLine = null;
         mapSnapBtn.addEventListener('click', async (e) => {
             e.stopPropagation();
 
+            let customName = prompt("Enter a name for this Geo Intel Capture:", "GEO_" + Date.now().toString().slice(-4));
+            if (customName === null) return;
+            if (customName.trim() === '') customName = "GEO_" + Date.now().toString().slice(-4);
+
             const originalHtml = mapSnapBtn.innerHTML;
             mapSnapBtn.innerHTML = `<span class="animate-pulse">📸 SAVING...</span>`;
             mapSnapBtn.disabled = true;
@@ -4038,7 +4013,7 @@ let rallyPointLine = null;
             const distVal = document.getElementById('live-map-dist')?.textContent || '';
             if (distVal) meta.distance = distVal + ' ' + geoDistanceUnit;
 
-            const label = "GEO_" + Date.now().toString().slice(-4);
+            const label = customName;
 
             // Build a fallback canvas in case html2canvas hangs (common on mobile due to tile CORS)
             function buildFallbackCanvas() {
@@ -4182,7 +4157,7 @@ let rallyPointLine = null;
     // LOAD INTEL VAULT TO MAP
     // ========================================================================
     window.loadVaultToMap = function(item) {
-        if (!item || (!item.markers && !item.originLat && !item.drawings && !item.image)) {
+        if (!item || (!item.markers && !item.originLat && !item.drawings && !item.image && !item.routeTracker)) {
             alert("This snapshot does not contain valid map data or images.");
             return;
         }
@@ -4246,6 +4221,13 @@ let rallyPointLine = null;
                 const newDraw = L.polyline(points, {color: '#3b82f6', weight: 5, opacity: 0.9, smoothFactor: 1}).addTo(orbitalMap);
                 allDrawings.push(newDraw);
             });
+        }
+
+        // 3.75. Inject Route Tracker
+        if (item.routeTracker && Array.isArray(item.routeTracker)) {
+            if (typeof window.loadRouteToMap === 'function') {
+                window.loadRouteToMap(item.routeTracker);
+            }
         }
 
         // 4. Draw Line
@@ -4526,7 +4508,7 @@ let rallyPointLine = null;
                 </button>
                 ` : ''}
 
-                ${(item.label && item.label.startsWith('GEO_')) ? `
+                ${(item.label && (item.label.startsWith('GEO_') || item.label.startsWith('ROUTE'))) ? `
                 <button class="load-map-btn absolute bottom-7 left-1.5 bg-blue-600 text-white p-1.5 rounded border border-blue-400 shadow-lg hover:bg-blue-400 transition-all z-30" title="Load to Geo Matrix">
                     <i data-lucide="map-pin" class="w-3 h-3"></i>
                 </button>
@@ -4536,11 +4518,15 @@ let rallyPointLine = null;
                 <button class="load-video-btn absolute bottom-7 left-1.5 bg-purple-600 text-white p-1.5 rounded border border-purple-400 shadow-lg hover:bg-purple-400 transition-all z-30" title="Play Video">
                     <i data-lucide="play" class="w-3 h-3"></i>
                 </button>
-                ` : ''}
+                ` : (!item.remarksText && !(item.label && (item.label.startsWith('GEO_') || item.label.startsWith('ROUTE'))) ? `
+                <button class="load-snapshot-btn absolute bottom-7 left-1.5 bg-emerald-600 text-white p-1.5 rounded border border-emerald-400 shadow-lg hover:bg-emerald-400 transition-all z-30" title="Load Snapshot to Viewer">
+                    <i data-lucide="camera" class="w-3 h-3"></i>
+                </button>
+                ` : '')}
             `;
             
             el.addEventListener('click', (e) => {
-                if(e.target.closest('.delete-vault-btn') || e.target.closest('.vault-export-checkbox') || e.target.closest('.load-note-btn') || e.target.closest('.load-map-btn') || e.target.closest('.load-video-btn')) return;
+                if(e.target.closest('.delete-vault-btn') || e.target.closest('.vault-export-checkbox') || e.target.closest('.load-note-btn') || e.target.closest('.load-map-btn') || e.target.closest('.load-video-btn') || e.target.closest('.load-snapshot-btn')) return;
                 e.stopPropagation();
                 selectVaultItem(item);
             });
@@ -4566,6 +4552,14 @@ let rallyPointLine = null;
                 loadVidBtn.addEventListener('click', (e) => {
                     e.stopPropagation();
                     if(window.loadVideoBackToPlayer) window.loadVideoBackToPlayer(item);
+                });
+            }
+
+            const loadSnapBtn = el.querySelector('.load-snapshot-btn');
+            if(loadSnapBtn) {
+                loadSnapBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    if(window.loadSnapshotToViewer) window.loadSnapshotToViewer(item);
                 });
             }
 
@@ -4791,20 +4785,25 @@ let rallyPointLine = null;
 
     let absoluteFired = false;
     function handleOrientation(e) {
-        if (e.type === 'deviceorientationabsolute') {
-            absoluteFired = true;
-        } else if (e.type === 'deviceorientation' && absoluteFired) {
-            // Ignore relative events if we are getting absolute ones
-            return;
+        let heading;
+        let pitch = e.beta;
+        if (pitch === null || pitch === undefined) pitch = 0;
+
+        if (e.webkitCompassHeading !== undefined && e.webkitCompassHeading !== null) {
+            heading = e.webkitCompassHeading;
+        } else {
+            if (e.type === 'deviceorientationabsolute') {
+                absoluteFired = true;
+                heading = 360 - e.alpha; // Android
+            } else if (e.type === 'deviceorientation') {
+                if (absoluteFired) return; // Android fallback
+                heading = 360 - e.alpha;
+            }
         }
+        
+        if (heading === null || heading === undefined || isNaN(heading)) heading = 0;
 
         deviceOrientationActive = true; 
-        
-        let heading = e.webkitCompassHeading;
-        if (heading === undefined || heading === null) {
-            heading = 360 - e.alpha; // Android alpha CCW compensation
-        }
-        if (heading === null || heading === undefined || isNaN(heading)) heading = 0;
         
         // Adjust for device screen orientation (landscape vs portrait)
         let screenAngle = 0;
@@ -4817,19 +4816,12 @@ let rallyPointLine = null;
         heading = (heading + screenAngle) % 360;
         if (heading < 0) heading += 360;
         
-        let pitch = e.beta;
-        if (pitch === null || pitch === undefined) pitch = 0;
-
         currentHudHeading = heading;
         currentHudPitch = pitch - 90;
     }
 
     function updateTacticalHUD() {
-        if (!deviceOrientationActive) {
-            // Mock test animation for PC testing
-            currentHudHeading = (currentHudHeading + 0.2) % 360;
-            currentHudPitch = Math.sin(Date.now() / 1500) * 15;
-        }
+        // Mock animation removed for production
 
         // 1. Compass Update
         const compassValue = document.getElementById('hud-compass-value');
@@ -4842,18 +4834,30 @@ let rallyPointLine = null;
         if (compassTape) {
             if (!compassTape.innerHTML.includes('E')) {
                 let tapeStr = "";
-                for (let i = 0; i <= 360; i += 15) {
+                for (let i = 0; i < 360; i += 15) {
                     let dir = i;
-                    if (i === 0 || i === 360) dir = 'N';
+                    if (i === 0) dir = 'N';
                     else if (i === 90) dir = 'E';
                     else if (i === 180) dir = 'S';
                     else if (i === 270) dir = 'W';
                     tapeStr += `<span class="inline-block w-8 text-center">${dir}</span>`;
                 }
-                compassTape.innerHTML = tapeStr + tapeStr + tapeStr; // Extra buffer
+                compassTape.innerHTML = tapeStr + tapeStr + tapeStr + tapeStr + tapeStr; // Extra buffers
+                // Set tape explicitly so it doesn't auto-center based on flex
+                compassTape.style.left = "50%";
             }
-            // Approx 32px per 15 degrees = 2.13px per degree
-            const offset = (currentHudHeading * (32/15));
+            
+            // Each 15 degrees is 32px (w-8).
+            // A full 360 tape is 24 items * 32px = 768px.
+            // We put 5 copies. The middle copy starts at index 2 (0, 1, 2).
+            // So the middle '0' (N) is at 2 * 768px = 1536px from left edge.
+            // Center of that 'N' is 1536 + 16px (half of 32px) = 1552px.
+            // We want that center to be at left: 50%.
+            // So we translate by -1552px when heading is 0.
+            
+            const pxPerDegree = 32 / 15;
+            const baseOffset = 1552; 
+            const offset = baseOffset + (currentHudHeading * pxPerDegree);
             compassTape.style.transform = `translateX(-${offset}px)`;
         }
 
@@ -4886,19 +4890,14 @@ let rallyPointLine = null;
     }
 
     function initTacticalHUD() {
+        
         if (window.DeviceOrientationEvent) {
             window.addEventListener('deviceorientationabsolute', handleOrientation, true);
             window.addEventListener('deviceorientation', handleOrientation, true);
-            setTimeout(() => {
-                if (currentHudHeading === 0 && currentHudPitch === -90) {
-                    deviceOrientationActive = false; // PC mock fallback
-                } else {
-                    deviceOrientationActive = true;
-                }
-            }, 500);
         } else {
             deviceOrientationActive = false;
         }
+
         
         // Start GPS tracking for HUD
         if (navigator.geolocation) {
@@ -4907,6 +4906,7 @@ let rallyPointLine = null;
                 const lonEl = document.getElementById('hud-gps-lon');
                 if (latEl) latEl.textContent = pos.coords.latitude.toFixed(6);
                 if (lonEl) lonEl.textContent = pos.coords.longitude.toFixed(6);
+                window.myLatestCoords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
             }, (err) => {
                 console.warn("HUD GPS Error:", err);
             }, { enableHighAccuracy: true });
@@ -4940,11 +4940,16 @@ let rallyPointLine = null;
                     width: { ideal: 1920 },
                     height: { ideal: 1080 }
                 },
-                audio: false
+                audio: isVideoMode ? true : false
             };
 
             const stream = await navigator.mediaDevices.getUserMedia(constraints);
             activeStream = stream;
+            
+            if (isVideoMode && !window.videoAudioAlertShown) {
+                window.videoAudioAlertShown = true;
+                setTimeout(() => alert("VIDEO RECORDING:\nMicrophones for 2-way radio and AI Spotter are temporarily inactive."), 500);
+            }
             window.activeStream = stream; // Export for flashlight
             
             // Re-enable autoplay for live stream
@@ -5034,10 +5039,26 @@ let rallyPointLine = null;
             videoEl.classList.add('hidden');
         }
         
+        const imgViewer = document.getElementById('surveillance-snapshot-viewer');
+        if (imgViewer) {
+            imgViewer.src = "";
+            imgViewer.classList.add('hidden');
+        }
+        
         placeholder.classList.remove('hidden');
         hud.classList.add('hidden');
         if(killBtn) killBtn.classList.add('hidden'); // Hide shutdown button again
         
+        // RESTORE all buttons that may have been hidden during image/video review mode
+        const _flipBtn = document.getElementById('feed-switch-cam-btn');
+        const _hudToggleBtn = document.getElementById('feed-hud-toggle-btn');
+        const _recStartBtn = document.getElementById('surveillance-record-start-btn');
+        if (_flipBtn) _flipBtn.classList.remove('hidden');
+        if (_hudToggleBtn) _hudToggleBtn.classList.remove('hidden');
+        if (_recStartBtn) _recStartBtn.classList.remove('hidden');
+        // Also reset kill button text in case it was changed to "CLOSE REVIEW"
+        if (killBtn) killBtn.innerHTML = '<i data-lucide="power-off" class="w-4 h-4"></i>';
+
         // HIDE FOOTER ON STOP
         const survFooter = document.getElementById('surveillance-footer');
         if(survFooter) survFooter.classList.add('hidden');
@@ -5047,21 +5068,40 @@ let rallyPointLine = null;
         label.textContent = "OFFLINE";
     }
 
+    
+    function requestOrientationPermissionAndStartFeed(isVid) {
+        isVideoMode = isVid;
+        if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+            DeviceOrientationEvent.requestPermission().then(permissionState => {
+                if (permissionState === 'granted') {
+                    deviceOrientationActive = true;
+                } else {
+                    deviceOrientationActive = false;
+                }
+                startFeed();
+            }).catch(err => {
+                console.error(err);
+                startFeed();
+            });
+        } else {
+            startFeed();
+        }
+    }
+
     if (activateScopeBtn) {
         activateScopeBtn.addEventListener('click', (e) => {
             e.stopPropagation();
-            isVideoMode = false;
-            startFeed();
+            requestOrientationPermissionAndStartFeed(false);
         });
     }
 
     if (activateVideoBtn) {
         activateVideoBtn.addEventListener('click', (e) => {
             e.stopPropagation();
-            isVideoMode = true;
-            startFeed();
+            requestOrientationPermissionAndStartFeed(true);
         });
     }
+
 
     if (killBtn) {
         killBtn.addEventListener('click', (e) => {
@@ -5124,6 +5164,72 @@ let rallyPointLine = null;
             const cx = cw / 2;
             const cy = ch / 2;
             
+            // Set uniform styling for the HUD info
+            ctx.font = "bold 12px monospace";
+            ctx.fillStyle = "#10b981";
+            
+            // Top Center: Compass Tape
+            const tapeWidth = cw * 0.6;
+            const tapeHeight = 24;
+            const tapeX = cw / 2 - tapeWidth / 2;
+            const tapeY = 80;
+            
+            // Tape Background
+            ctx.fillStyle = "rgba(0, 0, 0, 0.4)";
+            ctx.fillRect(tapeX, tapeY, tapeWidth, tapeHeight);
+            ctx.strokeStyle = "rgba(16, 185, 129, 0.3)";
+            ctx.strokeRect(tapeX, tapeY, tapeWidth, tapeHeight);
+
+            // Tape Text (Clipping Region)
+            ctx.save();
+            ctx.beginPath();
+            ctx.rect(tapeX, tapeY, tapeWidth, tapeHeight);
+            ctx.clip();
+            
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            ctx.font = "bold 8px monospace";
+            ctx.fillStyle = "rgba(16, 185, 129, 0.7)";
+            
+            const pxPerDegree = 32 / 15;
+            for (let deg = Math.floor(currentHudHeading - 90); deg <= currentHudHeading + 90; deg += 15) {
+                let displayDeg = deg % 360;
+                if (displayDeg < 0) displayDeg += 360;
+                
+                let dir = displayDeg;
+                if (displayDeg === 0) dir = 'N';
+                else if (displayDeg === 90) dir = 'E';
+                else if (displayDeg === 180) dir = 'S';
+                else if (displayDeg === 270) dir = 'W';
+
+                const dx = (cw / 2) + ((deg - currentHudHeading) * pxPerDegree);
+                ctx.fillText(dir, dx, tapeY + tapeHeight / 2);
+            }
+            ctx.restore();
+
+            // Center Needle
+            ctx.fillStyle = "#10b981";
+            ctx.fillRect(cw / 2 - 1, tapeY, 2, tapeHeight);
+
+            // Numerical Value Box
+            const compassTxt = document.getElementById('hud-compass-value')?.textContent || "000° N";
+            const valWidth = 50;
+            const valHeight = 16;
+            const valX = cw / 2 - valWidth / 2;
+            const valY = tapeY - valHeight;
+            ctx.fillStyle = "rgba(0, 0, 0, 0.8)";
+            ctx.fillRect(valX, valY, valWidth, valHeight);
+            ctx.strokeStyle = "rgba(16, 185, 129, 0.5)";
+            ctx.strokeRect(valX, valY, valWidth, valHeight);
+            
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            ctx.font = "bold 10px monospace";
+            ctx.fillStyle = "#10b981";
+            ctx.fillText(compassTxt, cw / 2, valY + valHeight / 2 + 1);
+            
+            ctx.textBaseline = "alphabetic"; // Restore baseline for other text
+
             // 1. Center Reticle
             ctx.strokeStyle = "rgba(16, 185, 129, 0.7)";
             ctx.beginPath();
@@ -5134,112 +5240,38 @@ let rallyPointLine = null;
             ctx.arc(cx, cy, 8, 0, Math.PI * 2); // Center circle
             ctx.stroke();
             
-            // Gather live HUD strings
-            const tAng = document.getElementById('hud-pitch-angle')?.textContent || "A: --°";
+            // Set uniform styling for the HUD info
+            ctx.font = "bold 12px monospace";
+            ctx.fillStyle = "#10b981";
+            
+            // Left Side: Pitch, Cosine, Temp
+            const tAng = document.getElementById('hud-pitch-angle')?.textContent || "A: --";
             const tCos = document.getElementById('hud-pitch-cos')?.textContent || "C: 1.00";
             const tTmp = document.getElementById('hud-tel-temp')?.textContent || "--°";
-            const tDa = document.getElementById('hud-tel-da')?.textContent || "--";
-            const tBaro = document.getElementById('hud-tel-baro')?.textContent || "--";
-            const tHumi = document.getElementById('hud-tel-humi')?.textContent || "--";
-            const tWnd = document.getElementById('hud-tel-wind')?.textContent || "--";
+            ctx.fillText(tAng, 15, cy - 15);
+            ctx.fillText(tCos, 15, cy);
+            ctx.fillText(tTmp, 15, cy + 15);
+            
+            // Right Side: Elev, Hold, Rng
+            ctx.textAlign = "right";
             const tElev = document.getElementById('hud-dope-elev')?.textContent || "--";
             const tHold = document.getElementById('hud-dope-hold')?.textContent || "--";
             const tRng = document.getElementById('hud-dope-rng')?.textContent || "--";
+            ctx.fillText(`ELEV: ${tElev}`, cw - 15, cy - 15);
+            ctx.fillText(`HOLD: ${tHold}`, cw - 15, cy);
+            ctx.fillText(`RNG: ${tRng}`, cw - 15, cy + 15);
             
-            ctx.font = "bold 12px monospace";
-            
-            // 2. Dynamic Compass Tape (Top)
-            ctx.save();
-            ctx.fillStyle = "rgba(0, 0, 0, 0.6)";
-            ctx.fillRect(cx - 100, 15, 200, 25);
-            ctx.strokeStyle = "rgba(16, 185, 129, 0.4)";
-            ctx.strokeRect(cx - 100, 15, 200, 25);
-            
-            ctx.beginPath();
-            ctx.rect(cx - 100, 15, 200, 25);
-            ctx.clip(); // Clip drawing to inside the box
-            
-            ctx.fillStyle = "#34d399";
-            ctx.font = "bold 10px monospace";
+            // Bottom Center: Timestamp & GPS
             ctx.textAlign = "center";
-            
-            const pxPerDeg = 3;
-            const centerDeg = typeof currentHudHeading !== 'undefined' ? currentHudHeading : 0;
-            
-            for (let i = -40; i <= 40; i++) {
-                const deg = Math.round(centerDeg + i);
-                const normalizedDeg = (deg + 360) % 360;
-                const x = cx + (i * pxPerDeg);
-                
-                if (normalizedDeg % 15 === 0) {
-                    ctx.fillRect(x - 0.5, 30, 1, 10); // Tick mark
-                    let label = normalizedDeg.toString();
-                    if (normalizedDeg === 0) label = "N";
-                    if (normalizedDeg === 90) label = "E";
-                    if (normalizedDeg === 180) label = "S";
-                    if (normalizedDeg === 270) label = "W";
-                    ctx.fillText(label, x, 26);
-                } else if (normalizedDeg % 5 === 0) {
-                    ctx.fillRect(x - 0.5, 35, 1, 5); // Minor tick
-                }
-            }
-            ctx.restore();
-            
-            // Center pointer for compass
-            ctx.fillStyle = "#10b981";
-            ctx.beginPath();
-            ctx.moveTo(cx - 4, 40); ctx.lineTo(cx + 4, 40); ctx.lineTo(cx, 35); ctx.fill();
-            
-            ctx.font = "bold 12px monospace";
-            
-            // 3. Pitch Inclinometer (Right)
-            ctx.fillStyle = "rgba(0, 0, 0, 0.6)";
-            ctx.fillRect(cw - 65, cy - 40, 60, 80);
-            ctx.strokeRect(cw - 65, cy - 40, 60, 80);
-            ctx.textAlign = "right";
-            ctx.fillStyle = "#34d399";
-            ctx.fillText(tAng, cw - 12, cy - 20);
-            ctx.fillText(tCos, cw - 12, cy);
-            
-            // 4. Telemetry Block (Bottom Left)
-            ctx.fillStyle = "rgba(0, 0, 0, 0.6)";
-            ctx.fillRect(15, ch - 105, 140, 90);
-            ctx.strokeRect(15, ch - 105, 140, 90);
-            ctx.textAlign = "left";
-            ctx.fillStyle = "#10b981";
-            ctx.font = "bold 10px monospace";
-            ctx.fillText("ATMOSPHERIC TELEMETRY", 20, ch - 90);
-            ctx.beginPath(); ctx.moveTo(15, ch - 85); ctx.lineTo(155, ch - 85); ctx.stroke();
-            
-            ctx.fillStyle = "#34d399";
-            ctx.fillText(`TEMP: ${tTmp}`, 20, ch - 70);
-            ctx.fillText(`PRES: ${tBaro}`, 20, ch - 57);
-            ctx.fillText(`HUMI: ${tHumi}`, 20, ch - 44);
-            ctx.fillText(`WIND: ${tWnd}`, 20, ch - 31);
-            ctx.fillStyle = "#10b981";
-            ctx.fillText(`D.A.: ${tDa}`, 20, ch - 18);
-            
-            // 5. Active DOPE Block (Bottom Right)
-            ctx.fillStyle = "rgba(0, 0, 0, 0.6)";
-            ctx.fillRect(cw - 115, ch - 85, 100, 70);
-            ctx.strokeRect(cw - 115, ch - 85, 100, 70);
-            ctx.textAlign = "right";
-            ctx.fillStyle = "#10b981";
-            ctx.fillText("ACTIVE DOPE", cw - 20, ch - 70);
-            ctx.beginPath(); ctx.moveTo(cw - 115, ch - 65); ctx.lineTo(cw - 15, ch - 65); ctx.stroke();
-            
-            ctx.fillStyle = "#34d399";
-            ctx.fillText(`ELEV: ${tElev}`, cw - 20, ch - 50);
-            ctx.fillText(`HOLD: ${tHold}`, cw - 20, ch - 37);
-            ctx.fillStyle = "#10b981";
-            ctx.fillText(`RNG: ${tRng}`, cw - 20, ch - 24);
-            
-            // Time Stamp
             const dateStr = new Date().toISOString().replace('T', ' ').slice(0, 19) + "Z";
-            ctx.textAlign = "center";
-            ctx.font = "10px monospace";
-            ctx.fillStyle = "rgba(52, 211, 153, 0.6)";
-            ctx.fillText(dateStr, cx, ch - 15);
+            ctx.fillText(dateStr, cx, ch - 95);
+            
+            if (window.myLatestCoords) {
+                ctx.fillText(`GPS: ${window.myLatestCoords.lat.toFixed(6)}, ${window.myLatestCoords.lng.toFixed(6)}`, cx, ch - 80);
+            } else {
+                ctx.fillStyle = "#ef4444";
+                ctx.fillText("GPS: ACQUIRING...", cx, ch - 80);
+            }
             }
             // --- END BURN-IN ---
             
@@ -5250,8 +5282,14 @@ let rallyPointLine = null;
             hud.classList.add('bg-white/40');
             setTimeout(() => hud.classList.remove('bg-white/40'), 100);
 
+            // Get Custom Name from User
+            const defaultName = "STREAM_CAPTURE_" + Date.now().toString().slice(-4);
+            const userLabel = window.prompt("Enter Name for Intel Capture:", defaultName);
+            if(userLabel === null) return; // User cancelled capture
+            const finalLabel = userLabel.trim() || defaultName;
+
             // Save Directly to Window 4
-            saveIntelSnapshot("Stream_Capture_" + Date.now().toString().slice(-4), shotData);
+            saveIntelSnapshot(finalLabel.toUpperCase(), shotData);
         });
     }
 
@@ -8330,11 +8368,129 @@ let rallyPointLine = null;
             if(item) window.loadVideoBackToPlayer(item);
         };
 
+        window.loadSnapshotBackToViewer = function(item) {
+            if (!item || !item.image) return;
+
+            const panel = document.getElementById('panel-vault');
+            if (panel && panel.classList.contains('is-maximized')) {
+                window.toggleFullscreen('panel-vault');
+            }
+
+            const videoEl = document.getElementById('surveillance-stream');
+            let imgViewer = document.getElementById('surveillance-snapshot-viewer');
+            if (!imgViewer) {
+                const container = document.getElementById('surveillance-container');
+                if (container) {
+                    imgViewer = document.createElement('img');
+                    imgViewer.id = 'surveillance-snapshot-viewer';
+                    imgViewer.className = 'w-full h-full object-contain hidden z-0 absolute inset-0';
+                    container.insertBefore(imgViewer, videoEl);
+                }
+            }
+
+            const placeholder = document.getElementById('surveillance-placeholder');
+            const hud = document.getElementById('surveillance-hud');
+            const killBtn = document.getElementById('feed-kill-btn');
+            const survFooter = document.getElementById('surveillance-footer');
+            const recStartBtn = document.getElementById('surveillance-record-start-btn');
+            const recStopBtn = document.getElementById('surveillance-record-stop-btn');
+            const captureBtn = document.getElementById('surveillance-capture-btn');
+            const label = document.getElementById('feed-label-source');
+
+            if (typeof stopFeed === 'function') {
+                stopFeed();
+            }
+
+            if (imgViewer) {
+                imgViewer.src = item.image;
+                imgViewer.classList.remove('hidden');
+            }
+            
+            const _survFooter = document.getElementById('surveillance-footer');
+            if (_survFooter) _survFooter.classList.remove('hidden');
+            
+            const _killBtn = document.getElementById('feed-kill-btn');
+            if (_killBtn) _killBtn.classList.remove('hidden');
+
+            if (videoEl) {
+                videoEl.src = "";
+                videoEl.classList.add('hidden');
+            }
+            if (placeholder) placeholder.classList.add('hidden');
+            if (hud) hud.classList.add('hidden');
+            
+            if(survFooter) survFooter.classList.remove('hidden');
+            
+            if(captureBtn) captureBtn.classList.add('hidden');
+            if(recStartBtn) recStartBtn.classList.add('hidden');
+            if(recStopBtn) recStopBtn.classList.add('hidden');
+            
+            const flipBtn = document.getElementById('feed-switch-cam-btn');
+            if(flipBtn) flipBtn.classList.add('hidden');
+            
+            const hudToggleBtn = document.getElementById('feed-hud-toggle-btn');
+            if(hudToggleBtn) hudToggleBtn.classList.add('hidden');
+
+            if(killBtn) {
+                killBtn.classList.remove('hidden');
+            }
+            if(label) label.textContent = `VIEWING INTEL: ${item.label || 'SNAPSHOT'}`;
+        };
+
+        window.loadSnapshotToViewer = function(item) {
+            window.pushTacLog(`RESTORING CAPTURE: ${item.label || 'INTEL'} TO SURVEILLANCE FEED`, "SYS");
+            
+            const panel = document.getElementById('panel-vault');
+            if (panel && panel.classList.contains('is-maximized')) {
+                window.toggleFullscreen('panel-vault');
+            }
+            
+            const videoEl = document.getElementById('surveillance-stream');
+            const imgViewer = document.getElementById('surveillance-snapshot-viewer');
+            const placeholder = document.getElementById('surveillance-placeholder');
+            const label = document.getElementById('feed-label-source');
+            const hud = document.getElementById('surveillance-hud');
+            const captureBtn = document.getElementById('surveillance-capture-btn');
+            
+            if (videoEl) videoEl.classList.add('hidden');
+            if (placeholder) placeholder.classList.add('hidden');
+            if (hud) hud.classList.add('hidden'); // HIDE THE LIVE COMPASS!
+            if (captureBtn) captureBtn.classList.add('hidden'); // Disable capturing a capture
+            
+            if (imgViewer) {
+                imgViewer.src = item.image;
+                imgViewer.classList.remove('hidden');
+            }
+            
+            const survFooter = document.getElementById('surveillance-footer');
+            if (survFooter) survFooter.classList.remove('hidden');
+
+            // IMAGE REVIEW MODE: Hide all live-feed controls — image is static, they don't apply
+            const _flipSnap = document.getElementById('feed-switch-cam-btn');
+            const _hudSnap = document.getElementById('feed-hud-toggle-btn');
+            const _recStartSnap = document.getElementById('surveillance-record-start-btn');
+            const _recStopSnap = document.getElementById('surveillance-record-stop-btn');
+            if (_flipSnap) _flipSnap.classList.add('hidden');
+            if (_hudSnap) _hudSnap.classList.add('hidden');
+            if (_recStartSnap) _recStartSnap.classList.add('hidden');
+            if (_recStopSnap) _recStopSnap.classList.add('hidden');
+
+            const killBtn = document.getElementById('feed-kill-btn');
+            if (killBtn) {
+                killBtn.classList.remove('hidden');
+                killBtn.textContent = '✕  CLOSE REVIEW';
+            }
+
+            if (label) label.textContent = `INTEL REVIEW [${item.label || 'SNAPSHOT'}]`;
+        };
+
         window.loadVideoBackToPlayer = function(item) {
             if (!item || !item.image) return;
 
-            // Go to the camera panel
-            window.toggleFullscreen('panel-hud');
+            const panel = document.getElementById('panel-vault');
+            if (panel && panel.classList.contains('is-maximized')) {
+                window.toggleFullscreen('panel-vault');
+            }
 
             const videoEl = document.getElementById('surveillance-stream');
             const placeholder = document.getElementById('surveillance-placeholder');
@@ -8346,36 +8502,34 @@ let rallyPointLine = null;
             const captureBtn = document.getElementById('surveillance-capture-btn');
             const label = document.getElementById('feed-label-source');
 
-            // If a live stream is running, stop it
-            const stopBtn = document.getElementById('feed-kill-btn');
-            if (stopBtn && !stopBtn.classList.contains('hidden')) {
-                stopBtn.click();
-            }
+            if (typeof stopFeed === 'function') stopFeed();
 
-            // Convert base64 data URL → Blob → Object URL for playback (browsers can't play large base64 src)
+            const imgViewer = document.getElementById('surveillance-snapshot-viewer');
+            if (imgViewer) imgViewer.classList.add('hidden');
+
             let playUrl;
             if (item.image.startsWith('data:')) {
                 const mime = item.image.split(';')[0].replace('data:', '') || 'video/webm';
-                const b64 = item.image.split(',')[1];
+                const b64 = item.image.includes('base64,') ? item.image.split('base64,')[1] : item.image.substring(item.image.indexOf(',') + 1);
                 const byteChars = atob(b64);
                 const byteArr = new Uint8Array(byteChars.length);
                 for (let i = 0; i < byteChars.length; i++) byteArr[i] = byteChars.charCodeAt(i);
                 const videoBlob = new Blob([byteArr], { type: mime });
                 playUrl = URL.createObjectURL(videoBlob);
             } else {
-                playUrl = item.image; // already a blob: or http: URL
+                playUrl = item.image;
             }
 
             videoEl.srcObject = null;
             
-            // Disable autoplay so it starts paused
             videoEl.autoplay = false;
             videoEl.removeAttribute('autoplay');
             
             videoEl.src = playUrl;
+            videoEl.load();
             videoEl.controls = true;
+            videoEl.muted = false;
             
-            // Force pause explicitly
             videoEl.pause();
 
             videoEl.classList.remove('hidden');
@@ -8396,7 +8550,6 @@ let rallyPointLine = null;
 
             if(killBtn) {
                 killBtn.classList.remove('hidden');
-                // The killBtn normally calls stopFeed() which will clear videoEl.src
             }
             if(label) label.textContent = `PLAYING INTEL: ${item.label}`;
         };
@@ -8704,7 +8857,7 @@ let rallyPointLine = null;
                 // Convert base64 data URL -> Blob, then encrypt and upload
                 window.pushTacLog("ENCRYPTING SECURE TAPE FOR TRANSMISSION...", "SYS");
                 try {
-                    const base64 = item.image.split(',')[1];
+                    const base64 = item.image.includes('base64,') ? item.image.split('base64,')[1] : item.image.substring(item.image.indexOf(',') + 1);
                     const mimeType = item.image.split(';')[0].replace('data:', '') || 'video/webm';
                     const byteChars = atob(base64);
                     const byteNums = new Array(byteChars.length);
@@ -9741,8 +9894,13 @@ setTimeout(() => {
                     const finalRoute = JSON.parse(JSON.stringify(geoTrackData));
                     
                     if (window.saveIntelSnapshot && finalRoute.length > 0) {
-                        window.saveIntelSnapshot(`ROUTE-${timeStr}`, imgData, { routeTracker: finalRoute });
-                        window.pushTacLog(`ROUTE SAVED WITH ${finalRoute.length} WAYPOINTS`, "SUCCESS");
+                        let routeName = prompt("Enter a name to save this tracked route:", `ROUTE-${timeStr}`);
+                        if (routeName !== null && routeName.trim() !== "") {
+                            window.saveIntelSnapshot(routeName.trim(), imgData, { routeTracker: finalRoute });
+                            window.pushTacLog(`ROUTE SAVED WITH ${finalRoute.length} WAYPOINTS`, "SUCCESS");
+                        } else {
+                            window.pushTacLog(`ROUTE SAVE CANCELLED BY USER`, "WARNING");
+                        }
                     } else {
                          window.pushTacLog(`ROUTE TRACKER STOPPED (NO MOVEMENT DETECTED)`, "WARNING");
                          alert("Route was not saved because 0 GPS waypoints were collected.");
@@ -9914,3 +10072,88 @@ if (window.DeviceOrientationEvent) {
         window.addEventListener("deviceorientation", handleCompass, true);
     }
 }
+
+
+// ==============================================
+// EMERGENCY SIREN DETERRENT
+// ==============================================
+let sirenContext = null;
+let sirenOsc1 = null;
+let sirenOsc2 = null;
+let sirenGain = null;
+let sirenInterval = null;
+let isSirenActive = false;
+
+function toggleSiren() {
+    const sirenBtn = document.getElementById('siren-deterrent-btn');
+    if (isSirenActive) {
+        // Stop Siren
+        isSirenActive = false;
+        clearInterval(sirenInterval);
+        if (sirenOsc1) { try { sirenOsc1.stop(); sirenOsc1.disconnect(); } catch(e){} }
+        if (sirenOsc2) { try { sirenOsc2.stop(); sirenOsc2.disconnect(); } catch(e){} }
+        if (sirenGain) { try { sirenGain.disconnect(); } catch(e){} }
+        sirenOsc1 = null;
+        sirenOsc2 = null;
+        if (sirenBtn) {
+            sirenBtn.classList.remove('bg-red-600', 'animate-pulse');
+            sirenBtn.classList.add('bg-red-950/30');
+        }
+        if (window.pushTacLog) window.pushTacLog("EMERGENCY SIREN DEACTIVATED", "SYS");
+    } else {
+        // Start Siren
+        isSirenActive = true;
+        try {
+            if (!sirenContext) {
+                sirenContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (sirenContext.state === 'suspended') {
+                sirenContext.resume();
+            }
+            
+            sirenGain = sirenContext.createGain();
+            sirenGain.gain.value = 1.0; // Max volume
+            sirenGain.connect(sirenContext.destination);
+            
+            sirenOsc1 = sirenContext.createOscillator();
+            sirenOsc1.type = 'square'; // Harsh, loud sound
+            sirenOsc1.connect(sirenGain);
+            sirenOsc1.start();
+            
+            sirenOsc2 = sirenContext.createOscillator();
+            sirenOsc2.type = 'sawtooth';
+            sirenOsc2.connect(sirenGain);
+            sirenOsc2.start();
+
+            // Wail effect (Yelp / European Police Siren style)
+            let high = true;
+            sirenInterval = setInterval(() => {
+                if (!isSirenActive) return;
+                if (high) {
+                    sirenOsc1.frequency.setValueAtTime(1200, sirenContext.currentTime);
+                    sirenOsc2.frequency.setValueAtTime(1250, sirenContext.currentTime);
+                } else {
+                    sirenOsc1.frequency.setValueAtTime(600, sirenContext.currentTime);
+                    sirenOsc2.frequency.setValueAtTime(620, sirenContext.currentTime);
+                }
+                high = !high;
+            }, 300); // toggle every 300ms
+
+            if (sirenBtn) {
+                sirenBtn.classList.remove('bg-red-950/30');
+                sirenBtn.classList.add('bg-red-600', 'animate-pulse');
+            }
+            if (window.pushTacLog) window.pushTacLog("EMERGENCY SIREN ACTIVATED!", "WARN");
+        } catch(err) {
+            console.error("Siren failed:", err);
+            isSirenActive = false;
+        }
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const sirenBtn = document.getElementById('siren-deterrent-btn');
+    if (sirenBtn) {
+        sirenBtn.addEventListener('click', toggleSiren);
+    }
+});

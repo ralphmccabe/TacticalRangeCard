@@ -116,7 +116,7 @@ body {
 
 /* Canvas Styles */
 canvas {
-    touch-action: none;
+    touch-action: pinch-zoom;
 }
 
 /* Distance Table Styling */
@@ -561,3 +561,8 @@ body.is-capturing #card-scale-wrapper {
 
 
 
+
+[data-lucide] {
+  display: inline-block;
+  vertical-align: middle;
+}

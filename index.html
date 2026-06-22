@@ -349,6 +349,9 @@
                 <h1 class="text-xl lg:text-2xl font-bold tracking-tighter text-neon-green uppercase flex flex-wrap items-center gap-1 md:gap-2 relative">
                     <i data-lucide="crosshair" class="w-5 h-5 md:w-6 md:h-6 text-neon-green shrink-0"></i>
                     <span class="flex-1 min-w-0 leading-tight">Tactical Range Card <span id="header-version-display" class="text-white font-bold text-[10px] md:text-xs lowercase italic bg-white/10 px-1 md:px-2 rounded border border-white/30 ml-1"></span></span>
+                    <button id="siren-deterrent-btn" class="text-red-500 hover:text-red-400 p-1 flex items-center justify-center transition-colors shrink-0 mr-2 bg-red-950/30 border border-red-500/50 rounded shadow-md shadow-red-900/40" title="Emergency Siren Deterrent" aria-label="Siren">
+                        <i data-lucide="megaphone" class="w-5 h-5 md:w-6 md:h-6"></i>
+                    </button>
                     <button onclick="openBriefingModal()" class="text-blue-500 hover:text-blue-400 p-1 flex items-center justify-center transition-colors shrink-0 mr-2" title="Mission Briefing" aria-label="Mission Briefing">
                         <i data-lucide="clipboard-list" class="w-6 h-6"></i>
                     </button>
@@ -756,7 +759,7 @@
                     </div>
                 </div>
 
-                <div id="mobile-live-preview-complete" class="space-y-6 mt-8 border-t border-gray-700 pt-8 pb-10 hidden">
+                <div id="mobile-live-preview-complete" class="space-y-6 mt-8 border-t border-gray-700 pt-8 pb-10">
                     <div class="bg-white text-black p-4 rounded shadow-lg font-mono">
                         <div class="flex justify-between border-b-2 border-black pb-2 mb-2 text-black">
                              <div class="flex flex-col">
@@ -1323,7 +1326,12 @@
                 <!-- Weather Telemetry Module -->
                 <div class="dash-panel flex-1" id="panel-weather">
                     <div class="dash-panel-header">
-                        <span class="dash-panel-title"><i data-lucide="cloud-rain" class="inline w-3 h-3 mr-1 text-blue-400"></i> Atmospheric Telemetry</span>
+                        <span class="dash-panel-title flex items-center">
+                            <i data-lucide="cloud-rain" class="inline w-3 h-3 mr-1 text-blue-400"></i> Atmospheric Telemetry
+                            <button id="bt-kestrel-connect-btn" class="ml-2 text-gray-600 hover:text-blue-500 transition-colors" title="Connect Kestrel (Bluetooth coming soon)">
+                                <i data-lucide="bluetooth" class="w-3.5 h-3.5"></i>
+                            </button>
+                        </span>
                         <button class="maximize-btn text-gray-500 hover:text-emerald-400 transition-colors flex items-center p-4 m-[-10px]" onclick="event.stopPropagation(); toggleFullscreen('panel-weather')" aria-label="Action Button"><span class="close-label font-black text-[9px] uppercase tracking-widest bg-emerald-950/80 px-2 py-1 rounded border border-emerald-600/50 text-emerald-400 mr-2 shadow-sm shadow-emerald-900/30">CLOSE WINDOW</span><i data-lucide="maximize-2" class="w-6 h-6"></i></button>
                     </div>
                     <div class="dash-panel-content bg-gradient-to-b from-black/40 to-transparent flex flex-col p-3 font-mono" id="weather-panel-content">
@@ -1379,9 +1387,12 @@
                         </div>
 
                         <!-- Action Buttons -->
-                        <div class="mt-3 grid grid-cols-2 gap-2">
+                        <div class="mt-3 grid grid-cols-3 gap-2">
                             <button id="sync-wx-btn" class="w-full bg-blue-950/40 hover:bg-blue-900/60 border border-blue-900/60 py-1.5 rounded text-[8px] font-black uppercase text-blue-300 flex items-center justify-center gap-1.5 tracking-[0.15em] transition-all active:scale-95" aria-label="Action Button">
                                 <i data-lucide="satellite-dish" class="w-3 h-3"></i> SYNC
+                            </button>
+                            <button id="btn-kestrel-bt" class="w-full bg-blue-950/40 opacity-50 border border-blue-900/60 py-1.5 rounded text-[8px] font-black uppercase text-blue-300 flex items-center justify-center gap-1.5 tracking-[0.15em] transition-all" title="Coming Soon: Bluetooth Telemetry" onclick="alert('Bluetooth Telemetry Integration Coming Soon.')">
+                                <i data-lucide="bluetooth" class="w-3 h-3"></i> TELEM
                             </button>
                             <button id="btn-weather-to-vault" class="w-full bg-emerald-950/40 hover:bg-emerald-900/60 border border-emerald-900/60 py-1.5 rounded text-[8px] font-black uppercase text-emerald-300 flex items-center justify-center gap-1.5 tracking-[0.15em] transition-all active:scale-95" aria-label="Action Button">
                                 <i data-lucide="save" class="w-3 h-3"></i> VAULT
@@ -1709,6 +1720,8 @@
                     <!-- The Real Video Stream Target -->
                     <video id="surveillance-stream" autoplay playsinline webkit-playsinline muted class="w-full h-full object-cover hidden z-0"></video>
                     
+                    <img id="surveillance-snapshot-viewer" class="w-full h-full object-contain hidden z-10 bg-black absolute inset-0 pointer-events-none">
+                    
                     <!-- Fallback / Placeholder -->
                     <div id="surveillance-placeholder" class="absolute inset-0 flex flex-col items-center justify-center text-center z-0">
                         <div class="absolute inset-0 opacity-20 bg-[radial-gradient(circle,#10b981_1px,transparent_1px)] [background-size:30px_30px] pointer-events-none"></div>
@@ -1739,7 +1752,7 @@
                             <div class="relative w-full h-full flex items-center justify-center">
                                 <span id="hud-compass-value" class="text-emerald-400 font-mono font-black text-[10px] tracking-widest absolute top-0 bg-black/80 px-1 rounded-b border border-emerald-500/50 border-t-0 z-20">---°</span>
                                 <!-- The tape that moves -->
-                                <div id="hud-compass-tape" class="absolute h-full flex items-end pb-0.5 text-emerald-500/70 font-mono text-[7px] font-bold whitespace-nowrap transition-transform duration-75" style="transform: translateX(0px);">
+                                <div id="hud-compass-tape" class="absolute h-full flex items-end pb-0.5 text-emerald-500/70 font-mono text-[7px] font-bold whitespace-nowrap" style="transform: translateX(0px);">
                                     <!-- Populated by JS -->
                                 </div>
                             </div>
@@ -2226,7 +2239,7 @@
     </div>
 
     <!-- MAIN SCRIPT -->
-    <script src="./trc_core.js?v=8.0.5" defer></script>
+    <script src="./trc_core.min.js?v=8.0.5" defer></script>
     
     <!-- CUSTOM SAVE PROFILE MODAL -->
     <div id="save-profile-modal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-[1000000] flex items-center justify-center p-4 font-mono">
@@ -2246,7 +2259,7 @@
     <!-- PWA SERVICE WORKER REGISTRATION & API UPDATE CHECK -->
 
     <script>
-        window.APP_VERSION = 'v7.27.19';
+        window.APP_VERSION = 'v7.27.21';
         if(document.getElementById('header-version-display')) {
             document.getElementById('header-version-display').innerText = window.APP_VERSION;
         }
@@ -2692,6 +2705,8 @@
     </script>
 </body>
 </html>
+
+
 
 
 
