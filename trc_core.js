@@ -1166,7 +1166,7 @@ function initializeTacticalDashboard1() {
                 if (err && err.name === 'QuotaExceededError' || err.toString().includes('exceeded the quota')) {
                     alert("CRITICAL: Browser memory is 100% full! You must delete old Dope Cards or Recon Maps from the library before you can save this one.");
                 } else {
-                    alert("Record save failed. Please check log.");
+                    alert("Record save failed. Error: " + (err ? (err.stack || err.message || err) : "Unknown error"));
                 }
             });
         }, 500); // Increased to 500ms for absolute stability
@@ -1926,8 +1926,8 @@ function initializeTacticalDashboard2() {
             card.className = "bg-black border border-emerald-500/30 p-4 rounded-xl flex flex-col justify-between hover:border-emerald-400 hover:shadow-[0_0_15px_rgba(16,185,129,0.2)] transition-all shadow-md relative group overflow-hidden";
             card.innerHTML = `
                 <!-- Send to Vault Checkbox -->
-                <div class="absolute top-2 left-2 z-30 bg-black/80 p-1 rounded border border-emerald-500/20">
-                    <label class="sr-only">Mark Ammo Profile for Vault</label><input type="checkbox" class="ammo-vault-checkbox w-4 h-4 cursor-pointer accent-emerald-500" data-profile-name="${key}" title="Mark for Vault" aria-label="Mark Ammo Profile for Vault">
+                <div class="absolute top-2 left-2 z-30 bg-black/60 p-1 rounded">
+                    <label class="sr-only">Mark Ammo Profile for Vault</label><input autocomplete="off" type="checkbox" class="ammo-vault-checkbox w-4 h-4 cursor-pointer bg-black/50 border border-gray-500 rounded text-neon-green focus:ring-neon-green/50 shadow-lg" data-profile-name="${key}" title="Mark for Vault" aria-label="Mark Ammo Profile for Vault">
                 </div>
                 
                 <div class="space-y-3 text-left mt-3">
@@ -3229,13 +3229,13 @@ function initializeTacticalDashboard2() {
                 <div class="absolute inset-0 bg-emerald-500/10 opacity-0 group-hover:opacity-100 pointer-events-none border-2 border-transparent group-hover:border-emerald-500/50 rounded transition-all"></div>
                 
                 <!-- Send to Vault Checkbox -->
-                <div class="absolute top-1 left-1 z-30 bg-black/60 p-0.5 rounded">
-                    <label class="sr-only">Mark Dope Card for Vault</label><input type="checkbox" class="dope-vault-checkbox w-3.5 h-3.5 cursor-pointer" data-profile-name="${name}" title="Mark for Vault" aria-label="Mark Dope Card for Vault">
+                <div class="absolute top-1 left-1 z-30 bg-black/60 p-0.5 rounded shadow-[0_0_10px_rgba(0,0,0,0.8)] border border-gray-600">
+                    <label class="sr-only">Mark Dope Card for Vault</label><input autocomplete="off" type="checkbox" class="dope-vault-checkbox w-4 h-4 cursor-pointer bg-black/50 border border-gray-500 rounded text-neon-green focus:ring-neon-green/50 shadow-lg" data-profile-name="${name}" title="Mark for Vault" aria-label="Mark Dope Card for Vault">
                 </div>
                 
                 <!-- Delete Button -->
-                <button class="absolute top-1 right-1 z-30 bg-red-950/80 text-red-400 p-1 rounded border border-red-900/50 hover:bg-red-600 hover:text-white transition-colors opacity-0 group-hover:opacity-100" onclick="event.stopPropagation(); window.deleteRangeProfile('${name.replace(/'/g, "\\'")}')" title="Delete Profile">
-                    <i data-lucide="trash-2" class="w-3 h-3"></i>
+                <button class="absolute top-1 right-1 z-30 bg-red-950/90 text-red-400 p-1 rounded border border-red-900/50 hover:bg-red-600 hover:text-white transition-colors" onclick="event.stopPropagation(); window.deleteRangeProfile('${name.replace(/'/g, "\\'")}')" title="Delete Profile">
+                    <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
                 </button>
             `;
             
@@ -3348,12 +3348,12 @@ function initializeTacticalDashboard2() {
                 
                 <!-- Send to Vault Checkbox -->
                 <div class="absolute top-1 left-1 z-30 bg-black/60 p-0.5 rounded">
-                    <label class="sr-only">Mark Target Data for Vault</label><input type="checkbox" class="sat-vault-checkbox w-3.5 h-3.5 cursor-pointer" data-profile-name="${name}" title="Mark for Vault" aria-label="Mark Target Data for Vault">
+                    <label class="sr-only">Mark Target Data for Vault</label><input autocomplete="off" type="checkbox" class="sat-vault-checkbox w-4 h-4 cursor-pointer bg-black/50 border border-gray-500 rounded text-neon-green focus:ring-neon-green/50 shadow-lg" data-profile-name="${name}" title="Mark for Vault" aria-label="Mark Target Data for Vault">
                 </div>
                 
                 <!-- Delete Button -->
-                <button class="absolute top-1 right-1 z-30 bg-red-950/80 text-red-400 p-1 rounded border border-red-900/50 hover:bg-red-600 hover:text-white transition-colors opacity-0 group-hover:opacity-100" onclick="event.stopPropagation(); window.deleteRangeProfile('${name.replace(/'/g, "\\'")}')" title="Delete Profile">
-                    <i data-lucide="trash-2" class="w-3 h-3"></i>
+                <button class="absolute top-1 right-1 z-30 bg-red-950/90 text-red-400 p-1 rounded border border-red-900/50 hover:bg-red-600 hover:text-white transition-colors" onclick="event.stopPropagation(); window.deleteRangeProfile('${name.replace(/'/g, "\\'")}')" title="Delete Profile">
+                    <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
                 </button>
             `;
             
@@ -4501,8 +4501,8 @@ function initializeTacticalDashboard2() {
                 }</div>
                 
                 <!-- Export Checkbox Overlay: LOCKED VISIBLE ON MOBILE -->
-                <div class="absolute top-1.5 left-1.5 z-30 bg-black/60 p-1 rounded">
-                    <label class="sr-only">Mark Vault Item for Export</label><input type="checkbox" class="vault-export-checkbox w-4 h-4 cursor-pointer" data-vault-id="${item.id}" title="Mark for Export" aria-label="Mark Vault Item for Export">
+                <div class="absolute top-1.5 left-1.5 z-40 bg-black/60 p-1 rounded">
+                    <label class="sr-only">Mark Vault Item for Export</label><input name="${item.id}" autocomplete="off" type="checkbox" class="vault-export-checkbox w-4 h-4 cursor-pointer bg-black/50 border border-gray-500 rounded text-neon-green focus:ring-neon-green/50 shadow-lg" data-vault-id="${item.id}" title="Mark for Export" aria-label="Mark Vault Item for Export">
                 </div>
 
                 <!-- Trash Icon Button Overlay: LOCKED VISIBLE ON MOBILE -->
@@ -5031,6 +5031,17 @@ function initializeTacticalDashboard2() {
             activeStream.getTracks().forEach(track => track.stop());
             activeStream = null;
             window.activeStream = null;
+            
+            // Reset Flashlight UI
+            if (window.isFlashlightOn !== undefined) {
+                window.isFlashlightOn = false;
+                const fBtn = document.getElementById('flashlight-btn');
+                if (fBtn) {
+                    fBtn.classList.add('text-gray-400');
+                    fBtn.classList.remove('text-yellow-400', 'bg-black/90');
+                    fBtn.style.boxShadow = '';
+                }
+            }
         }
         if (mediaRecorder && mediaRecorder.state !== 'inactive') {
             mediaRecorder.stop();
@@ -5362,7 +5373,7 @@ function initializeTacticalDashboard2() {
                         <div class="border border-emerald-500 bg-gray-900 p-6 rounded shadow-[0_0_30px_rgba(16,185,129,0.3)] w-full max-w-sm text-center">
                             <h3 class="text-emerald-400 font-mono font-bold tracking-widest uppercase mb-4"><i data-lucide="video" class="inline w-4 h-4 mr-2"></i> TAPE SECURED</h3>
                             <p class="text-[10px] text-gray-400 mb-2 uppercase tracking-widest font-mono">ENTER TAPE DESIGNATION:</p>
-                            <input type="text" id="tape-name-input" class="w-full bg-black border border-emerald-800 text-emerald-300 px-3 py-2 text-center font-mono font-bold tracking-widest uppercase mb-4 focus:outline-none focus:border-emerald-400" value="${defaultLabel}">
+                            <input name="tape-name-input" autocomplete="off" type="text" id="tape-name-input" class="w-full bg-black border border-emerald-800 text-emerald-300 px-3 py-2 text-center font-mono font-bold tracking-widest uppercase mb-4 focus:outline-none focus:border-emerald-400" value="${defaultLabel}">
                             <button id="tape-save-btn" class="w-full bg-emerald-700 hover:bg-emerald-500 text-white font-black px-4 py-3 rounded text-[12px] uppercase tracking-widest transition-all">
                                 ENCRYPT & SAVE TO VAULT
                             </button>
@@ -8722,8 +8733,8 @@ function initializeTacticalDashboard2() {
                 card.className = "bg-black border border-emerald-500/30 p-4 rounded-xl flex flex-col justify-between hover:border-emerald-400 hover:shadow-[0_0_15px_rgba(16,185,129,0.2)] transition-all shadow-md relative group overflow-hidden cursor-pointer";
                 card.innerHTML = `
                     <!-- Send to Vault Checkbox -->
-                    <div class="absolute top-2 left-2 z-30 bg-black/80 p-1 rounded border border-emerald-500/20">
-                        <label class="sr-only">Mark Briefing for Vault</label><input type="checkbox" class="briefing-vault-checkbox w-4 h-4 cursor-pointer accent-emerald-500" data-id="${item.id}" title="Mark for Vault" aria-label="Mark Briefing for Vault">
+                    <div class="absolute top-2 left-2 z-30 bg-black/60 p-1 rounded">
+                        <label class="sr-only">Mark Briefing for Vault</label><input name="${item.id}" autocomplete="off" type="checkbox" class="briefing-vault-checkbox w-4 h-4 cursor-pointer bg-black/50 border border-gray-500 rounded text-neon-green focus:ring-neon-green/50 shadow-lg" data-id="${item.id}" title="Mark for Vault" aria-label="Mark Briefing for Vault">
                     </div>
                     
                     <div class="space-y-3 text-left mt-3 pointer-events-none">
@@ -10519,8 +10530,8 @@ document.addEventListener('DOMContentLoaded', () => {
             
             // Checkbox for Vault export integration
             card.innerHTML = `
-                <div class="absolute top-2 left-2 z-10">
-                    <input type="checkbox" class="calendar-vault-checkbox w-4 h-4 bg-black/50 border border-gray-500 rounded text-neon-green focus:ring-neon-green/50 cursor-pointer shadow-lg" data-vault-id="${item.id}" data-type="calendar" aria-label="Select for Export">
+                <div class="absolute top-2 left-2 z-30 bg-black/60 p-1 rounded">
+                    <input name="${item.id}" autocomplete="off" type="checkbox" class="calendar-vault-checkbox w-4 h-4 bg-black/50 border border-gray-500 rounded text-neon-green focus:ring-neon-green/50 cursor-pointer shadow-lg" data-vault-id="${item.id}" data-type="calendar" aria-label="Select for Export">
                 </div>
                 <div class="h-32 bg-black relative cursor-pointer" >
                     <img src="${item.image}" class="w-full h-full object-cover opacity-60 group-hover:opacity-100 transition-opacity" alt="Calendar Snapshot">

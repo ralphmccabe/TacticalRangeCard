@@ -429,28 +429,32 @@
 
         <aside class="w-full lg:w-1/3 bg-gray-900 border-r border-gray-700 flex flex-col h-full shadow-2xl relative z-10 overflow-hidden">
             <div id="main-sidebar-header" class="p-6 border-b border-gray-700 bg-black z-50 shrink-0 sticky top-0">
-                <h1 class="text-xl lg:text-2xl font-bold tracking-tighter text-neon-green uppercase flex flex-wrap items-center gap-1 md:gap-2 relative">
-                    <i data-lucide="crosshair" class="w-5 h-5 md:w-6 md:h-6 text-neon-green shrink-0"></i>
-                    <span class="flex-1 min-w-0 leading-tight">Tactical Range Card <span id="header-version-display" class="text-white font-bold text-[10px] md:text-xs lowercase italic bg-white/10 px-1 md:px-2 rounded border border-white/30 ml-1"></span></span>
-                    <button id="siren-deterrent-btn" class="text-red-500 hover:text-red-400 p-1 flex items-center justify-center transition-colors shrink-0 mr-2 bg-red-950/30 border border-red-500/50 rounded shadow-md shadow-red-900/40" title="Emergency Siren Deterrent" aria-label="Siren">
-                        <i data-lucide="megaphone" class="w-5 h-5 md:w-6 md:h-6"></i>
-                    </button>
-                    <button onclick="openCalendarModal()" class="text-emerald-500 hover:text-emerald-400 p-1 flex items-center justify-center transition-colors shrink-0 mr-2" title="Operational Calendar" aria-label="Operational Calendar">
-                        <i data-lucide="calendar" class="w-6 h-6"></i>
-                    </button>
-                    <button onclick="openBriefingModal()" class="text-blue-500 hover:text-blue-400 p-1 flex items-center justify-center transition-colors shrink-0 mr-2" title="Mission Briefing" aria-label="Mission Briefing">
-                        <i data-lucide="clipboard-list" class="w-6 h-6"></i>
-                    </button>
-                    <button id="btn-tactical-hints" onclick="toggleTacticalHints()" class="text-emerald-500 hover:text-emerald-400 p-1 flex items-center justify-center transition-colors shrink-0 mr-1" title="Quick Reference & Conversions" aria-label="Quick Reference & Conversions">
-                        <i data-lucide="info" class="w-6 h-6"></i>
-                    </button>
-                    <button class="calc-toggle-btn text-blue-500 hover:text-blue-400 p-1 flex items-center justify-center transition-colors shrink-0 mr-2" title="Tactical Calculator" aria-label="Tactical Calculator">
-                        <i data-lucide="calculator" class="w-6 h-6"></i>
-                    </button>
-                    <button class="remarks-toggle-btn text-yellow-500 hover:text-yellow-400 p-1 flex items-center justify-center transition-colors shrink-0 mr-2" title="ReMarks Jotter" aria-label="ReMarks Jotter">
-                        <i data-lucide="edit-3" class="w-6 h-6"></i>
-                    </button>
-                </h1>
+                <div class="flex flex-col gap-3">
+                    <h1 class="text-xl lg:text-2xl font-bold tracking-tighter text-neon-green uppercase flex items-center justify-center md:justify-start gap-2 relative">
+                        <i data-lucide="crosshair" class="w-5 h-5 md:w-6 md:h-6 text-neon-green shrink-0"></i>
+                        <span class="leading-tight">Tactical Range Card <span id="header-version-display" class="text-white font-bold text-[10px] md:text-xs lowercase italic bg-white/10 px-1 md:px-2 rounded border border-white/30 ml-1"></span></span>
+                    </h1>
+                    <div class="flex flex-wrap items-center justify-center md:justify-start gap-2 md:gap-3 border-t border-gray-800/50 pt-2">
+                        <button id="siren-deterrent-btn" class="text-red-500 hover:text-red-400 p-1 flex items-center justify-center transition-colors shrink-0 bg-red-950/30 border border-red-500/50 rounded shadow-md shadow-red-900/40" title="Emergency Siren Deterrent" aria-label="Siren">
+                            <i data-lucide="megaphone" class="w-5 h-5 md:w-6 md:h-6"></i>
+                        </button>
+                        <button onclick="openCalendarModal()" class="text-emerald-500 hover:text-emerald-400 p-1 flex items-center justify-center transition-colors shrink-0" title="Operational Calendar" aria-label="Operational Calendar">
+                            <i data-lucide="calendar" class="w-6 h-6"></i>
+                        </button>
+                        <button onclick="openBriefingModal()" class="text-blue-500 hover:text-blue-400 p-1 flex items-center justify-center transition-colors shrink-0" title="Mission Briefing" aria-label="Mission Briefing">
+                            <i data-lucide="clipboard-list" class="w-6 h-6"></i>
+                        </button>
+                        <button id="btn-tactical-hints" onclick="toggleTacticalHints()" class="text-emerald-500 hover:text-emerald-400 p-1 flex items-center justify-center transition-colors shrink-0" title="Quick Reference & Conversions" aria-label="Quick Reference & Conversions">
+                            <i data-lucide="info" class="w-6 h-6"></i>
+                        </button>
+                        <button class="calc-toggle-btn text-blue-500 hover:text-blue-400 p-1 flex items-center justify-center transition-colors shrink-0" title="Tactical Calculator" aria-label="Tactical Calculator">
+                            <i data-lucide="calculator" class="w-6 h-6"></i>
+                        </button>
+                        <button class="remarks-toggle-btn text-yellow-500 hover:text-yellow-400 p-1 flex items-center justify-center transition-colors shrink-0" title="ReMarks Jotter" aria-label="ReMarks Jotter">
+                            <i data-lucide="edit-3" class="w-6 h-6"></i>
+                        </button>
+                    </div>
+                </div>
             </div>
 
             <div id="main-sidebar-content" class="p-6 space-y-8 pb-32 flex-1 overflow-y-auto custom-scrollbar">
@@ -792,7 +796,7 @@
                         </div>
 
                         <h2 class="section-label">5. Recon SITREP / Report</h2>
-                        <textarea id="recon-report" aria-label="Recon Report" class="w-full bg-black/30 border border-gray-600 rounded p-2 text-xs text-white h-24 focus:outline-none focus:border-neon-green custom-scrollbar" placeholder="Type tactical report details here..." maxlength="3000"></textarea>
+                        <textarea id="recon-report" aria-label="Recon Report" class="shrink-0 min-h-[6rem] w-full bg-black/30 border border-gray-600 rounded p-2 text-xs text-white h-24 focus:outline-none focus:border-neon-green custom-scrollbar" placeholder="Type tactical report details here..." maxlength="3000"></textarea>
 
                         <h2 class="section-label">6. Recon Database</h2>
                         <div class="grid grid-cols-2 gap-2">
@@ -1731,10 +1735,15 @@
                                 </div>
                             </div>
 
-                            <!-- BIG SOLVE TRIGGER -->
-                            <button id="master-solve-btn" class="w-full h-11 bg-emerald-500 text-emerald-950 rounded font-black text-xs uppercase tracking-[0.3em] flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(16,185,129,0.2)] hover:bg-emerald-400 active:scale-95 transition-all" aria-label="Action Button">
-                                <i data-lucide="zap" class="w-3.5 h-3.5 fill-current"></i> SOLVE
-                            </button>
+                            <!-- BIG SOLVE & SYNC DOPE BUTTONS -->
+                            <div class="flex gap-2 w-full">
+                                <button id="master-solve-btn" class="flex-1 h-11 bg-emerald-500 text-emerald-950 rounded font-black text-xs uppercase tracking-[0.2em] flex items-center justify-center gap-1.5 shadow-[0_0_20px_rgba(16,185,129,0.2)] hover:bg-emerald-400 active:scale-95 transition-all" aria-label="Action Button">
+                                    <i data-lucide="zap" class="w-3.5 h-3.5 fill-current"></i> SOLVE
+                                </button>
+                                <button onclick="syncDopeToForm()" id="sync-dope-btn" class="flex-1 h-11 bg-amber-500 text-amber-950 rounded font-black text-[10px] sm:text-xs uppercase tracking-[0.1em] sm:tracking-[0.2em] flex items-center justify-center gap-1.5 shadow-[0_0_20px_rgba(245,158,11,0.2)] hover:bg-amber-400 active:scale-95 transition-all" aria-label="Action Button">
+                                    <i data-lucide="crosshair" class="w-3.5 h-3.5 fill-current"></i> SYNC DOPE
+                                </button>
+                            </div>
 
                             <!-- GLOWING OUTPUT CARDS -->
                             <div class="space-y-2 pt-1">
@@ -1791,14 +1800,30 @@
 
             <!-- CENTRAL HUB: Surveillance / Mapping Viewport -->
             <div class="dash-panel dash-viewport" id="panel-mainview">
-                <div class="dash-panel-header absolute top-0 inset-x-0 z-20 bg-gradient-to-b from-black/95 via-black/70 to-transparent border-none pt-2 px-3 flex-wrap gap-y-1.5 items-start md:items-center">
-                    <span class="dash-panel-title font-mono bg-black/80 px-2 py-1 rounded border border-gray-800 text-emerald-100 text-[10px] flex items-center gap-1.5 shadow-[0_0_10px_rgba(0,0,0,0.5)]">
-                        <span class="w-1.5 h-1.5 rounded-full bg-red-500 inline-block animate-pulse"></span> FEED_01: <span id="feed-label-source">OFFLINE</span>
-                    </span>
-                    <div class="flex flex-row items-center gap-1.5 z-30 relative">
-                        <button class="maximize-btn text-gray-500 hover:text-emerald-400 flex items-center p-2 m-[-5px] ml-1" onclick="event.stopPropagation(); window.toggleFullscreen('panel-mainview')" aria-label="Action Button">
-                            <span class="close-label font-black text-[9px] uppercase tracking-widest bg-emerald-950/80 px-2 py-1 rounded border border-emerald-600/50 text-emerald-400 mr-2" style="display:none;">CLOSE</span>
-                            <i data-lucide="maximize-2" class="w-5 h-5"></i>
+                <div class="dash-panel-header absolute top-0 inset-x-0 z-20 bg-gradient-to-b from-black/90 to-transparent border-none pt-2 px-2 pb-6 flex justify-between items-start pointer-events-none">
+                    <!-- LEFT SIDE: Kill Button -->
+                    <div class="pointer-events-auto z-30 shrink-0">
+                        <button id="feed-kill-btn" class="bg-red-950/90 border border-red-700 px-3 py-1.5 rounded-full text-[10px] text-red-100 hover:bg-red-600 font-black uppercase tracking-widest flex items-center gap-1.5 shadow-[0_0_15px_rgba(220,38,38,0.5)] transition-all hidden" aria-label="Action Button">
+                            <i data-lucide="video-off" class="w-4 h-4 shrink-0"></i> <span class="whitespace-nowrap">STOP</span>
+                        </button>
+                    </div>
+
+                    <!-- CENTER: Title -->
+                    <div class="pointer-events-auto z-20 flex-1 flex justify-center px-1 md:px-2 min-w-0">
+                        <span class="dash-panel-title font-mono bg-black/80 px-2 py-1 rounded border border-gray-800 text-emerald-100 text-[10px] flex items-center gap-1.5 shadow-[0_0_10px_rgba(0,0,0,0.5)] w-full max-w-[200px] sm:max-w-xs md:max-w-md">
+                            <span class="w-1.5 h-1.5 rounded-full bg-red-500 inline-block animate-pulse shrink-0"></span>
+                            <span class="truncate block w-full text-center">FEED_01: <span id="feed-label-source">OFFLINE</span></span>
+                        </span>
+                    </div>
+
+                    <!-- RIGHT SIDE: Tools -->
+                    <div class="pointer-events-auto z-30 shrink-0 flex items-center gap-2">
+                        <button id="flashlight-btn" onclick="toggleFlashlight()" class="text-gray-400 hover:text-yellow-400 flex items-center p-1.5 bg-black/60 border border-gray-800 rounded shadow-lg hover:bg-black/90 transition-all" aria-label="Toggle Flashlight">
+                            <i data-lucide="zap" class="w-5 h-5 shrink-0"></i>
+                        </button>
+                        <button class="maximize-btn text-gray-400 hover:text-emerald-400 flex items-center p-1.5 bg-black/60 border border-gray-800 rounded shadow-lg hover:bg-black/90 transition-all" onclick="event.stopPropagation(); window.toggleFullscreen('panel-mainview')" aria-label="Action Button">
+                            <span class="close-label font-black text-[9px] uppercase tracking-widest bg-emerald-950/80 px-2 py-1 rounded border border-emerald-600/50 text-emerald-400 mr-2 hidden">CLOSE</span>
+                            <i data-lucide="maximize-2" class="w-5 h-5 shrink-0"></i>
                         </button>
                     </div>
                 </div>
@@ -1829,14 +1854,14 @@
                     <!-- HUD Overlay (Shows up when streaming is live) -->
                     <div id="surveillance-hud" class="absolute inset-0 pointer-events-none hidden border border-emerald-500/20 shadow-[inset_0_0_50px_rgba(16,185,129,0.1)]" style="z-index: 50;">
                         <!-- Top Left: GPS Data -->
-                        <div class="absolute top-2 left-2 bg-black/60 border border-emerald-500/30 rounded p-1.5 backdrop-blur-sm flex flex-col gap-0.5 shadow-sm text-left z-20">
+                        <div class="absolute left-2 bg-black/60 border border-emerald-500/30 rounded p-1.5 backdrop-blur-sm flex flex-col gap-0.5 shadow-sm text-left z-20 pointer-events-auto" style="top: 3.5rem;">
                             <div class="text-[5px] text-emerald-500 font-black tracking-[0.2em] uppercase border-b border-emerald-500/30 pb-0.5 mb-0.5">GPS COORDINATES</div>
                             <div class="flex gap-2 items-center text-[7px] font-mono text-emerald-400"><span class="text-emerald-600 w-4">LAT</span> <span id="hud-gps-lat">--.------</span></div>
                             <div class="flex gap-2 items-center text-[7px] font-mono text-emerald-400"><span class="text-emerald-600 w-4">LON</span> <span id="hud-gps-lon">--.------</span></div>
                         </div>
                         
                         <!-- Top: Compass Tape -->
-                        <div class="absolute top-40 left-1/2 -translate-x-1/2 w-[60%] h-6 bg-black/40 border border-emerald-500/30 rounded overflow-hidden flex items-center justify-center backdrop-blur-sm">
+                        <div class="absolute left-1/2 -translate-x-1/2 w-[60%] h-6 bg-black/40 border border-emerald-500/30 rounded overflow-hidden flex items-center justify-center backdrop-blur-sm" style="top: 3.5rem;">
                             <div class="absolute w-[2px] h-full bg-emerald-400 z-10 shadow-[0_0_8px_rgba(16,185,129,1)]"></div>
                             <div class="relative w-full h-full flex items-center justify-center">
                                 <span id="hud-compass-value" class="text-emerald-400 font-mono font-black text-[10px] tracking-widest absolute top-0 bg-black/80 px-1 rounded-b border border-emerald-500/50 border-t-0 z-20">---°</span>
@@ -1908,9 +1933,6 @@
                         </button>
                         <button id="surveillance-record-stop-btn" class="hidden bg-gray-800 border border-red-600 text-red-500 font-black px-4 py-2 rounded-full text-[10px] uppercase tracking-widest flex items-center gap-2 shadow-[0_0_20px_rgba(220,38,38,0.3)] pointer-events-auto hover:scale-105 active:scale-95 transition-all" aria-label="Action Button">
                             <div class="w-3 h-3 bg-red-600 rounded-sm animate-pulse"></div> STOP REC
-                        </button>
-                        <button id="feed-kill-btn" class="pointer-events-auto bg-red-950/90 border border-red-700 px-3 py-2 rounded-full text-[10px] text-red-100 hover:bg-red-600 font-black uppercase tracking-widest flex items-center gap-1.5 shadow-[0_0_15px_rgba(220,38,38,0.5)] transition-all hidden" aria-label="Action Button">
-                            <i data-lucide="video-off" class="w-4 h-4"></i> STOP
                         </button>
                     </div>
                 </div>
@@ -2331,7 +2353,7 @@
     </div>
 
     <!-- MAIN SCRIPT -->
-    <script src="./trc_core.min.js?v=8.0.5" defer></script>
+    <script src="./trc_core.min.js?v=8.0.7" defer></script>
     
     <!-- CUSTOM SAVE PROFILE MODAL -->
     <div id="save-profile-modal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-[1000000] flex items-center justify-center p-4 font-mono">
@@ -2351,7 +2373,7 @@
     <!-- PWA SERVICE WORKER REGISTRATION & API UPDATE CHECK -->
 
     <script>
-        window.APP_VERSION = 'v7.27.27';
+        window.APP_VERSION = 'v7.27.28';
         if(document.getElementById('header-version-display')) {
             document.getElementById('header-version-display').innerText = window.APP_VERSION;
         }
@@ -2795,8 +2817,165 @@
             });
         });
     </script>
+
+    <script>
+        // SYNC DOPE FEATURE
+        function syncDopeToForm() {
+            // First, trigger solve to ensure fresh data
+            if(typeof runSolverMatrix === 'function') runSolverMatrix();
+
+            // 1. Get Range
+            const rangeInput = document.getElementById('bal-input-range');
+            if(!rangeInput || !rangeInput.value) {
+                alert("Please enter a Range in the Ballistic Solver first.");
+                return;
+            }
+            const targetRange = parseFloat(rangeInput.value);
+
+            // 2. Get Outputs
+            const elevVal = document.getElementById('sol-elev-mil')?.textContent || '--.-';
+            if (elevVal === '--.-') return; // Not solved
+            const elevDir = document.getElementById('sol-elev-label-code')?.textContent || 'U';
+            const windVal = document.getElementById('sol-wind-mil')?.textContent || '--.-';
+            const windDir = document.getElementById('sol-wind-label-code')?.textContent || 'L';
+            
+            const elevClicks = document.getElementById('sol-elev-clicks')?.textContent || '--';
+            const windClicks = document.getElementById('sol-wind-clicks')?.textContent || '--';
+
+            // Construct Strings
+            const udlrString = `${elevDir}-${elevVal},${windDir}-${windVal}`;
+            const clicksString = `${elevClicks}${elevDir}, ${windClicks}${windDir}`;
+
+            // 3. Find target row (Closest hundred)
+            // Distance inputs are named dist-100 to dist-1000 originally
+            let bestRowDist = null;
+            let minDiff = Infinity;
+            let targetInputEl = null;
+
+            // Iterate over 100 to 1000 in steps of 100 to find the ID base,
+            // but check the ACTUAL value of that input in case the user already modified it.
+            for(let i = 100; i <= 1000; i += 100) {
+                const dInput = document.getElementById('dist-' + i);
+                if(dInput) {
+                    const currentVal = parseFloat(dInput.value) || i;
+                    const diff = Math.abs(currentVal - targetRange);
+                    if(diff < minDiff) {
+                        minDiff = diff;
+                        bestRowDist = i; // The ID base
+                        targetInputEl = dInput;
+                    }
+                }
+            }
+
+            if(!bestRowDist) {
+                alert("Could not locate Distance Data section.");
+                return;
+            }
+
+            // 4. Update the Row
+            // Change the distance label to match exactly
+            targetInputEl.value = targetRange;
+            targetInputEl.setAttribute('value', targetRange);
+            targetInputEl.dispatchEvent(new Event('input', { bubbles: true }));
+
+            // Find the corresponding UDLR and Clicks boxes
+            const udlrInput = document.getElementById('udlr-' + bestRowDist);
+            const clicksInput = document.getElementById('clicks-' + bestRowDist);
+
+            if(udlrInput) {
+                udlrInput.value = udlrString;
+                udlrInput.setAttribute('value', udlrString);
+                udlrInput.dispatchEvent(new Event('input', { bubbles: true }));
+            }
+            if(clicksInput) {
+                clicksInput.value = clicksString;
+                clicksInput.setAttribute('value', clicksString);
+                clicksInput.dispatchEvent(new Event('input', { bubbles: true }));
+            }
+
+            // Visual feedback
+            const syncBtn = document.getElementById('sync-dope-btn');
+            if(syncBtn) {
+                const originalBg = syncBtn.className;
+                syncBtn.classList.remove('bg-amber-500', 'hover:bg-amber-400');
+                syncBtn.classList.add('bg-neon-green', 'text-black');
+                syncBtn.innerHTML = '<i data-lucide="check" class="w-3.5 h-3.5 fill-current"></i> SYNCED!';
+                if(window.lucide) window.lucide.createIcons();
+                
+                setTimeout(() => {
+                    syncBtn.className = originalBg;
+                    syncBtn.innerHTML = '<i data-lucide="crosshair" class="w-3.5 h-3.5 fill-current"></i> SYNC DOPE';
+                    if(window.lucide) window.lucide.createIcons();
+                }, 1000);
+            }
+            
+            // Flash the inputs to show where it went
+            if(udlrInput) {
+                udlrInput.classList.add('bg-neon-green/30');
+                setTimeout(() => udlrInput.classList.remove('bg-neon-green/30'), 1000);
+            }
+            if(clicksInput) {
+                clicksInput.classList.add('bg-neon-green/30');
+                setTimeout(() => clicksInput.classList.remove('bg-neon-green/30'), 1000);
+            }
+        }
+
+        // FLASHLIGHT FEATURE
+        window.isFlashlightOn = false;
+        async function toggleFlashlight() {
+            // Check if there is an active stream
+            if (!window.activeStream) {
+                alert("Only can use when camera or video is activated.");
+                return;
+            }
+
+            // Get the video track
+            const videoTracks = window.activeStream.getVideoTracks();
+            if (videoTracks.length === 0) {
+                alert("No video track found.");
+                return;
+            }
+            const track = videoTracks[0];
+
+            // Check if torch is supported
+            const capabilities = track.getCapabilities();
+            if (!capabilities.torch) {
+                alert("Your device or current camera does not support a flashlight/torch via the browser.");
+                return;
+            }
+
+            // Toggle state
+            window.isFlashlightOn = !window.isFlashlightOn;
+
+            try {
+                // Apply constraints
+                await track.applyConstraints({
+                    advanced: [{ torch: window.isFlashlightOn }]
+                });
+
+                // Update UI button
+                const btn = document.getElementById('flashlight-btn');
+                if (btn) {
+                    if (window.isFlashlightOn) {
+                        btn.classList.remove('text-gray-400');
+                        btn.classList.add('text-yellow-400', 'bg-black/90');
+                        btn.style.boxShadow = '0 0 15px rgba(250,204,21,0.4)';
+                    } else {
+                        btn.classList.add('text-gray-400');
+                        btn.classList.remove('text-yellow-400', 'bg-black/90');
+                        btn.style.boxShadow = '';
+                    }
+                }
+            } catch (err) {
+                console.error("Failed to toggle flashlight", err);
+                alert("Failed to activate flashlight: " + err.message);
+                window.isFlashlightOn = !window.isFlashlightOn; // revert state
+            }
+        }
+    </script>
 </body>
 </html>
+
 
 
 
