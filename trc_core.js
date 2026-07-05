@@ -10444,11 +10444,40 @@ document.addEventListener('DOMContentLoaded', () => {
                 const targetEl = document.getElementById('calendar-snapshot-target');
                 if(!targetEl) throw new Error("Snapshot target not found");
                 
-                const canvas = await html2canvas(targetEl, {
+                // FIX: html2canvas captures position: sticky elements at their scrolled offset.
+                // Scroll to 0 first so the header is naturally at the top.
+                const scrollParent = targetEl.parentElement;
+                const originalScrollTop = scrollParent ? scrollParent.scrollTop : 0;
+                if (scrollParent) scrollParent.scrollTop = 0;
+                
+                const canvas = await window.html2canvas(targetEl, {
                     backgroundColor: '#0f172a', // slate-900
-                    scale: 1.5,
+                    scale: Math.max(window.devicePixelRatio || 2, 2),
                     logging: false,
+                    windowWidth: targetEl.scrollWidth,
+                    windowHeight: targetEl.scrollHeight,
                     onclone: (clonedDoc) => {
+                        const clonedTarget = clonedDoc.getElementById('calendar-snapshot-target');
+                        if (clonedTarget) {
+                            clonedTarget.style.height = 'max-content';
+                            clonedTarget.style.width = targetEl.offsetWidth + 'px';
+                            clonedTarget.style.overflow = 'visible';
+                            
+                            // Fix transparent backgrounds for sticky headers
+                            const header = clonedTarget.querySelector('#calendar-days-header');
+                            if (header) {
+                                header.style.backgroundColor = 'rgba(17,24,39,1)'; // Solid gray-900
+                                header.style.backdropFilter = 'none';
+                                header.style.position = 'static'; // Safely prevent sticky overlaps without breaking classes
+                            }
+                            
+                            const monthNav = clonedTarget.querySelector('.sticky.top-0');
+                            if (monthNav) {
+                                monthNav.style.backgroundColor = 'rgba(17,24,39,1)';
+                                monthNav.style.position = 'static'; // Safely prevent sticky overlaps without breaking classes
+                            }
+                        }
+                        
                         Array.from(targetEl.querySelectorAll('textarea')).forEach(originalTa => {
                             if (!originalTa.id) return;
                             const cloneTa = clonedDoc.getElementById(originalTa.id);
@@ -10465,6 +10494,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         });
                     }
                 });
+                
+                if (scrollParent) scrollParent.scrollTop = originalScrollTop;
                 
                 const imgData = canvas.toDataURL('image/jpeg', 0.85);
                 const timestamp = Date.now();
