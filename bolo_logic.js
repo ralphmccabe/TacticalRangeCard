@@ -224,8 +224,6 @@ window.loadBoloBackToEditor = function(bolo) {
       document.getElementById('bolo-input-contact').value = bolo.contact || '';
       
       currentBoloImage = bolo.image || null;
-      const previewImg = document.getElementById('bolo-form-preview-img');
-      const previewIcon = document.getElementById('bolo-form-preview-icon');
       const label = document.getElementById('bolo-image-label');
       
       if(bolo.image) {
@@ -234,18 +232,19 @@ window.loadBoloBackToEditor = function(bolo) {
               boloRenderImg.style.display = 'block';
           }
           if(boloImagePlaceholder) boloImagePlaceholder.style.display = 'none';
-          if(previewImg) {
-              previewImg.src = bolo.image;
-              previewImg.classList.remove('hidden');
+          if(label) {
+              label.innerText = 'CHANGE PHOTO';
+              label.classList.remove('text-gray-400');
+              label.classList.add('text-neon-green');
           }
-          if(previewIcon) previewIcon.style.opacity = '0.3';
-          if(label) label.innerText = 'CHANGE PHOTO';
       } else {
           if(boloRenderImg) boloRenderImg.style.display = 'none';
           if(boloImagePlaceholder) boloImagePlaceholder.style.display = 'block';
-          if(previewImg) previewImg.classList.add('hidden');
-          if(previewIcon) previewIcon.style.opacity = '1';
-          if(label) label.innerText = 'TAP TO UPLOAD PHOTO';
+          if(label) {
+              label.innerText = 'TAP TO UPLOAD PHOTO';
+              label.classList.remove('text-neon-green');
+              label.classList.add('text-gray-400');
+          }
       }
       
       if (typeof openBoloModal === 'function') openBoloModal();
