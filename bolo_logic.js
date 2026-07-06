@@ -140,7 +140,8 @@ async function renderBoloLibrary() {
     if(!listEl || !window.TRC_IDB) return;
     
     try {
-        const allBolos = await window.TRC_IDB.getAll('boloLibrary');
+        const boloObj = await window.TRC_IDB.getAll('boloLibrary');
+        const allBolos = Object.values(boloObj || {});
         listEl.innerHTML = '';
         
         if(allBolos.length === 0) {
