@@ -314,13 +314,18 @@ if (boloToVaultBtnTop) {
         document.getElementById('bolo-render-warning').innerText = bolo.warning || 'Approach with caution.';
         document.getElementById('bolo-render-contact').innerText = bolo.contact || 'CONTACT LOCAL AUTHORITIES';
 
+        const posterPhoto = document.getElementById('bolo-render-photo');
+        const posterNoPhoto = document.getElementById('bolo-render-nophoto');
+
         if(bolo.image) {
-            boloRenderImg.src = bolo.image;
-            boloRenderImg.style.display = 'block';
-            boloImagePlaceholder.style.display = 'none';
+            if (posterPhoto) {
+                posterPhoto.src = bolo.image;
+                posterPhoto.style.display = 'block';
+            }
+            if (posterNoPhoto) posterNoPhoto.style.display = 'none';
         } else {
-            boloRenderImg.style.display = 'none';
-            boloImagePlaceholder.style.display = 'block';
+            if (posterPhoto) posterPhoto.style.display = 'none';
+            if (posterNoPhoto) posterNoPhoto.style.display = 'block';
         }
 
         // Prepare the render zone
