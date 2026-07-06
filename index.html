@@ -453,6 +453,12 @@
                         <button class="remarks-toggle-btn text-yellow-500 hover:text-yellow-400 p-1 flex items-center justify-center transition-colors shrink-0" title="ReMarks Jotter" aria-label="ReMarks Jotter">
                             <i data-lucide="edit-3" class="w-6 h-6"></i>
                         </button>
+                        <button id="openBoloBtn" class="text-red-500 hover:text-white hover:bg-red-900 p-1 px-2 flex items-center justify-center transition-all shrink-0 font-black uppercase text-[9px] md:text-[10px] tracking-widest border border-red-500/50 rounded shadow-[0_0_10px_rgba(239,68,68,0.2)]" title="MOST WANTED / BOLO Card" aria-label="BOLO Card">
+                            MOST WANTED
+                        </button>
+                        <button id="openGameTagBtn" class="text-amber-500 hover:text-white hover:bg-amber-900 p-1 px-2 flex items-center justify-center transition-all shrink-0 font-black uppercase text-[9px] md:text-[10px] tracking-widest border border-amber-500/50 rounded shadow-[0_0_10px_rgba(245,158,11,0.2)]" title="FIELD HARVEST TAG" aria-label="Game Tag">
+                            <i data-lucide="tag" class="w-3 h-3 mr-1"></i> FIELD TAG
+                        </button>
                     </div>
                 </div>
             </div>
@@ -1234,6 +1240,400 @@
             </div>
         </div>
     </div>
+
+    <!-- START BOLO MODAL -->
+    <div id="bolo-modal" class="fixed inset-0 bg-black/90 backdrop-blur-md z-[200] hidden flex items-center justify-center p-4" style="z-index: 100050;">
+        <div class="bg-gray-900 border-2 w-full max-w-6xl h-full max-h-[100%] md:h-[90vh] rounded-xl flex flex-col overflow-hidden min-h-0" style="border-color: #ef4444; box-shadow: 0 0 30px rgba(239,68,68,0.3);">
+            <!-- Header -->
+            <div class="p-3 border-b-2 flex flex-wrap justify-between items-center bg-gray-950 gap-y-3 gap-x-2" style="border-color: #ef4444;">
+                <div class="flex items-center gap-2 md:gap-3">
+                    <i data-lucide="crosshair" class="w-4 h-4 md:w-5 md:h-5 shrink-0" style="color: #ef4444;"></i>
+                    <h2 class="text-sm md:text-lg font-black uppercase text-white tracking-widest truncate">BOLO / MOST WANTED</h2>
+                </div>
+                <div class="flex items-center gap-2 flex-wrap justify-end shrink-0">
+                    <button id="closeBoloBtnTop" onclick="closeBoloModal()" aria-label="Close modal" class="p-4 bg-gray-800 rounded-lg group hover:bg-red-900 transition-colors shrink-0">
+                        <i data-lucide="x" class="w-8 h-8 text-white"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Content Area -->
+            <div class="flex-1 flex flex-col md:flex-row overflow-y-auto md:overflow-hidden min-h-0">
+                
+                <!-- Left: Form -->
+                <div class="flex flex-col bg-gray-900 border-b md:border-b-0 md:border-r border-gray-800 shrink-0 md:flex-1 min-w-0 min-h-0 relative">
+                    <div class="flex-1 flex flex-col custom-scrollbar p-4 space-y-4 md:overflow-y-auto md:min-h-0">
+                        
+                        <!-- Image Upload -->
+                        <div class="flex flex-col gap-1 text-center">
+                            <label class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Suspect Photo</label>
+                            <input type="file" id="bolo-image-upload" accept="image/*" class="hidden">
+                            <button onclick="document.getElementById('bolo-image-upload').click()" class="bg-gray-800 border border-gray-600 rounded p-4 flex flex-col items-center justify-center hover:bg-gray-700 transition-colors text-gray-400 relative overflow-hidden h-48 md:h-64">
+                                <img id="bolo-form-preview-img" class="absolute inset-0 w-full h-full object-cover hidden">
+                                <i data-lucide="camera" id="bolo-form-preview-icon" class="w-8 h-8 mb-2 text-red-500 relative z-10"></i>
+                                <span class="text-xs font-bold relative z-10 bg-black/50 px-2 py-1 rounded" id="bolo-image-label">TAP TO UPLOAD PHOTO</span>
+                            </button>
+                        </div>
+
+                        <!-- Fields -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <div>
+                                <label class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Name / Alias</label>
+                                <input type="text" id="bolo-input-name" class="w-full bg-black border border-gray-700 rounded p-2 text-white font-bold" placeholder='UNKNOWN SUSPECT'>
+                            </div>
+                            <div>
+                                <label class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Reason</label>
+                                <input type="text" id="bolo-input-reason" class="w-full bg-black border border-gray-700 rounded p-2 text-white font-bold" placeholder='WANTED FOR QUESTIONING'>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                            <div>
+                                <label class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Height</label>
+                                <input type="text" id="bolo-input-height" class="w-full bg-black border border-gray-700 rounded p-2 text-white font-bold" placeholder='N/A'>
+                            </div>
+                            <div>
+                                <label class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Weight</label>
+                                <input type="text" id="bolo-input-weight" class="w-full bg-black border border-gray-700 rounded p-2 text-white font-bold" placeholder='N/A'>
+                            </div>
+                            <div>
+                                <label class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Hair</label>
+                                <input type="text" id="bolo-input-hair" class="w-full bg-black border border-gray-700 rounded p-2 text-white font-bold" placeholder='N/A'>
+                            </div>
+                            <div>
+                                <label class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Eyes</label>
+                                <input type="text" id="bolo-input-eye" class="w-full bg-black border border-gray-700 rounded p-2 text-white font-bold" placeholder='N/A'>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 gap-3">
+                            <div>
+                                <label class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Distinguishing Features</label>
+                                <input type="text" id="bolo-input-features" class="w-full bg-black border border-gray-700 rounded p-2 text-white font-bold" placeholder='Tattoos, Scars, etc.'>
+                            </div>
+                            <div>
+                                <label class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Last Seen / Location</label>
+                                <input type="text" id="bolo-input-lastseen" class="w-full bg-black border border-gray-700 rounded p-2 text-white font-bold" placeholder='e.g. 1st St & Main'>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <div>
+                                <label class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Reward</label>
+                                <input type="text" id="bolo-input-reward" class="w-full bg-black border border-gray-700 rounded p-2 text-white font-bold" placeholder='5000.00'>
+                            </div>
+                            <div>
+                                <label class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Warning</label>
+                                <input type="text" id="bolo-input-warning" class="w-full bg-black border border-gray-700 rounded p-2 text-red-500 font-bold" placeholder='ARMED AND DANGEROUS'>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Contact Info</label>
+                            <input type="text" id="bolo-input-contact" class="w-full bg-black border border-gray-700 rounded p-2 text-white font-bold" placeholder='Call 911 or Local Agency'>
+                        </div>
+                    </div>
+
+                    <!-- Left Form Actions -->
+                    <div class="p-4 bg-gray-950 border-t border-gray-800 flex justify-between shrink-0">
+                        <button id="bolo-clear-btn" class="text-gray-400 hover:text-white px-4 py-2 border border-gray-600 rounded text-xs font-bold uppercase tracking-widest transition-colors">CLEAR FORM</button>
+                        <div class="flex gap-2">
+                            <button id="rework-bolo-btn" class="hidden text-amber-500 hover:bg-amber-900 px-4 py-2 border border-amber-500 rounded text-xs font-bold uppercase tracking-widest transition-colors shadow-lg"><i data-lucide="wrench" class="w-4 h-4 inline-block mr-1"></i> REWORK</button>
+                            <button id="bolo-to-vault-btn-top" class="hidden bg-purple-950/80 text-purple-300 font-extrabold py-2.5 px-4 rounded-lg uppercase tracking-wider text-xs shadow-lg hover:bg-purple-900 transition-all border border-purple-700/50"><i data-lucide="archive" class="w-4 h-4 inline-block mr-1"></i> INTEL VAULT</button>
+                            <button id="bolo-save-inventory-btn" class="bg-red-700 hover:bg-red-600 text-white px-4 py-2 rounded text-xs font-bold uppercase tracking-widest transition-colors shadow-[0_0_15px_rgba(220,38,38,0.4)] flex items-center gap-2"><i data-lucide="save" class="w-4 h-4"></i> SAVE BOLO</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right: Saved BOLOs -->
+                <div class="flex flex-col bg-gray-950 p-5 shrink-0 md:overflow-y-auto md:flex-1 min-w-0 min-h-0">
+                    <div class="text-[10px] font-black uppercase text-gray-400 tracking-wider border-b border-gray-800 pb-2 mb-4 flex justify-between items-center">
+                        <span>BOLO Inventory</span>
+                        <span class="text-[9px] text-red-500/60 tracking-widest font-bold">MOST WANTED</span>
+                    </div>
+
+                    <div id="bolo-library-list" class="space-y-3 pb-20">
+                        <div class="text-center text-gray-600 text-xs py-8 italic border border-dashed border-gray-800 rounded-lg">No BOLO cards saved yet.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="bolo-poster-render-zone" class="bg-[#1f2126]" style="position: fixed; top: -9999px; left: -9999px; z-index: -9999; width: 600px; height: 850px;">
+        <div class="w-full h-full p-8 font-sans relative bg-[#25262a] flex flex-col">
+            <!-- Visme inner border -->
+            <div class="absolute inset-5 border border-gray-600 pointer-events-none"></div>
+            
+            <div class="relative z-10 flex flex-col h-full p-2">
+                <div class="text-center mb-6">
+                    <h1 class="text-[95px] leading-none font-black tracking-normal uppercase text-[#f53d45]" style="font-family: Arial, sans-serif; transform: scaleY(1.05);">WANTED</h1>
+                    <div class="border-t-2 border-white mt-5 pt-4">
+                        <h2 class="text-[28px] font-bold tracking-[0.15em] uppercase text-white" id="bolo-render-name">UNKNOWN SUSPECT</h2>
+                    </div>
+                    <div class="border-b-2 border-white mt-4 mb-2"></div>
+                </div>
+                
+                <!-- Strict CSS Grid to prevent html2canvas collapsing -->
+                <div style="display: grid; grid-template-columns: 240px 255px; justify-content: space-between; height: 260px; margin-bottom: 30px;">
+                    <div style="background-color: #1a1b1e; position: relative; display: flex; align-items: center; justify-content: center; overflow: hidden;">
+                        <img id="bolo-render-img" class="absolute inset-0 w-full h-full object-cover hidden">
+                        <span id="bolo-render-img-placeholder" class="font-bold text-xl text-gray-700">NO PHOTO</span>
+                    </div>
+                    
+                    <div style="background-color: white; padding: 20px; color: black; display: flex; flex-direction: column; justify-content: flex-start;">
+                        <h3 class="text-[#f53d45] font-black text-[15px] mb-4 leading-snug" id="bolo-render-reason">For Bank Robbery, Train Heists, and Armed Assault</h3>
+                        <h4 class="font-black mb-1 tracking-widest text-[10px] uppercase">DESCRIPTION</h4>
+                        <div class="space-y-1 text-[11px] font-bold">
+                            <div>Height: <span id="bolo-render-height" class="font-normal text-gray-700"></span></div>
+                            <div>Weight: <span id="bolo-render-weight" class="font-normal text-gray-700"></span></div>
+                            <div>Hair Color: <span id="bolo-render-hair" class="font-normal text-gray-700"></span></div>
+                            <div>Eye Color: <span id="bolo-render-eye" class="font-normal text-gray-700"></span></div>
+                            <div class="mt-2 text-[11px]">
+                                <div class="mb-0.5">Distinguishing Features:</div>
+                                <div id="bolo-render-features" class="font-normal text-gray-600 leading-tight"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mb-6">
+                    <h3 class="text-[#f53d45] font-semibold text-[13px] mb-1 tracking-wider uppercase">LAST SEEN</h3>
+                    <p id="bolo-render-lastseen" class="text-gray-300 text-[11px] leading-relaxed">Unknown location.</p>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-8 mb-6 pb-6 border-b border-gray-600">
+                    <div>
+                        <h3 class="text-[#f53d45] font-semibold text-[13px] mb-1 tracking-wider uppercase">REWARD</h3>
+                        <p id="bolo-render-reward" class="text-gray-300 text-[11px] leading-relaxed">No reward offered.</p>
+                    </div>
+                    <div>
+                        <h3 class="text-[#f53d45] font-semibold text-[13px] mb-1 tracking-wider uppercase">WARNING</h3>
+                        <p id="bolo-render-warning" class="text-gray-300 text-[11px] leading-relaxed">Approach with caution.</p>
+                    </div>
+                </div>
+                
+                <div class="mt-auto flex justify-between items-end pb-2">
+                    <p class="text-[9px] text-gray-500 w-[45%] leading-relaxed">Report any sightings to the Sheriff's Office of Redwood County or call</p>
+                    <h2 id="bolo-render-contact" class="text-[22px] font-black tracking-widest text-[#f53d45] uppercase">555-WANTED</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- END BOLO MODAL -->
+
+    <!-- START GAME TAG MODAL -->
+    <div id="gametag-modal" class="fixed inset-0 bg-black/90 backdrop-blur-md z-[200] hidden flex items-center justify-center p-4" style="z-index: 100050;">
+        <div class="bg-gray-900 border-2 w-full max-w-6xl h-full max-h-[100%] md:h-[90vh] rounded-xl flex flex-col overflow-hidden min-h-0" style="border-color: #f59e0b; box-shadow: 0 0 30px rgba(245,158,11,0.3);">
+            <!-- Header -->
+            <div class="p-3 border-b-2 flex flex-wrap justify-between items-center bg-gray-950 gap-y-3 gap-x-2" style="border-color: #f59e0b;">
+                <div class="flex items-center gap-2 md:gap-3">
+                    <i data-lucide="tag" class="w-4 h-4 md:w-5 md:h-5 shrink-0" style="color: #f59e0b;"></i>
+                    <h2 class="text-sm md:text-lg font-black uppercase text-white tracking-widest truncate">FIELD HARVEST TAG</h2>
+                </div>
+                <div class="flex items-center gap-2 flex-wrap justify-end shrink-0">
+                    <button id="closeGameTagBtnTop" onclick="closeGameTagModal()" aria-label="Close modal" class="p-4 bg-gray-800 rounded-lg group hover:bg-amber-900 transition-colors shrink-0">
+                        <i data-lucide="x" class="w-8 h-8 text-white"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Content Area -->
+            <div class="flex-1 flex flex-col md:flex-row overflow-y-auto md:overflow-hidden min-h-0">
+                
+                <!-- Left: Form -->
+                <div class="flex flex-col bg-gray-900 border-b md:border-b-0 md:border-r border-gray-800 shrink-0 md:flex-1 min-w-0 min-h-0 relative">
+                    <div class="flex-1 flex flex-col custom-scrollbar p-4 space-y-4 md:overflow-y-auto md:min-h-0">
+                        
+                        <!-- Toggle Big Game / Fish -->
+                        <div class="flex bg-black rounded-lg p-1 border border-gray-700">
+                            <button id="gametag-type-game" onclick="setGameTagType('game')" class="flex-1 py-2 text-xs font-black uppercase tracking-widest bg-amber-600 text-white rounded transition-all">BIG GAME</button>
+                            <button id="gametag-type-fish" onclick="setGameTagType('fish')" class="flex-1 py-2 text-xs font-black uppercase tracking-widest text-gray-500 hover:text-white rounded transition-all">FISHING</button>
+                        </div>
+
+                        <!-- Image Upload -->
+                        <div class="flex flex-col gap-1 text-center">
+                            <label class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Harvest Photo</label>
+                            <input type="file" id="gametag-image-upload" accept="image/*" class="hidden">
+                            <button onclick="document.getElementById('gametag-image-upload').click()" class="bg-gray-800 border border-gray-600 rounded p-4 flex flex-col items-center justify-center hover:bg-gray-700 transition-colors text-gray-400 relative overflow-hidden h-48 md:h-64">
+                                <img id="gametag-form-preview-img" class="absolute inset-0 w-full h-full object-cover hidden">
+                                <i data-lucide="camera" id="gametag-form-preview-icon" class="w-8 h-8 mb-2 text-amber-500 relative z-10"></i>
+                                <span class="text-xs font-bold relative z-10 bg-black/50 px-2 py-1 rounded" id="gametag-image-label">TAP TO UPLOAD PHOTO</span>
+                            </button>
+                        </div>
+
+                        <!-- Common Fields -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <div>
+                                <label class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Date / Time</label>
+                                <div class="flex gap-2">
+                                    <input type="text" id="gametag-input-date" class="w-full bg-black border border-gray-700 rounded p-2 text-white font-bold" placeholder='YYYY-MM-DD HH:MM'>
+                                    <button onclick="document.getElementById('gametag-input-date').value = new Date().toLocaleString()" class="bg-gray-700 text-white px-3 rounded hover:bg-gray-600"><i data-lucide="clock" class="w-4 h-4"></i></button>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">GPS Coordinates / Location</label>
+                                <input type="text" id="gametag-input-gps" class="w-full bg-black border border-gray-700 rounded p-2 text-white font-bold" placeholder='e.g. 45.123, -110.456 or GMU 42'>
+                            </div>
+                        </div>
+
+                        <!-- Big Game Fields -->
+                        <div id="gametag-fields-game" class="space-y-4">
+                            <div class="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Species</label>
+                                    <input type="text" id="gametag-input-game-species" class="w-full bg-black border border-gray-700 rounded p-2 text-white font-bold" placeholder='e.g. Elk, Mule Deer'>
+                                </div>
+                                <div>
+                                    <label class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Sex</label>
+                                    <input type="text" id="gametag-input-game-sex" class="w-full bg-black border border-gray-700 rounded p-2 text-white font-bold" placeholder='e.g. Bull, Cow, Buck'>
+                                </div>
+                                <div>
+                                    <label class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Weapon / Method</label>
+                                    <input type="text" id="gametag-input-game-weapon" class="w-full bg-black border border-gray-700 rounded p-2 text-white font-bold" placeholder='e.g. Rifle, Archery'>
+                                </div>
+                                <div>
+                                    <label class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">License / Tag #</label>
+                                    <input type="text" id="gametag-input-game-license" class="w-full bg-black border border-gray-700 rounded p-2 text-white font-bold" placeholder='e.g. AZ-998811'>
+                                </div>
+                                <div>
+                                    <label class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Antler Points (L/R)</label>
+                                    <input type="text" id="gametag-input-game-points" class="w-full bg-black border border-gray-700 rounded p-2 text-white font-bold" placeholder='e.g. 6x6, 4x5, N/A'>
+                                </div>
+                                <div>
+                                    <label class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Inside Spread (in)</label>
+                                    <input type="text" id="gametag-input-game-spread" class="w-full bg-black border border-gray-700 rounded p-2 text-white font-bold" placeholder='e.g. 24"'>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Fishing Fields -->
+                        <div id="gametag-fields-fish" class="space-y-4 hidden">
+                            <div class="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Species</label>
+                                    <input type="text" id="gametag-input-fish-species" class="w-full bg-black border border-gray-700 rounded p-2 text-white font-bold" placeholder='e.g. Largemouth Bass'>
+                                </div>
+                                <div>
+                                    <label class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Water Body</label>
+                                    <input type="text" id="gametag-input-fish-water" class="w-full bg-black border border-gray-700 rounded p-2 text-white font-bold" placeholder='e.g. Lake Mead'>
+                                </div>
+                                <div>
+                                    <label class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Length (in)</label>
+                                    <input type="text" id="gametag-input-fish-length" class="w-full bg-black border border-gray-700 rounded p-2 text-white font-bold" placeholder='e.g. 21.5"'>
+                                </div>
+                                <div>
+                                    <label class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Weight (lbs)</label>
+                                    <input type="text" id="gametag-input-fish-weight" class="w-full bg-black border border-gray-700 rounded p-2 text-white font-bold" placeholder='e.g. 5.2 lbs'>
+                                </div>
+                                <div class="col-span-2">
+                                    <label class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Lure / Bait</label>
+                                    <input type="text" id="gametag-input-fish-bait" class="w-full bg-black border border-gray-700 rounded p-2 text-white font-bold" placeholder='e.g. Green Pumpkin Jig'>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Notes -->
+                        <div>
+                            <label class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Field Notes</label>
+                            <textarea id="gametag-input-notes" class="w-full bg-black border border-gray-700 rounded p-2 text-white font-bold h-24" placeholder='Weather conditions, behavior, tracking notes...'></textarea>
+                        </div>
+                    </div>
+
+                    <!-- Footer Buttons -->
+                    <div class="p-3 border-t border-gray-800 bg-gray-950 flex justify-end gap-3 shrink-0 flex-wrap">
+                        <button id="rework-gametag-btn" class="hidden bg-blue-950/80 text-blue-300 font-extrabold py-2.5 px-4 rounded-lg uppercase tracking-wider text-xs shadow-lg hover:bg-blue-900 transition-all flex items-center gap-2 border border-blue-700/50">
+                            <i data-lucide="wrench" class="w-4 h-4"></i> REWORK TAG
+                        </button>
+                        <button id="gametag-to-vault-btn-top" class="hidden bg-purple-950/80 text-purple-300 font-extrabold py-2.5 px-4 rounded-lg uppercase tracking-wider text-xs shadow-lg hover:bg-purple-900 transition-all flex items-center gap-2 border border-purple-700/50">
+                            <i data-lucide="archive" class="w-4 h-4"></i> INTEL VAULT
+                        </button>
+                        <button id="gametag-clear-btn" class="bg-red-900 text-white font-extrabold py-2.5 px-4 rounded-lg uppercase tracking-wider text-xs shadow-lg hover:bg-red-800 transition-all flex items-center gap-2">
+                            <i data-lucide="trash-2" class="w-4 h-4"></i> CLEAR FORM
+                        </button>
+                        <button id="gametag-save-inventory-btn" class="bg-amber-500 text-amber-950 font-extrabold px-6 py-2.5 rounded-lg uppercase tracking-wider text-xs shadow-[0_0_20px_rgba(245,158,11,0.2)] hover:bg-amber-400 transition-all flex items-center gap-2">
+                            <i data-lucide="save" class="w-4 h-4"></i> SAVE TO INVENTORY
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Right: Saved Tag Cards -->
+                <div class="flex flex-col bg-gray-950 p-5 shrink-0 md:overflow-y-auto md:flex-1 min-w-0 min-h-0">
+                    <div class="text-[10px] font-black uppercase text-gray-400 tracking-wider border-b border-gray-800 pb-2 mb-4 flex justify-between items-center">
+                        <div class="flex items-center gap-2"><i data-lucide="archive" class="w-4 h-4 text-amber-500"></i> HARVEST INVENTORY</div>
+                        <span class="text-gray-600 text-[8px]">(SELECT TO SEND TO VAULT)</span>
+                    </div>
+                    <div id="gametagLibraryList" class="flex flex-col gap-3 custom-scrollbar flex-1 min-h-0">
+                        <!-- IDB Tags load here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- HIDDEN FIELD TAG RENDER ZONE -->
+    <div id="gametag-poster-render-zone" class="w-[800px] h-[600px] bg-[#3E4A35] flex overflow-hidden border-[15px] border-[#2A3420]" style="font-family: monospace; position: fixed; top: -9999px; left: -9999px; z-index: -9999;">
+        <!-- Tag Header -->
+        <div class="w-24 bg-[#b59e72] border-r-[4px] border-black flex flex-col items-center justify-between py-6">
+            <div class="w-8 h-8 rounded-full bg-[#3E4A35] border-4 border-black mb-4"></div>
+            <div class="flex-1 flex items-center justify-center">
+                <div class="-rotate-90 text-black font-extrabold tracking-[0.3em] text-2xl whitespace-nowrap opacity-80" id="gametag-render-type-label">FIELD HARVEST TAG</div>
+            </div>
+            <img src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=TRC-HARVEST-TAG" class="w-16 h-16 opacity-70 mix-blend-multiply">
+        </div>
+        <!-- Tag Content -->
+        <div class="flex-1 p-8 flex flex-col bg-[#5A684C] text-[#D8D4C7] bg-[url('https://www.transparenttextures.com/patterns/cardboard-flat.png')] bg-repeat shadow-[inset_0_0_100px_rgba(0,0,0,0.8)]">
+            <div class="flex justify-between items-end border-b-4 border-black/50 pb-2 mb-4">
+                <h1 class="text-5xl font-black tracking-widest text-[#151A10]" style="text-shadow: 1px 1px 0px rgba(255,255,255,0.2);">OFFICIAL HARVEST RECORD</h1>
+                <div class="text-xl font-bold bg-[#151A10] px-3 py-1 rounded text-[#D8D4C7]" id="gametag-render-date">YYYY-MM-DD</div>
+            </div>
+            
+            <div class="flex gap-6 h-full min-h-0">
+                <div class="w-1/2 h-full flex flex-col gap-4">
+                    <div class="bg-black/40 p-4 border-2 border-black/50 rounded flex-1">
+                        <div class="text-xs text-amber-500/80 font-bold mb-1">SPECIES / IDENTIFICATION</div>
+                        <div class="text-3xl font-bold uppercase text-white break-words leading-none pb-2" id="gametag-render-species">UNKNOWN</div>
+                        <div class="text-xs text-amber-500/80 font-bold mt-3 mb-1" id="gametag-render-sex-label">SEX / CLASS</div>
+                        <div class="text-2xl font-bold uppercase text-gray-300 break-words leading-none pb-2" id="gametag-render-sex">N/A</div>
+                    </div>
+                    
+                    <div class="bg-black/40 p-4 border-2 border-black/50 rounded flex-1">
+                        <div class="text-xs text-amber-500/80 font-bold mb-1">LOCATION / GPS</div>
+                        <div class="text-xl font-bold text-green-400" id="gametag-render-gps">N/A</div>
+                        <div class="text-xs text-amber-500/80 font-bold mt-3 mb-1" id="gametag-render-license-label">LICENSE / TAG #</div>
+                        <div class="text-xl font-bold text-gray-300 uppercase" id="gametag-render-license">N/A</div>
+                    </div>
+
+                    <div class="bg-black/40 p-4 border-2 border-black/50 rounded flex-1">
+                        <div class="text-xs text-amber-500/80 font-bold mb-1" id="gametag-render-stat1-label">ANTLER POINTS (L/R)</div>
+                        <div class="text-xl font-bold text-white uppercase" id="gametag-render-stat1">N/A</div>
+                        <div class="text-xs text-amber-500/80 font-bold mt-3 mb-1" id="gametag-render-stat2-label">INSIDE SPREAD</div>
+                        <div class="text-xl font-bold text-white uppercase" id="gametag-render-stat2">N/A</div>
+                    </div>
+                </div>
+                
+                <div class="w-1/2 h-full flex flex-col gap-4">
+                    <div class="h-64 bg-black/60 border-4 border-black/50 rounded flex items-center justify-center overflow-hidden relative">
+                        <div id="gametag-render-img-placeholder" class="text-center opacity-30">
+                            <i data-lucide="image" class="w-16 h-16 mx-auto mb-2"></i>
+                            <div class="font-bold tracking-widest">NO PHOTO RECORDED</div>
+                        </div>
+                        <img id="gametag-render-img" class="absolute inset-0 w-full h-full object-cover hidden" style="filter: contrast(1.1) saturate(0.8) sepia(0.3);">
+                    </div>
+                    
+                    <div class="bg-black/40 p-4 border-2 border-black/50 rounded flex-1 flex flex-col">
+                        <div class="text-xs text-amber-500/80 font-bold mb-1">FIELD NOTES</div>
+                        <div class="flex-1 text-sm text-gray-300 font-medium overflow-hidden leading-relaxed" id="gametag-render-notes">No notes provided.</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mt-4 pt-2 border-t-2 border-black/30 text-center text-[10px] text-black font-bold uppercase opacity-60">
+                TEMPORARY FIELD RECORD ONLY - NOT A LEGAL STATE E-TAG - FOR TACTICAL RANGE CARD LOGGING
+            </div>
+        </div>
+    </div>
+    <!-- END GAME TAG MODAL -->
 
     <!-- AMMO LIBRARY MODAL -->
     <div id="ammoLibraryModal" class="fixed inset-0 bg-black/95 backdrop-blur-md z-[100] hidden flex items-center justify-center p-4">
@@ -2068,6 +2468,12 @@
                                     <button class="remarks-toggle-btn bg-gray-900 border border-yellow-700 text-yellow-500 p-2 rounded hover:bg-yellow-600 hover:text-black transition-all shadow-[0_0_10px_rgba(234,179,8,0.2)] flex items-center justify-center" title="ReMarks Jotter" aria-label="ReMarks Jotter">
                                         <i data-lucide="edit-3" class="w-5 h-5"></i>
                                     </button>
+                                    <button id="openBoloBtnHud" class="bg-gray-900 border border-red-700 text-red-500 p-2 rounded hover:bg-red-600 hover:text-black transition-all shadow-[0_0_10px_rgba(239,68,68,0.2)] flex items-center justify-center font-black uppercase text-[10px]" title="MOST WANTED / BOLO Card" aria-label="BOLO Card">
+                                        MOST WANTED
+                                    </button>
+                                    <button id="openGameTagBtnHud" class="bg-gray-900 border border-amber-700 text-amber-500 p-2 rounded hover:bg-amber-600 hover:text-black transition-all shadow-[0_0_10px_rgba(245,158,11,0.2)] flex items-center justify-center font-black uppercase text-[10px]" title="FIELD HARVEST TAG" aria-label="Game Tag">
+                                        <i data-lucide="tag" class="w-4 h-4 mr-1"></i> FIELD TAG
+                                    </button>
                                 </div>
                                 
                                 <div class="flex items-center gap-2 text-[9px] font-black text-emerald-400 uppercase tracking-widest font-mono bg-black/50 px-2 py-1 border border-gray-800 rounded hidden md:flex shrink-0 ml-2">
@@ -2182,6 +2588,12 @@
                                     </button>
                                     <button id="vault-geomatrix-btn" class="text-[8px] bg-cyan-950/80 text-cyan-300 px-2 py-1 rounded border border-cyan-700 hover:bg-cyan-600 hover:text-white transition-colors flex items-center gap-1 font-bold" aria-label="Action Button">
                                         <i data-lucide="navigation" class="w-3 h-3"></i> GEO MATRIX
+                                    </button>
+                                    <button id="vault-to-bolo-btn" class="text-[8px] bg-red-950/80 text-red-500 px-2 py-1 rounded border border-red-700 hover:bg-red-600 hover:text-white transition-colors flex items-center gap-1 font-bold uppercase" title="MOST WANTED / BOLO Card" aria-label="BOLO Card">
+                                        <i data-lucide="crosshair" class="w-3 h-3"></i> MOST WANTED
+                                    </button>
+                                    <button id="vault-to-gametag-btn" class="text-[8px] bg-amber-950/80 text-amber-500 px-2 py-1 rounded border border-amber-700 hover:bg-amber-600 hover:text-white transition-colors flex items-center gap-1 font-bold uppercase" title="FIELD HARVEST TAG" aria-label="Game Tag">
+                                        <i data-lucide="tag" class="w-3 h-3"></i> FIELD TAG
                                     </button>
                                     <span class="text-[8px] text-gray-500 font-mono uppercase ml-2">Encrypted Cache</span>
                                 </div>
@@ -2353,7 +2765,8 @@
     </div>
 
     <!-- MAIN SCRIPT -->
-    <script src="./trc_core.min.js?v=8.0.7" defer></script>
+    <script src="./trc_core.js?v=8.0.7" defer></script>
+    <script src="./gametag_logic.js?v=1.0" defer></script>
     
     <!-- CUSTOM SAVE PROFILE MODAL -->
     <div id="save-profile-modal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-[1000000] flex items-center justify-center p-4 font-mono">
@@ -2373,7 +2786,7 @@
     <!-- PWA SERVICE WORKER REGISTRATION & API UPDATE CHECK -->
 
     <script>
-        window.APP_VERSION = 'v7.27.28';
+        window.APP_VERSION = 'v7.27.31';
         if(document.getElementById('header-version-display')) {
             document.getElementById('header-version-display').innerText = window.APP_VERSION;
         }
@@ -2636,9 +3049,15 @@
           <p class="text-center text-gray-500 text-xs mb-6">DOCUMENT ID: TRC-TERMS-2026-A</p>
           
           <div class="border border-red-900/50 bg-red-950/20 p-4 rounded mb-6">
-              <h3 class="text-red-500 font-bold mb-2">!!! CRITICAL SAFETY WARNING !!!</h3>
-              <p class="text-red-400/80 text-sm">Ballistic software is for reference and training purposes only. Numerical outputs are theoretical. The user is solely responsible for firearm safety, target identification, and background awareness. Never rely on an application as your sole safety check.</p>
-          </div>
+            <h3 class="text-red-500 font-bold mb-2">!!! CRITICAL SAFETY WARNING !!!</h3>
+            <p class="text-red-400/80 text-sm mb-4">Ballistic software is for reference and training purposes only. Numerical outputs are theoretical. The user is solely responsible for firearm safety, target identification, and background awareness. Never rely on an application as your sole safety check.</p>
+            
+            <h3 class="text-amber-500 font-bold mb-2">HARVEST TAG DISCLAIMER</h3>
+            <p class="text-amber-400/80 text-sm mb-4">The "Field Harvest Tag" feature is for personal logging purposes only. It is NOT an official state-issued E-Tag and does NOT satisfy legal requirements for tagging harvested game in your state. You are solely responsible for following all local and federal hunting/fishing laws.</p>
+            
+            <h3 class="text-red-500 font-bold mb-2">BOLO CARD DISCLAIMER</h3>
+            <p class="text-red-400/80 text-sm">The BOLO / Most Wanted feature is for training and entertainment purposes only.</p>
+        </div>
 
           <div class="space-y-6 text-sm text-gray-300">
               <div>
@@ -2975,6 +3394,7 @@
     </script>
 </body>
 </html>
+
 
 
 

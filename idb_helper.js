@@ -5,11 +5,13 @@
  */
 
 const DB_NAME = 'TRC_PRO_UPGRADE_DB';
-const DB_VERSION = 4; // Incremented version to add intelVault store
+const DB_VERSION = 7; // Incremented to force schema upgrade on all devices
 const STORES = {
     PROFILES: 'rangeCardProfiles',
-    VAULT: 'intelVault', // NEW: Permanent storage for snapshots/remarks
-    DRAFTS: 'drafts' // NEW: Mission recovery drafts
+    VAULT: 'intelVault', // Permanent storage for snapshots/remarks
+    DRAFTS: 'drafts', // Mission recovery drafts
+    BOLO: 'boloLibrary', // Permanent storage for BOLO cards
+    GAMETAG: 'gameTagLibrary' // NEW: Storage for Field Harvest Tags
 };
 
 const idb = {
@@ -30,6 +32,12 @@ const idb = {
                 }
                 if (!db.objectStoreNames.contains(STORES.DRAFTS)) {
                     db.createObjectStore(STORES.DRAFTS);
+                }
+                if (!db.objectStoreNames.contains(STORES.BOLO)) {
+                    db.createObjectStore(STORES.BOLO);
+                }
+                if (!db.objectStoreNames.contains(STORES.GAMETAG)) {
+                    db.createObjectStore(STORES.GAMETAG);
                 }
             };
 

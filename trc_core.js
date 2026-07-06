@@ -6007,6 +6007,86 @@ function initializeTacticalDashboard2() {
         });
     }
 
+    const vaultToBoloBtn = document.getElementById('vault-to-bolo-btn');
+    if (vaultToBoloBtn) {
+        vaultToBoloBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const checkedBoxes = document.querySelectorAll('.vault-export-checkbox:checked');
+            
+            if (checkedBoxes.length === 1) {
+                const id = checkedBoxes[0].dataset.vaultId;
+                const item = vaultCache.find(x => x.id.toString() === id);
+                if (item && item.type === 'bolo-card' && item.boloData) {
+                    if(window.openBoloModal && window.loadBoloBackToEditor) {
+                        window.openBoloModal();
+                        window.loadBoloBackToEditor(item.boloData);
+                    }
+                } else {
+                    alert("The selected snapshot is not a valid BOLO card.");
+                    return;
+                }
+            } else if (checkedBoxes.length > 1) {
+                alert("Please select only ONE Most Wanted card to load into the editor.");
+                return;
+            } else {
+                if(window.openBoloModal) {
+                    window.openBoloModal();
+                }
+            }
+            
+            // Uncheck boxes
+            checkedBoxes.forEach(cb => cb.checked = false);
+            
+            // Auto-close vault if full screen mode is active
+            if (typeof window.toggleFullscreen === 'function') {
+                const vaultPanel = document.getElementById('panel-vault');
+                if (vaultPanel && vaultPanel.classList.contains('is-maximized')) {
+                    window.toggleFullscreen('panel-vault');
+                }
+            }
+        });
+    }
+
+    const vaultToGametagBtn = document.getElementById('vault-to-gametag-btn');
+    if (vaultToGametagBtn) {
+        vaultToGametagBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const checkedBoxes = document.querySelectorAll('.vault-export-checkbox:checked');
+            
+            if (checkedBoxes.length === 1) {
+                const id = checkedBoxes[0].dataset.vaultId;
+                const item = vaultCache.find(x => x.id.toString() === id);
+                if (item && item.type === 'gametag-card' && item.gametagData) {
+                    if(window.openGameTagModal && window.loadGametagBackToEditor) {
+                        window.openGameTagModal();
+                        window.loadGametagBackToEditor(item.gametagData);
+                    }
+                } else {
+                    alert("The selected snapshot is not a valid Field Tag card.");
+                    return;
+                }
+            } else if (checkedBoxes.length > 1) {
+                alert("Please select only ONE Field Tag to load into the editor.");
+                return;
+            } else {
+                if(window.openGameTagModal) {
+                    window.openGameTagModal();
+                }
+            }
+            
+            // Uncheck boxes
+            checkedBoxes.forEach(cb => cb.checked = false);
+            
+            // Auto-close vault if full screen mode is active
+            if (typeof window.toggleFullscreen === 'function') {
+                const vaultPanel = document.getElementById('panel-vault');
+                if (vaultPanel && vaultPanel.classList.contains('is-maximized')) {
+                    window.toggleFullscreen('panel-vault');
+                }
+            }
+        });
+    }
+
     const vaultToAmmoBtn = document.getElementById('vault-to-ammo-btn');
     if (vaultToAmmoBtn) {
         vaultToAmmoBtn.addEventListener('click', (e) => {

@@ -771,3 +771,19 @@ v7.27.28 - DEPLOYED 2026-06-22 22:00:17
 * Service Worker cache updated to: trc-vv7.27.28
 * All tactical systems: OPERATIONAL
 * Toast updater: ACTIVE - users will see update prompt on next app open
+
+============================================================
+v7.27.29 - DEPLOYED 2026-07-05 10:38:00
+* Version auto-bumped from v7.27.28
+* Service Worker cache updated to: trc-vv7.27.29
+* All tactical systems: OPERATIONAL
+* Toast updater: ACTIVE - users will see update prompt on next app open
+
+v7.27.30 - Re-linked trc_core.js and fixed sticky header bug on calendar snapshots
+
+============================================================
+v7.27.31 - DEPLOYED 2026-07-05 11:18:51
+* Version auto-bumped from v7.27.30
+* Service Worker cache updated to: trc-vv7.27.31
+* All tactical systems: OPERATIONAL
+* Toast updater: ACTIVE - users will see update prompt on next app open

@@ -1,0 +1,164 @@
+    <!-- START BOLO MODAL -->
+    <div id="bolo-modal" class="fixed inset-0 bg-black/90 backdrop-blur-md z-[200] hidden flex items-center justify-center p-4" style="z-index: 100050;">
+        <div class="bg-gray-900 border-2 w-full max-w-6xl h-full max-h-[100%] md:h-[90vh] rounded-xl flex flex-col overflow-hidden min-h-0" style="border-color: #ef4444; box-shadow: 0 0 30px rgba(239,68,68,0.3);">
+            <!-- Header -->
+            <div class="p-3 border-b-2 flex flex-wrap justify-between items-center bg-gray-950 gap-y-3 gap-x-2" style="border-color: #ef4444;">
+                <div class="flex items-center gap-2 md:gap-3">
+                    <i data-lucide="crosshair" class="w-4 h-4 md:w-5 md:h-5 shrink-0" style="color: #ef4444;"></i>
+                    <h2 class="text-sm md:text-lg font-black uppercase text-white tracking-widest truncate">BOLO / MOST WANTED</h2>
+                </div>
+                <div class="flex items-center gap-2 flex-wrap justify-end shrink-0">
+                    <button id="closeBoloBtnTop" onclick="closeBoloModal()" aria-label="Close modal" class="p-4 bg-gray-800 rounded-lg group hover:bg-red-900 transition-colors shrink-0">
+                        <i data-lucide="x" class="w-8 h-8 text-white"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Content Area -->
+            <div class="flex-1 flex flex-col md:flex-row overflow-y-auto md:overflow-hidden min-h-0">
+                
+                <!-- Left: Form -->
+                <div class="flex flex-col bg-gray-900 border-b md:border-b-0 md:border-r border-gray-800 shrink-0 md:flex-1 min-w-0 min-h-0 relative">
+                    <div class="flex-1 flex flex-col custom-scrollbar p-4 space-y-4 md:overflow-y-auto md:min-h-0">
+                        
+                        <!-- Image Upload -->
+                        <div class="flex flex-col gap-1 text-center">
+                            <label class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Suspect Photo</label>
+                            <input type="file" id="bolo-image-upload" accept="image/*" class="hidden">
+                            <button onclick="document.getElementById('bolo-image-upload').click()" class="bg-gray-800 border border-gray-600 rounded p-4 flex flex-col items-center justify-center hover:bg-gray-700 transition-colors text-gray-400 relative overflow-hidden h-48 md:h-64">
+                                <img id="bolo-render-img" class="absolute inset-0 w-full h-full object-cover hidden">
+                                <i data-lucide="camera" id="bolo-render-img-placeholder" class="w-8 h-8 mb-2 text-red-500 relative z-10"></i>
+                                <span class="text-xs font-bold relative z-10 bg-black/50 px-2 py-1 rounded" id="bolo-image-label">TAP TO UPLOAD PHOTO</span>
+                            </button>
+                        </div>
+
+                        <!-- Fields -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <div>
+                                <label class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Name / Alias</label>
+                                <input type="text" id="bolo-input-name" class="w-full bg-black border border-gray-700 rounded p-2 text-white font-bold" placeholder='UNKNOWN SUSPECT'>
+                            </div>
+                            <div>
+                                <label class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Reason</label>
+                                <input type="text" id="bolo-input-reason" class="w-full bg-black border border-gray-700 rounded p-2 text-white font-bold" placeholder='WANTED FOR QUESTIONING'>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                            <div>
+                                <label class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Height</label>
+                                <input type="text" id="bolo-input-height" class="w-full bg-black border border-gray-700 rounded p-2 text-white font-bold" placeholder='N/A'>
+                            </div>
+                            <div>
+                                <label class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Weight</label>
+                                <input type="text" id="bolo-input-weight" class="w-full bg-black border border-gray-700 rounded p-2 text-white font-bold" placeholder='N/A'>
+                            </div>
+                            <div>
+                                <label class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Hair</label>
+                                <input type="text" id="bolo-input-hair" class="w-full bg-black border border-gray-700 rounded p-2 text-white font-bold" placeholder='N/A'>
+                            </div>
+                            <div>
+                                <label class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Eyes</label>
+                                <input type="text" id="bolo-input-eye" class="w-full bg-black border border-gray-700 rounded p-2 text-white font-bold" placeholder='N/A'>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 gap-3">
+                            <div>
+                                <label class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Distinguishing Features</label>
+                                <input type="text" id="bolo-input-features" class="w-full bg-black border border-gray-700 rounded p-2 text-white font-bold" placeholder='Tattoos, Scars, etc.'>
+                            </div>
+                            <div>
+                                <label class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Last Seen / Location</label>
+                                <input type="text" id="bolo-input-lastseen" class="w-full bg-black border border-gray-700 rounded p-2 text-white font-bold" placeholder='e.g. 1st St & Main'>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <div>
+                                <label class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Reward</label>
+                                <input type="text" id="bolo-input-reward" class="w-full bg-black border border-gray-700 rounded p-2 text-white font-bold" placeholder='$0.00'>
+                            </div>
+                            <div>
+                                <label class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Warning</label>
+                                <input type="text" id="bolo-input-warning" class="w-full bg-black border border-gray-700 rounded p-2 text-red-500 font-bold" placeholder='ARMED AND DANGEROUS'>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Contact Info</label>
+                            <input type="text" id="bolo-input-contact" class="w-full bg-black border border-gray-700 rounded p-2 text-white font-bold" placeholder='Call 911 or Local Agency'>
+                        </div>
+                    </div>
+
+                    <!-- Left Form Actions -->
+                    <div class="p-4 bg-gray-950 border-t border-gray-800 flex justify-between shrink-0">
+                        <button id="bolo-clear-btn" class="text-gray-400 hover:text-white px-4 py-2 border border-gray-600 rounded text-xs font-bold uppercase tracking-widest transition-colors">CLEAR FORM</button>
+                        <div class="flex gap-2">
+                            <button id="rework-bolo-btn" class="hidden text-amber-500 hover:bg-amber-900 px-4 py-2 border border-amber-500 rounded text-xs font-bold uppercase tracking-widest transition-colors shadow-lg"><i data-lucide="wrench" class="w-4 h-4 inline-block mr-1"></i> REWORK</button>
+                            <button id="bolo-to-vault-btn-top" class="hidden bg-purple-950/80 text-purple-300 font-extrabold py-2.5 px-4 rounded-lg uppercase tracking-wider text-xs shadow-lg hover:bg-purple-900 transition-all border border-purple-700/50"><i data-lucide="archive" class="w-4 h-4 inline-block mr-1"></i> INTEL VAULT</button>
+                            <button id="bolo-save-inventory-btn" class="bg-red-700 hover:bg-red-600 text-white px-4 py-2 rounded text-xs font-bold uppercase tracking-widest transition-colors shadow-[0_0_15px_rgba(220,38,38,0.4)] flex items-center gap-2"><i data-lucide="save" class="w-4 h-4"></i> SAVE BOLO</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right: Saved BOLOs -->
+                <div class="flex flex-col bg-gray-950 p-5 shrink-0 md:overflow-y-auto md:flex-1 min-w-0 min-h-0">
+                    <div class="text-[10px] font-black uppercase text-gray-400 tracking-wider border-b border-gray-800 pb-2 mb-4 flex justify-between items-center">
+                        <span>BOLO Inventory</span>
+                        <span class="text-[9px] text-red-500/60 tracking-widest font-bold">MOST WANTED</span>
+                    </div>
+
+                    <div id="bolo-library-list" class="space-y-3 pb-20">
+                        <div class="text-center text-gray-600 text-xs py-8 italic border border-dashed border-gray-800 rounded-lg">No BOLO cards saved yet.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hidden BOLO Render Zone -->
+    <div id="bolo-poster-render-zone" class="hidden absolute top-0 left-0 bg-white" style="width: 600px; height: 800px; z-index:-9999;">
+        <!-- Wanted Poster Template -->
+        <div class="w-full h-full bg-[#f4e4bc] p-8 font-serif text-black relative flex flex-col border-[12px] border-black" style="background-image: url('data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'100%\' height=\'100%\'><filter id=\'noise\'><feTurbulence type=\'fractalNoise\' baseFrequency=\'0.05\' numOctaves=\'3\' stitchTiles=\'stitch\'/></filter><rect width=\'100%\' height=\'100%\' filter=\'url(%23noise)\' opacity=\'0.15\'/></svg>');">
+            
+            <div class="text-center mb-6 border-b-4 border-black pb-4">
+                <h1 class="text-7xl font-black tracking-[0.2em] mb-2 uppercase" style="font-family: 'Times New Roman', Times, serif;">WANTED</h1>
+                <h2 class="text-3xl font-bold tracking-widest uppercase" id="bolo-render-reason">REASON</h2>
+            </div>
+            
+            <div class="flex-1 flex flex-col">
+                <div class="w-[400px] h-[400px] border-8 border-black mx-auto mb-6 bg-gray-300 relative overflow-hidden flex items-center justify-center">
+                    <img id="bolo-render-photo" class="absolute inset-0 w-full h-full object-cover hidden">
+                    <span id="bolo-render-nophoto" class="font-bold text-2xl text-gray-500">NO PHOTO AVAILABLE</span>
+                </div>
+                
+                <h3 id="bolo-render-name" class="text-4xl font-black text-center uppercase tracking-widest mb-6" style="font-family: 'Times New Roman', Times, serif;">UNKNOWN SUSPECT</h3>
+                
+                <div class="grid grid-cols-2 gap-x-8 gap-y-4 text-xl font-bold px-8 mb-6 uppercase">
+                    <div class="border-b-2 border-black pb-1 flex justify-between"><span>HEIGHT:</span> <span id="bolo-render-height"></span></div>
+                    <div class="border-b-2 border-black pb-1 flex justify-between"><span>WEIGHT:</span> <span id="bolo-render-weight"></span></div>
+                    <div class="border-b-2 border-black pb-1 flex justify-between"><span>HAIR:</span> <span id="bolo-render-hair"></span></div>
+                    <div class="border-b-2 border-black pb-1 flex justify-between"><span>EYES:</span> <span id="bolo-render-eye"></span></div>
+                </div>
+                
+                <div class="text-xl font-bold px-8 space-y-4 mb-6 uppercase">
+                    <div>
+                        <span class="block border-b-2 border-black mb-1">FEATURES:</span>
+                        <span id="bolo-render-features" class="block min-h-[1.5em]"></span>
+                    </div>
+                    <div>
+                        <span class="block border-b-2 border-black mb-1">LAST SEEN:</span>
+                        <span id="bolo-render-lastseen" class="block min-h-[1.5em]"></span>
+                    </div>
+                </div>
+
+                <div class="mt-auto text-center border-t-4 border-black pt-4">
+                    <div class="text-4xl font-black tracking-widest mb-2" id="bolo-render-reward"></div>
+                    <div class="text-3xl font-black text-red-700 tracking-widest uppercase" id="bolo-render-warning"></div>
+                    <div class="text-xl font-bold mt-4 italic" id="bolo-render-contact"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- END BOLO MODAL -->
