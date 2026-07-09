@@ -1267,15 +1267,43 @@
                 <div class="flex flex-col bg-gray-900 border-b md:border-b-0 md:border-r border-gray-800 shrink-0 md:flex-1 min-w-0 min-h-0 relative">
                     <div class="flex-1 flex flex-col custom-scrollbar p-4 space-y-4 md:overflow-y-auto md:min-h-0">
                         
+                        <!-- ══ TYPE TOGGLE ══ -->
+                        <div class="flex bg-black rounded-lg p-1 border border-gray-700 gap-1">
+                            <button id="bolo-type-btn-person" onclick="setBoloType('person')"
+                                style="flex:1;padding:8px 4px;font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:3px;border-radius:4px;border:2px solid #ef4444;background:#7f1d1d;color:#fca5a5;transition:all 0.2s;">
+                                🚨 PERSON
+                            </button>
+                            <button id="bolo-type-btn-animal" onclick="setBoloType('animal')"
+                                style="flex:1;padding:8px 4px;font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:3px;border-radius:4px;border:2px solid #374151;background:transparent;color:#6b7280;transition:all 0.2s;">
+                                🐗 ANIMAL
+                            </button>
+                        </div>
+
                         <!-- Image Upload -->
                         <div class="flex flex-col gap-1 text-center">
-                            <label class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Suspect Photo</label>
+                            <label id="bolo-photo-label" class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Suspect Photo</label>
                             <input type="file" id="bolo-image-upload" accept="image/*" class="hidden">
                             <button onclick="document.getElementById('bolo-image-upload').click()" class="bg-gray-800 border border-gray-600 rounded p-4 flex flex-col items-center justify-center hover:bg-gray-700 transition-colors text-gray-400 relative overflow-hidden h-48 md:h-64">
                                 <img id="bolo-form-preview-img" class="absolute inset-0 w-full h-full object-cover hidden">
                                 <i data-lucide="camera" id="bolo-form-preview-icon" class="w-8 h-8 mb-2 text-red-500 relative z-10"></i>
                                 <span class="text-xs font-bold relative z-10 bg-black/50 px-2 py-1 rounded" id="bolo-image-label">TAP TO UPLOAD PHOTO</span>
                             </button>
+                        </div>
+
+                        <!-- ══ PERSON FIELDS ══ -->
+                        <div id="bolo-person-fields">
+
+                        <!-- Sex Toggle -->
+                        <div>
+                            <label class="text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-1 block">Sex</label>
+                            <div class="flex gap-1">
+                                <button id="bolo-sex-btn-male"    onclick="setBoloSex('male')"
+                                    style="flex:1;padding:7px 4px;font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:2px;border-radius:4px;border:2px solid #374151;background:transparent;color:#6b7280;transition:all 0.2s;">♂ MALE</button>
+                                <button id="bolo-sex-btn-female"  onclick="setBoloSex('female')"
+                                    style="flex:1;padding:7px 4px;font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:2px;border-radius:4px;border:2px solid #374151;background:transparent;color:#6b7280;transition:all 0.2s;">♀ FEMALE</button>
+                                <button id="bolo-sex-btn-unknown" onclick="setBoloSex('unknown')"
+                                    style="flex:1;padding:7px 4px;font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:2px;border-radius:4px;border:2px solid #9ca3af;background:#374151;color:#d1d5db;transition:all 0.2s;">— UNKNOWN</button>
+                            </div>
                         </div>
 
                         <!-- Agency + Case # -->
@@ -1377,7 +1405,82 @@
                             <input type="text" id="bolo-input-contact" class="w-full bg-black border border-gray-700 rounded p-2 text-white font-bold" placeholder='Call 911 or Local Agency'>
                         </div>
 
-                        <!-- Notes -->
+                        </div><!-- END bolo-person-fields -->
+
+                        <!-- ══ ANIMAL FIELDS ══ -->
+                        <div id="bolo-animal-fields" style="display:none;">
+
+                        <!-- Species + Sex/Class -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <div>
+                                <label class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Species</label>
+                                <input type="text" id="bolo-input-species" class="w-full bg-black border border-gray-700 rounded p-2 text-white font-bold" placeholder='e.g. Wild Boar, Black Bear, Buck'>
+                            </div>
+                            <div>
+                                <label class="text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-1 block">Sex / Class</label>
+                                <div class="flex gap-1">
+                                    <button id="bolo-sex-btn-male"    onclick="setBoloSex('male')"
+                                        style="flex:1;padding:7px 4px;font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:2px;border-radius:4px;border:2px solid #374151;background:transparent;color:#6b7280;transition:all 0.2s;">♂ MALE</button>
+                                    <button id="bolo-sex-btn-female"  onclick="setBoloSex('female')"
+                                        style="flex:1;padding:7px 4px;font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:2px;border-radius:4px;border:2px solid #374151;background:transparent;color:#6b7280;transition:all 0.2s;">♀ FEMALE</button>
+                                    <button id="bolo-sex-btn-unknown" onclick="setBoloSex('unknown')"
+                                        style="flex:1;padding:7px 4px;font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:2px;border-radius:4px;border:2px solid #9ca3af;background:#374151;color:#d1d5db;transition:all 0.2s;">— UNK</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Animal Threat Level -->
+                        <div>
+                            <label class="text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-1 block">Threat / Classification</label>
+                            <div class="grid grid-cols-3 gap-2">
+                                <button id="bolo-animal-threat-nuisance" onclick="setAnimalThreat('nuisance')"
+                                    style="padding:10px 4px;font-size:10px;font-weight:900;text-transform:uppercase;border-radius:4px;border:2px solid #b45309;background:rgba(180,83,9,0.35);color:#fbbf24;">
+                                    🐗 NUISANCE
+                                </button>
+                                <button id="bolo-animal-threat-dangerous" onclick="setAnimalThreat('dangerous')"
+                                    style="padding:10px 4px;font-size:10px;font-weight:900;text-transform:uppercase;border-radius:4px;border:2px solid #374151;background:transparent;color:#6b7280;">
+                                    ☠️ DANGEROUS
+                                </button>
+                                <button id="bolo-animal-threat-trophy" onclick="setAnimalThreat('trophy')"
+                                    style="padding:10px 4px;font-size:10px;font-weight:900;text-transform:uppercase;border-radius:4px;border:2px solid #374151;background:transparent;color:#6b7280;">
+                                    🏆 TROPHY
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Est. Weight + Distinguishing Marks -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <div>
+                                <label class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Est. Weight / Size</label>
+                                <input type="text" id="bolo-input-animal-weight" class="w-full bg-black border border-gray-700 rounded p-2 text-white font-bold" placeholder='e.g. 400 lbs, 12-pt rack'>
+                            </div>
+                            <div>
+                                <label class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Distinguishing Marks</label>
+                                <input type="text" id="bolo-input-animal-marks" class="w-full bg-black border border-gray-700 rounded p-2 text-white font-bold" placeholder='e.g. Scar on left shoulder'>
+                            </div>
+                        </div>
+
+                        <!-- Territory / Last Seen -->
+                        <div>
+                            <label class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Territory / Last Seen</label>
+                            <input type="text" id="bolo-input-animal-territory" class="w-full bg-black border border-gray-700 rounded p-2 text-white font-bold" placeholder='e.g. South pasture, near creek'>
+                        </div>
+
+                        <!-- Reward + Contact -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <div>
+                                <label class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Reward / Action</label>
+                                <input type="text" id="bolo-input-animal-reward" class="w-full bg-black border border-gray-700 rounded p-2 text-white font-bold" placeholder='e.g. $500 — Dead or Alive'>
+                            </div>
+                            <div>
+                                <label class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Contact</label>
+                                <input type="text" id="bolo-input-animal-contact" class="w-full bg-black border border-gray-700 rounded p-2 text-white font-bold" placeholder='Ranch Owner / Game Warden'>
+                            </div>
+                        </div>
+
+                        </div><!-- END bolo-animal-fields -->
+
+                        <!-- Notes (shared) -->
                         <div>
                             <label class="text-[10px] text-gray-400 font-bold uppercase tracking-widest flex justify-between items-center">
                                 <span>Notes</span>
@@ -1386,7 +1489,7 @@
                             <textarea id="bolo-input-notes" maxlength="1000" rows="4"
                                 oninput="document.getElementById('bolo-notes-counter').innerText = this.value.length + ' / 1000'"
                                 class="w-full bg-black border border-gray-700 rounded p-2 text-white text-sm leading-relaxed resize-y"
-                                placeholder="Additional notes: behavioral patterns, associates, known vehicles, last known address, etc."></textarea>
+                                placeholder="Additional notes: behavioral patterns, known area, associates, last known sighting, etc."></textarea>
                         </div>
                     </div>
 
@@ -1450,7 +1553,8 @@
                     <span style="color: #fff; font-size: 10px; font-weight: 900; letter-spacing: 4px; text-transform: uppercase;">DESCRIPTION</span>
                 </div>
                 <div style="padding: 10px 14px; font-size: 10.5px; line-height: 1.7; flex: 1; overflow: hidden;">
-                    <div><b>D.O.B / Age:</b>&nbsp;<span id="bolo-render-dob" style="color:#444;"></span></div>
+                    <div><b>Sex:</b>&nbsp;<span id="bolo-render-sex" style="color:#444;">— UNKNOWN</span></div>
+                                    <div><b>D.O.B / Age:</b>&nbsp;<span id="bolo-render-dob" style="color:#444;"></span></div>
                     <div><b>Race / Build:</b>&nbsp;<span id="bolo-render-build" style="color:#444;"></span></div>
                     <div><b>Height:</b>&nbsp;<span id="bolo-render-height" style="color:#444;"></span></div>
                     <div><b>Weight:</b>&nbsp;<span id="bolo-render-weight" style="color:#444;"></span></div>
@@ -1507,6 +1611,88 @@
 
     </div>
     <!-- END BOLO MODAL -->
+
+    <!-- ══ ANIMAL BOLO RENDER ZONE (grey theme) ══ -->
+    <div id="bolo-animal-render-zone" style="position:fixed;top:-9999px;left:-9999px;z-index:-9999;width:600px;height:850px;background:#1a1a1a;font-family:Arial,sans-serif;overflow:hidden;">
+
+        <!-- Top Agency Strip -->
+        <div style="background:#111;border-bottom:2px solid #555;padding:7px 22px;display:flex;justify-content:space-between;align-items:center;">
+            <span style="color:#9ca3af;font-size:9px;font-weight:900;letter-spacing:4px;text-transform:uppercase;">TACTICAL RANGE CARD</span>
+            <span id="bolo-animal-render-type-label" style="color:#9ca3af;font-size:9px;font-weight:900;letter-spacing:3px;text-transform:uppercase;">NUISANCE ANIMAL</span>
+        </div>
+
+        <!-- WANTED Header -->
+        <div style="text-align:center;padding:10px 0 6px;background:#1a1a1a;">
+            <div style="color:#d1d5db;font-size:108px;font-weight:900;line-height:0.87;letter-spacing:6px;text-transform:uppercase;font-family:'Arial Black',Impact,Arial,sans-serif;text-shadow:0 0 40px rgba(180,180,180,0.2),3px 3px 0px #0a0a0a;">WANTED</div>
+            <div style="border-top:3px solid #555;margin:10px 24px 8px;"></div>
+            <div id="bolo-animal-render-species" style="color:#ffffff;font-size:28px;font-weight:900;letter-spacing:9px;text-transform:uppercase;">UNKNOWN SPECIES</div>
+            <div style="border-bottom:3px solid #555;margin:8px 24px 5px;"></div>
+            <div style="color:#9ca3af;font-size:11px;font-weight:700;letter-spacing:3px;font-style:italic;text-transform:uppercase;">WILDLIFE / NUISANCE ANIMAL NOTICE</div>
+        </div>
+
+        <!-- Photo + Description -->
+        <div style="display:grid;grid-template-columns:305px 247px;gap:0;margin:10px 24px 0;">
+            <!-- Photo -->
+            <div style="background:#111;border:3px solid #555;position:relative;height:300px;display:flex;align-items:center;justify-content:center;overflow:hidden;">
+                <img id="bolo-animal-render-img" style="display:none;position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;">
+                <div id="bolo-animal-render-placeholder" style="text-align:center;padding:20px;">
+                    <div style="color:#2e2e2e;font-size:64px;line-height:1;">🐗</div>
+                    <div style="color:#333;font-size:11px;font-weight:900;letter-spacing:4px;margin-top:10px;">NO PHOTO</div>
+                </div>
+            </div>
+            <!-- Description box -->
+            <div style="background:#f5f5f5;color:#000;height:300px;display:flex;flex-direction:column;overflow:hidden;">
+                <div style="background:#444;padding:8px 14px;flex-shrink:0;">
+                    <span style="color:#fff;font-size:10px;font-weight:900;letter-spacing:4px;text-transform:uppercase;">DESCRIPTION</span>
+                </div>
+                <div style="padding:10px 14px;font-size:10.5px;line-height:1.75;flex:1;overflow:hidden;">
+                    <div><b>Sex / Class:</b>&nbsp;<span id="bolo-animal-render-sex" style="color:#444;">— Unknown</span></div>
+                    <div><b>Est. Weight:</b>&nbsp;<span id="bolo-animal-render-weight" style="color:#444;"></span></div>
+                    <div style="margin-top:8px;border-top:1px solid #ddd;padding-top:7px;">
+                        <div style="font-weight:900;font-size:10px;text-transform:uppercase;margin-bottom:3px;">Distinguishing Marks:</div>
+                        <span id="bolo-animal-render-marks" style="color:#555;font-style:italic;font-size:10px;"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Territory -->
+        <div style="margin:10px 24px 8px;background:#111;border-left:4px solid #555;padding:9px 14px;">
+            <div style="color:#9ca3af;font-size:9px;font-weight:900;letter-spacing:4px;margin-bottom:4px;text-transform:uppercase;">&#9679;&nbsp; TERRITORY / LAST SEEN</div>
+            <div id="bolo-animal-render-territory" style="color:#d1d5db;font-size:11px;line-height:1.5;">Unknown area.</div>
+        </div>
+
+        <!-- Notes (hidden when empty) -->
+        <div id="bolo-animal-render-notes-section" style="margin:0 24px 8px;background:#0f0f0f;border-left:4px solid #444;padding:7px 14px;display:none;">
+            <div style="color:#6b7280;font-size:9px;font-weight:900;letter-spacing:4px;margin-bottom:3px;text-transform:uppercase;">&#9679;&nbsp; NOTES</div>
+            <div id="bolo-animal-render-notes" style="color:#9ca3af;font-size:10px;line-height:1.5;"></div>
+        </div>
+
+        <!-- Reward + Contact -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:0 24px 8px;">
+            <div style="background:#0f0f00;border-left:4px solid #b45309;padding:9px 14px;">
+                <div style="color:#b45309;font-size:9px;font-weight:900;letter-spacing:3px;margin-bottom:4px;text-transform:uppercase;">&#9679;&nbsp; REWARD</div>
+                <div id="bolo-animal-render-reward" style="color:#fbbf24;font-size:13px;font-weight:900;">No reward posted.</div>
+            </div>
+            <div style="background:#111;border-left:4px solid #555;padding:9px 14px;">
+                <div style="color:#6b7280;font-size:9px;font-weight:900;letter-spacing:3px;margin-bottom:4px;text-transform:uppercase;">&#9679;&nbsp; CONTACT</div>
+                <div id="bolo-animal-render-contact" style="color:#d1d5db;font-size:11px;font-weight:900;letter-spacing:1px;text-transform:uppercase;">RANCH OWNER</div>
+            </div>
+        </div>
+
+        <!-- Threat Banner -->
+        <div id="bolo-animal-render-banner" style="margin:0 24px 10px;background:#92400e;padding:10px 0;text-align:center;">
+            <span id="bolo-animal-render-banner-text" style="color:#fff;font-size:13px;font-weight:900;letter-spacing:6px;text-transform:uppercase;font-family:'Arial Black',Arial,sans-serif;">&#9888;&nbsp; NUISANCE ANIMAL &nbsp;&#9888;</span>
+        </div>
+
+        <!-- Bottom Seal -->
+        <div style="margin:0 24px;display:flex;justify-content:space-between;align-items:center;border-top:1px solid #333;padding-top:7px;">
+            <span style="color:#444;font-size:8px;letter-spacing:2px;text-transform:uppercase;">TACTICAL RANGE CARD &bull; INTEL SYSTEM</span>
+            <span style="color:#6b7280;font-size:8px;letter-spacing:3px;text-transform:uppercase;font-weight:900;">OFFICIAL WILDLIFE NOTICE</span>
+        </div>
+
+    </div>
+    <!-- END ANIMAL BOLO RENDER ZONE -->
 
     <!-- START GAME TAG MODAL -->
     <div id="gametag-modal" class="fixed inset-0 bg-black/90 backdrop-blur-md z-[200] hidden flex items-center justify-center p-4" style="z-index: 100050;">
