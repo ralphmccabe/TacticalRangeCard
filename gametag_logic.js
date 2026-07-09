@@ -372,12 +372,19 @@ if (gametagToVaultBtnTop) {
         const titleLbl = document.getElementById('gametag-render-title');
 
         if (tag.type === 'game') {
-            if (borderBg) borderBg.style.backgroundColor = '#3E4A35';
-            if (headerBg) { headerBg.classList.remove('bg-[#64748b]'); headerBg.classList.add('bg-[#b59e72]'); }
-            if (holeBg) { holeBg.classList.remove('bg-[#1e293b]'); holeBg.classList.add('bg-[#3E4A35]'); }
-            if (typeLbl) typeLbl.innerText = 'FIELD HARVEST TAG';
-            if (contentBg) { contentBg.classList.remove('bg-[#334155]'); contentBg.classList.add('bg-[#5A684C]'); }
-            if (titleLbl) titleLbl.innerText = 'OFFICIAL HARVEST RECORD';
+            // ── HUNTING THEME: Military green ──
+            const zone = document.getElementById('gametag-poster-render-zone');
+            const headerStrip = document.getElementById('gametag-render-header-strip');
+            const titleBar = document.getElementById('gametag-render-title-bar');
+            const subtitle = document.getElementById('gametag-render-subtitle');
+            const dot = document.getElementById('gametag-render-dot');
+            if (zone)        { zone.style.background = '#2d3b24'; zone.style.borderColor = '#1a2314'; }
+            if (headerStrip) { headerStrip.style.background = '#1a2314'; headerStrip.style.borderBottomColor = '#4a6030'; }
+            if (titleBar)    { titleBar.style.background = '#1e2d18'; titleBar.style.borderBottomColor = '#3a4a2a'; }
+            if (subtitle)    { subtitle.style.color = '#8ab040'; subtitle.innerText = 'FIELD TAG \u2014 WILDLIFE DOCUMENTATION'; }
+            if (dot)         { dot.style.background = '#8ab040'; dot.style.boxShadow = '0 0 6px rgba(138,176,64,0.6)'; }
+            if (typeLbl)     typeLbl.innerText = 'FIELD HARVEST TAG';
+            if (titleLbl)    titleLbl.innerText = 'OFFICIAL HARVEST RECORD';
 
             speciesVal.innerText = tag.game_species || 'UNKNOWN';
             sexLbl.innerText = 'SEX / CLASS';
@@ -389,12 +396,19 @@ if (gametagToVaultBtnTop) {
             licenseLbl.innerText = 'LICENSE / TAG #';
             licenseVal.innerText = tag.game_license || 'N/A';
         } else {
-            if (borderBg) borderBg.style.backgroundColor = '#1e293b';
-            if (headerBg) { headerBg.classList.remove('bg-[#b59e72]'); headerBg.classList.add('bg-[#64748b]'); }
-            if (holeBg) { holeBg.classList.remove('bg-[#3E4A35]'); holeBg.classList.add('bg-[#1e293b]'); }
-            if (typeLbl) typeLbl.innerText = 'FISHING RECORD TAG';
-            if (contentBg) { contentBg.classList.remove('bg-[#5A684C]'); contentBg.classList.add('bg-[#334155]'); }
-            if (titleLbl) titleLbl.innerText = 'OFFICIAL CATCH RECORD';
+            // ── FISHING THEME: Deep ocean blue/teal ──
+            const zone = document.getElementById('gametag-poster-render-zone');
+            const headerStrip = document.getElementById('gametag-render-header-strip');
+            const titleBar = document.getElementById('gametag-render-title-bar');
+            const subtitle = document.getElementById('gametag-render-subtitle');
+            const dot = document.getElementById('gametag-render-dot');
+            if (zone)        { zone.style.background = '#0c1f2e'; zone.style.borderColor = '#071521'; }
+            if (headerStrip) { headerStrip.style.background = '#071521'; headerStrip.style.borderBottomColor = '#0e4d6b'; }
+            if (titleBar)    { titleBar.style.background = '#0a1c2a'; titleBar.style.borderBottomColor = '#0e4d6b'; }
+            if (subtitle)    { subtitle.style.color = '#38bdf8'; subtitle.innerText = 'CATCH RECORD \u2014 AQUATIC DOCUMENTATION'; }
+            if (dot)         { dot.style.background = '#38bdf8'; dot.style.boxShadow = '0 0 6px rgba(56,189,248,0.7)'; }
+            if (typeLbl)     typeLbl.innerText = 'FISHING RECORD TAG';
+            if (titleLbl)    titleLbl.innerText = 'OFFICIAL CATCH RECORD';
 
             speciesVal.innerText = tag.fish_species || 'UNKNOWN';
             sexLbl.innerText = 'WATER BODY';
@@ -405,6 +419,49 @@ if (gametagToVaultBtnTop) {
             stat2Val.innerText = tag.fish_weight || 'N/A';
             licenseLbl.innerText = 'LURE / BAIT';
             licenseVal.innerText = tag.fish_bait || 'N/A';
+        }
+
+        // ── Dynamic QR Code: encode real card data ──
+        const qrImg = document.getElementById('gametag-render-qr');
+        if (qrImg) {
+            const isGame = tag.type === 'game';
+            const tagDate = tag.date
+                ? new Date(tag.date).toLocaleDateString('en-US', { year:'numeric', month:'short', day:'numeric' })
+                : new Date().toLocaleDateString('en-US', { year:'numeric', month:'short', day:'numeric' });
+
+            let qrText;
+            if (isGame) {
+                qrText = [
+                    '=== TRC FIELD HARVEST TAG ===',
+                    'SPECIES : ' + (tag.game_species  || 'N/A').toUpperCase(),
+                    'SEX/CLASS: ' + (tag.game_sex      || 'N/A').toUpperCase(),
+                    'LICENSE # : ' + (tag.game_license  || 'N/A').toUpperCase(),
+                    'ANTLER PTS: ' + (tag.game_points   || 'N/A'),
+                    'SPREAD    : ' + (tag.game_spread   || 'N/A'),
+                    'GPS       : ' + (tag.gps           || 'N/A'),
+                    'DATE      : ' + tagDate,
+                    tag.notes ? 'NOTES: ' + tag.notes : '',
+                    '===========================',
+                    'UNOFFICIAL — FOR TRC LOGGING'
+                ].filter(Boolean).join('\n');
+            } else {
+                qrText = [
+                    '=== TRC FISHING RECORD TAG ===',
+                    'SPECIES   : ' + (tag.fish_species || 'N/A').toUpperCase(),
+                    'WATER BODY: ' + (tag.fish_water   || 'N/A').toUpperCase(),
+                    'LURE/BAIT : ' + (tag.fish_bait    || 'N/A').toUpperCase(),
+                    'LENGTH    : ' + (tag.fish_length   || 'N/A') + ' IN',
+                    'WEIGHT    : ' + (tag.fish_weight   || 'N/A') + ' LBS',
+                    'GPS       : ' + (tag.gps           || 'N/A'),
+                    'DATE      : ' + tagDate,
+                    tag.notes ? 'NOTES: ' + tag.notes : '',
+                    '==============================',
+                    'UNOFFICIAL — FOR TRC LOGGING'
+                ].filter(Boolean).join('\n');
+            }
+
+            qrImg.src = 'https://api.qrserver.com/v1/create-qr-code/?size=120x120&margin=2&data='
+                        + encodeURIComponent(qrText);
         }
 
         if(tag.image) {
@@ -456,22 +513,10 @@ if (gametagToVaultBtnTop) {
                     gametagData: tag
                 });
                 
-                if (window.showToast) window.showToast("Field Tag Sent to Intel Vault!");
+                if (window.showToast) window.showToast("✅ Field Tag Saved to Intel Vault!");
                 else alert("Field Tag Sent to Intel Vault!");
-                
-                // Close modals and open Vault
-                const gametagModal = document.getElementById('gametag-modal');
-                if (gametagModal) gametagModal.classList.add('hidden');
-                
-                const boloModal = document.getElementById('bolo-modal');
-                if (boloModal) boloModal.classList.add('hidden');
-                
-                if (typeof window.toggleFullscreen === 'function') {
-                    const vaultPanel = document.getElementById('panel-vault');
-                    if (vaultPanel && !vaultPanel.classList.contains('is-maximized')) {
-                        window.toggleFullscreen('panel-vault');
-                    }
-                }
+                // Stay in the form — user can create another tag immediately
+
             }
         } catch (error) {
             console.error("Tag Capture failed: ", error);

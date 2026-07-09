@@ -13,6 +13,30 @@ const boloToVaultBtnTop = document.getElementById('bolo-to-vault-btn-top');
 
 let currentBoloImage = null; // Store base64 image data for the form
 let activeBoloId = null;     // ID of the currently selected BOLO in the library list
+let currentBoloThreatLevel = 'poi'; // 'poi' | 'fugitive' | 'armed'
+
+window.setBoloThreatLevel = function(level) {
+    currentBoloThreatLevel = level;
+    const hiddenInput = document.getElementById('bolo-input-threat');
+    if (hiddenInput) hiddenInput.value = level;
+
+    const configs = {
+        poi:      { border: '#3b82f6', bg: 'rgba(29,78,216,0.4)',   color: '#93c5fd', shadow: '0 0 10px rgba(59,130,246,0.6)'   },
+        fugitive: { border: '#f97316', bg: 'rgba(194,65,12,0.4)',   color: '#fb923c', shadow: '0 0 10px rgba(249,115,22,0.6)'   },
+        armed:    { border: '#dc2626', bg: 'rgba(127,29,29,0.5)',   color: '#f87171', shadow: '0 0 12px rgba(220,38,38,0.6)'   }
+    };
+    const off = { border: '#374151', bg: '#111827', color: '#6b7280', shadow: 'none' };
+
+    ['poi', 'fugitive', 'armed'].forEach(lvl => {
+        const btn = document.getElementById(`bolo-threat-btn-${lvl}`);
+        if (!btn) return;
+        const s = lvl === level ? configs[level] : off;
+        btn.style.borderColor     = s.border;
+        btn.style.backgroundColor = s.bg;
+        btn.style.color           = s.color;
+        btn.style.boxShadow       = s.shadow;
+    });
+};
 
 window.closeBoloModal = function() {
     if (boloModal) {
@@ -34,12 +58,12 @@ openBoloBtns.forEach(btn => {
 
 function clearBoloForm() {
     // Clear inputs
-    const inputs = ['bolo-input-name', 'bolo-input-reason', 'bolo-input-height', 'bolo-input-weight', 'bolo-input-hair', 'bolo-input-eye', 'bolo-input-features', 'bolo-input-lastseen', 'bolo-input-reward', 'bolo-input-warning', 'bolo-input-contact'];
+    const inputs = ['bolo-input-name', 'bolo-input-reason', 'bolo-input-agency', 'bolo-input-case', 'bolo-input-dob', 'bolo-input-build', 'bolo-input-height', 'bolo-input-weight', 'bolo-input-hair', 'bolo-input-eye', 'bolo-input-features', 'bolo-input-lastseen', 'bolo-input-reward', 'bolo-input-warning', 'bolo-input-contact'];
     inputs.forEach(id => {
         if(document.getElementById(id)) document.getElementById(id).value = '';
     });
     
-    // Clear image
+    // Clear image — reset BOTH the hidden render zone AND the visible form preview
     currentBoloImage = null;
     if(boloRenderImg) {
         boloRenderImg.src = '';
@@ -47,9 +71,18 @@ function clearBoloForm() {
     }
     if(boloImagePlaceholder) boloImagePlaceholder.style.display = 'block';
     
+    // Clear the visible form photo preview
+    const formPreviewImg = document.getElementById('bolo-form-preview-img');
+    const formPreviewIcon = document.getElementById('bolo-form-preview-icon');
+    if(formPreviewImg) { formPreviewImg.src = ''; formPreviewImg.classList.add('hidden'); }
+    if(formPreviewIcon) formPreviewIcon.style.opacity = '1';
+    
+    // Reset the file input so the same file can be re-uploaded if needed
+    if(boloImageUpload) boloImageUpload.value = '';
+    
     const label = document.getElementById('bolo-image-label');
     if(label) {
-        label.innerText = 'TAP TO UPLOAD IMAGE';
+        label.innerText = 'TAP TO UPLOAD PHOTO';
         label.classList.remove('text-neon-green');
         label.classList.add('text-gray-400');
     }
@@ -58,7 +91,16 @@ function clearBoloForm() {
     activeBoloId = null;
     if(reworkBoloBtn) reworkBoloBtn.classList.add('hidden');
     if(boloToVaultBtnTop) boloToVaultBtnTop.classList.add('hidden');
-    
+
+    // Reset threat level to default
+    currentBoloThreatLevel = 'poi';
+    window.setBoloThreatLevel('poi');
+    // Clear notes
+    const notesInput = document.getElementById('bolo-input-notes');
+    if (notesInput) notesInput.value = '';
+    const notesCounter = document.getElementById('bolo-notes-counter');
+    if (notesCounter) notesCounter.innerText = '0 / 1000';
+
     renderBoloLibrary(); // clear highlights
 }
 
@@ -105,6 +147,10 @@ if(boloSaveInventoryBtn) {
         const data = {
             name: document.getElementById('bolo-input-name').value || '',
             reason: document.getElementById('bolo-input-reason').value || '',
+            agency: document.getElementById('bolo-input-agency').value || '',
+            case_num: document.getElementById('bolo-input-case').value || '',
+            dob: document.getElementById('bolo-input-dob').value || '',
+            build: document.getElementById('bolo-input-build').value || '',
             height: document.getElementById('bolo-input-height').value || '',
             weight: document.getElementById('bolo-input-weight').value || '',
             hair: document.getElementById('bolo-input-hair').value || '',
@@ -114,6 +160,8 @@ if(boloSaveInventoryBtn) {
             reward: document.getElementById('bolo-input-reward').value || '',
             warning: document.getElementById('bolo-input-warning').value || '',
             contact: document.getElementById('bolo-input-contact').value || '',
+            threat_level: currentBoloThreatLevel || 'poi',
+            notes: (document.getElementById('bolo-input-notes') || {}).value || '',
             image: currentBoloImage,
             timestamp: new Date().toISOString()
         };
@@ -165,14 +213,19 @@ async function renderBoloLibrary() {
                     <div class="font-black text-red-500 text-[10px] uppercase tracking-widest truncate max-w-[150px]">${displayName}</div>
                     <div class="text-[8px] text-gray-500 shrink-0">${dateStr}</div>
                 </div>
-                <div class="text-[9px] text-gray-400 truncate mb-3">${displayReason}</div>
-                
-                <div class="flex justify-between items-center border-t border-gray-800 pt-2 mt-auto">
-                     <span class="text-[9px] font-bold text-gray-500 flex items-center gap-1">
-                        <i data-lucide="${bolo.image ? 'image' : 'file-text'}" class="w-3 h-3"></i>
-                        ${bolo.image ? 'WITH MUGSHOT' : 'TEXT ONLY'}
-                     </span>
-                     <button class="text-gray-500 hover:text-red-500 p-1" onclick="event.stopPropagation(); deleteBolo('${bolo.id}')"><i data-lucide="trash" class="w-3 h-3"></i></button>
+                <div class="flex gap-2">
+                    <div class="w-12 h-12 bg-black border border-gray-700 rounded overflow-hidden shrink-0 flex items-center justify-center">
+                        ${bolo.image ? `<img src="${bolo.image}" class="w-full h-full object-cover">` : `<i data-lucide="user" class="w-4 h-4 text-gray-600"></i>`}
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <div class="text-[9px] text-gray-300 truncate">${displayReason}</div>
+                        <div class="text-[8px] text-gray-500 truncate mt-1">${bolo.lastseen ? 'Last: ' + bolo.lastseen : bolo.warning || ''}</div>
+                    </div>
+                    <div class="flex flex-col gap-1 items-end">
+                        <button class="text-gray-600 hover:text-red-500 p-1 bg-black rounded" onclick="event.stopPropagation(); deleteBolo('${bolo.id}')" title="Delete">
+                            <i data-lucide="trash" class="w-3 h-3"></i>
+                        </button>
+                    </div>
                 </div>
             `;
             
@@ -210,44 +263,65 @@ function selectBolo(bolo) {
 }
 
 window.loadBoloBackToEditor = function(bolo) {
-      if(!bolo) return;
-      document.getElementById('bolo-input-name').value = bolo.name || '';
-      document.getElementById('bolo-input-reason').value = bolo.reason || '';
-      document.getElementById('bolo-input-height').value = bolo.height || '';
-      document.getElementById('bolo-input-weight').value = bolo.weight || '';
-      document.getElementById('bolo-input-hair').value = bolo.hair || '';
-      document.getElementById('bolo-input-eye').value = bolo.eye || '';
-      document.getElementById('bolo-input-features').value = bolo.features || '';
-      document.getElementById('bolo-input-lastseen').value = bolo.lastseen || '';
-      document.getElementById('bolo-input-reward').value = bolo.reward || '';
-      document.getElementById('bolo-input-warning').value = bolo.warning || '';
-      document.getElementById('bolo-input-contact').value = bolo.contact || '';
-      
-      currentBoloImage = bolo.image || null;
-      const label = document.getElementById('bolo-image-label');
-      
-      if(bolo.image) {
-          if(boloRenderImg) {
-              boloRenderImg.src = bolo.image;
-              boloRenderImg.style.display = 'block';
-          }
-          if(boloImagePlaceholder) boloImagePlaceholder.style.display = 'none';
-          if(label) {
-              label.innerText = 'CHANGE PHOTO';
-              label.classList.remove('text-gray-400');
-              label.classList.add('text-neon-green');
-          }
-      } else {
-          if(boloRenderImg) boloRenderImg.style.display = 'none';
-          if(boloImagePlaceholder) boloImagePlaceholder.style.display = 'block';
-          if(label) {
-              label.innerText = 'TAP TO UPLOAD PHOTO';
-              label.classList.remove('text-neon-green');
-              label.classList.add('text-gray-400');
-          }
-      }
-      
-      if (typeof openBoloModal === 'function') openBoloModal();
+    if(!bolo) return;
+    document.getElementById('bolo-input-name').value = bolo.name || '';
+    document.getElementById('bolo-input-reason').value = bolo.reason || '';
+    document.getElementById('bolo-input-agency').value = bolo.agency || '';
+    document.getElementById('bolo-input-case').value = bolo.case_num || '';
+    document.getElementById('bolo-input-dob').value = bolo.dob || '';
+    document.getElementById('bolo-input-build').value = bolo.build || '';
+    document.getElementById('bolo-input-height').value = bolo.height || '';
+    document.getElementById('bolo-input-weight').value = bolo.weight || '';
+    document.getElementById('bolo-input-hair').value = bolo.hair || '';
+    document.getElementById('bolo-input-eye').value = bolo.eye || '';
+    document.getElementById('bolo-input-features').value = bolo.features || '';
+    document.getElementById('bolo-input-lastseen').value = bolo.lastseen || '';
+    document.getElementById('bolo-input-reward').value = bolo.reward || '';
+    document.getElementById('bolo-input-warning').value = bolo.warning || '';
+    document.getElementById('bolo-input-contact').value = bolo.contact || '';
+    // Restore threat level
+    window.setBoloThreatLevel(bolo.threat_level || 'poi');
+    // Restore notes
+    const notesInput = document.getElementById('bolo-input-notes');
+    if (notesInput) {
+        notesInput.value = bolo.notes || '';
+        const counter = document.getElementById('bolo-notes-counter');
+        if (counter) counter.innerText = (bolo.notes || '').length + ' / 1000';
+    }
+    
+    currentBoloImage = bolo.image || null;
+    const label = document.getElementById('bolo-image-label');
+    const formPreviewImg = document.getElementById('bolo-form-preview-img');
+    const formPreviewIcon = document.getElementById('bolo-form-preview-icon');
+    
+    if(bolo.image) {
+        // Populate the visible form photo preview
+        if(formPreviewImg) { formPreviewImg.src = bolo.image; formPreviewImg.classList.remove('hidden'); }
+        if(formPreviewIcon) formPreviewIcon.style.opacity = '0.3';
+        // Populate the hidden render zone image for vault export
+        if(boloRenderImg) { boloRenderImg.src = bolo.image; boloRenderImg.style.display = 'block'; }
+        if(boloImagePlaceholder) boloImagePlaceholder.style.display = 'none';
+        if(label) { label.innerText = 'CHANGE PHOTO'; label.classList.remove('text-gray-400'); label.classList.add('text-neon-green'); }
+    } else {
+        if(formPreviewImg) { formPreviewImg.src = ''; formPreviewImg.classList.add('hidden'); }
+        if(formPreviewIcon) formPreviewIcon.style.opacity = '1';
+        if(boloRenderImg) boloRenderImg.style.display = 'none';
+        if(boloImagePlaceholder) boloImagePlaceholder.style.display = 'block';
+        if(label) { label.innerText = 'TAP TO UPLOAD PHOTO'; label.classList.remove('text-neon-green'); label.classList.add('text-gray-400'); }
+    }
+    
+    // Show the modal directly — do NOT call openBoloModal() as it would clear everything we just loaded
+    if(boloModal) {
+        boloModal.classList.remove('hidden');
+        boloModal.classList.add('flex');
+    }
+    // Close the vault panel if open (same as Mission Briefing pattern)
+    const vaultPanel = document.getElementById('panel-vault');
+    if(vaultPanel) {
+        if(vaultPanel.classList.contains('is-maximized') && window.toggleFullscreen) window.toggleFullscreen('panel-vault');
+        vaultPanel.classList.add('hidden');
+    }
+    if(window.pushTacLog) window.pushTacLog(`BOLO LOADED: ${bolo.name || 'UNKNOWN SUSPECT'}`, 'INFO');
 };
 
 if(reworkBoloBtn) {
@@ -301,8 +375,12 @@ if (boloToVaultBtnTop) {
         if(!bolo) return;
         
         // Transfer data to hidden template
+        document.getElementById('bolo-render-agency').innerText = bolo.agency || 'TACTICAL RANGE CARD';
+        document.getElementById('bolo-render-case').innerText = bolo.case_num || 'N/A';
         document.getElementById('bolo-render-name').innerText = bolo.name || 'UNKNOWN SUSPECT';
         document.getElementById('bolo-render-reason').innerText = bolo.reason || 'WANTED FOR QUESTIONING';
+        document.getElementById('bolo-render-dob').innerText = bolo.dob || 'N/A';
+        document.getElementById('bolo-render-build').innerText = bolo.build || 'N/A';
         document.getElementById('bolo-render-height').innerText = bolo.height || 'N/A';
         document.getElementById('bolo-render-weight').innerText = bolo.weight || 'N/A';
         document.getElementById('bolo-render-hair').innerText = bolo.hair || 'N/A';
@@ -313,8 +391,30 @@ if (boloToVaultBtnTop) {
         document.getElementById('bolo-render-warning').innerText = bolo.warning || 'Approach with caution.';
         document.getElementById('bolo-render-contact').innerText = bolo.contact || 'CONTACT LOCAL AUTHORITIES';
 
-        const posterPhoto = document.getElementById('bolo-render-photo');
-        const posterNoPhoto = document.getElementById('bolo-render-nophoto');
+        // Threat level — drives banner color + text
+        const threatConfig = {
+            poi:      { bg: '#1d4ed8', text: '\u26A0  PERSON OF INTEREST  \u2014  APPROACH WITH CAUTION  \u26A0' },
+            fugitive: { bg: '#ea580c', text: '\u26A0  FUGITIVE / AT LARGE  \u2014  DO NOT APPROACH  \u26A0' },
+            armed:    { bg: '#cc0000', text: '\u26A0  ARMED & DANGEROUS  \u2014  EXERCISE EXTREME CAUTION  \u26A0' }
+        };
+        const tCfg = threatConfig[bolo.threat_level || 'armed'];
+        const bannerEl  = document.getElementById('bolo-render-threat-banner');
+        const bannerTxt = document.getElementById('bolo-render-threat-text');
+        if (bannerEl)  bannerEl.style.background = tCfg.bg;
+        if (bannerTxt) bannerTxt.innerText = tCfg.text;
+
+        // Notes on poster
+        const notesSec = document.getElementById('bolo-render-notes-section');
+        const notesEl  = document.getElementById('bolo-render-notes');
+        if (bolo.notes && bolo.notes.trim()) {
+            if (notesSec) notesSec.style.display = 'block';
+            if (notesEl)  notesEl.innerText = bolo.notes;
+        } else {
+            if (notesSec) notesSec.style.display = 'none';
+        }
+
+        const posterPhoto = document.getElementById('bolo-render-img');
+        const posterNoPhoto = document.getElementById('bolo-render-img-placeholder');
 
         if(bolo.image) {
             if (posterPhoto) {
@@ -349,25 +449,16 @@ if (boloToVaultBtnTop) {
             
             const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
             
-            if (window.TRC_IDB) {
+            if (window.saveIntelSnapshot) {
                 const entry = {
-                    id: Date.now(),
                     type: 'bolo-card',
-                    title: 'BOLO: ' + (bolo.name || 'UNKNOWN SUSPECT'),
-                    timestamp: new Date().toISOString(),
-                    image: dataUrl,
                     isAmmo: false,
-                    boloData: bolo // Save original form data
+                    boloData: bolo
                 };
-                
-                await window.TRC_IDB.set('intelVault', entry.id.toString(), entry);
-                
-                if (window.showToast) window.showToast("BOLO Poster Sent to Intel Vault!");
+                await window.saveIntelSnapshot('BOLO: ' + (bolo.name || 'UNKNOWN SUSPECT'), dataUrl, entry);
+                if (window.showToast) window.showToast("✅ BOLO Saved to Intel Vault!");
                 else alert("BOLO Poster Sent to Intel Vault!");
-                
-                closeBoloModal();
-                
-                if (window.initVaultFromDB) window.initVaultFromDB();
+                // Stay in the form — user can create another card immediately
             }
         } catch (error) {
             console.error("BOLO Capture failed: ", error);

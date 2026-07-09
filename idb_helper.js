@@ -5,13 +5,14 @@
  */
 
 const DB_NAME = 'TRC_PRO_UPGRADE_DB';
-const DB_VERSION = 7; // Incremented to force schema upgrade on all devices
+const DB_VERSION = 8; // v8: Added licenseLibrary store for Hunting/Fishing License cards
 const STORES = {
     PROFILES: 'rangeCardProfiles',
-    VAULT: 'intelVault', // Permanent storage for snapshots/remarks
-    DRAFTS: 'drafts', // Mission recovery drafts
-    BOLO: 'boloLibrary', // Permanent storage for BOLO cards
-    GAMETAG: 'gameTagLibrary' // NEW: Storage for Field Harvest Tags
+    VAULT: 'intelVault',
+    DRAFTS: 'drafts',
+    BOLO: 'boloLibrary',
+    GAMETAG: 'gameTagLibrary',
+    LICENSE: 'licenseLibrary' // Hunting/Fishing License & ID cards
 };
 
 const idb = {
@@ -38,6 +39,9 @@ const idb = {
                 }
                 if (!db.objectStoreNames.contains(STORES.GAMETAG)) {
                     db.createObjectStore(STORES.GAMETAG);
+                }
+                if (!db.objectStoreNames.contains(STORES.LICENSE)) {
+                    db.createObjectStore(STORES.LICENSE);
                 }
             };
 
