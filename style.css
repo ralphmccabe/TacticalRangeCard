@@ -566,3 +566,21 @@ body.is-capturing #card-scale-wrapper {
   display: inline-block;
   vertical-align: middle;
 }
+
+/* Custom Circle Buttons */
+.circle-btn-ammo { background-color: rgba(52, 211, 153, 0.15) !important; border-color: #34d399 !important; color: #34d399 !important; box-shadow: 0 0 20px rgba(52, 211, 153, 0.25) !important; }
+.circle-btn-ammo:hover { background-color: rgba(52, 211, 153, 0.3) !important; transform: scale(1.03) !important; }
+.circle-btn-ammo i, .circle-btn-ammo span { filter: drop-shadow(0 0 5px rgba(52,211,153,0.8)); }
+
+.circle-btn-mapper { background-color: rgba(232, 121, 249, 0.15) !important; border-color: #e879f9 !important; color: #e879f9 !important; box-shadow: 0 0 20px rgba(232, 121, 249, 0.25) !important; }
+.circle-btn-mapper:hover { background-color: rgba(232, 121, 249, 0.3) !important; transform: scale(1.03) !important; }
+.circle-btn-mapper i, .circle-btn-mapper span { filter: drop-shadow(0 0 5px rgba(232,121,249,0.8)); }
+
+.circle-btn-hud { background-color: rgba(163, 230, 53, 0.15) !important; border-color: #a3e635 !important; color: #a3e635 !important; box-shadow: 0 0 20px rgba(163, 230, 53, 0.25) !important; }
+.circle-btn-hud:hover { background-color: rgba(163, 230, 53, 0.3) !important; transform: scale(1.03) !important; }
+.circle-btn-hud i, .circle-btn-hud span { filter: drop-shadow(0 0 5px rgba(163,230,53,0.8)); }
+
+.circle-btn-tools { background-color: rgba(244, 63, 94, 0.15) !important; border-color: #f43f5e !important; color: #f43f5e !important; box-shadow: 0 0 20px rgba(244, 63, 94, 0.25) !important; }
+.circle-btn-tools:hover { background-color: rgba(244, 63, 94, 0.3) !important; transform: scale(1.03) !important; }
+.circle-btn-tools i, .circle-btn-tools span { filter: drop-shadow(0 0 5px rgba(244,63,94,0.8)); }
+

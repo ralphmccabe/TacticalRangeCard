@@ -5,11 +5,14 @@
  */
 
 const DB_NAME = 'TRC_PRO_UPGRADE_DB';
-const DB_VERSION = 4; // Incremented version to add intelVault store
+const DB_VERSION = 8; // v8: Added licenseLibrary store for Hunting/Fishing License cards
 const STORES = {
     PROFILES: 'rangeCardProfiles',
-    VAULT: 'intelVault', // NEW: Permanent storage for snapshots/remarks
-    DRAFTS: 'drafts' // NEW: Mission recovery drafts
+    VAULT: 'intelVault',
+    DRAFTS: 'drafts',
+    BOLO: 'boloLibrary',
+    GAMETAG: 'gameTagLibrary',
+    LICENSE: 'licenseLibrary' // Hunting/Fishing License & ID cards
 };
 
 const idb = {
@@ -30,6 +33,15 @@ const idb = {
                 }
                 if (!db.objectStoreNames.contains(STORES.DRAFTS)) {
                     db.createObjectStore(STORES.DRAFTS);
+                }
+                if (!db.objectStoreNames.contains(STORES.BOLO)) {
+                    db.createObjectStore(STORES.BOLO);
+                }
+                if (!db.objectStoreNames.contains(STORES.GAMETAG)) {
+                    db.createObjectStore(STORES.GAMETAG);
+                }
+                if (!db.objectStoreNames.contains(STORES.LICENSE)) {
+                    db.createObjectStore(STORES.LICENSE);
                 }
             };
 

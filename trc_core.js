@@ -6007,6 +6007,86 @@ function initializeTacticalDashboard2() {
         });
     }
 
+    const vaultToBoloBtn = document.getElementById('vault-to-bolo-btn');
+    if (vaultToBoloBtn) {
+        vaultToBoloBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const checkedBoxes = document.querySelectorAll('.vault-export-checkbox:checked');
+            
+            if (checkedBoxes.length === 1) {
+                const id = checkedBoxes[0].dataset.vaultId;
+                const item = vaultCache.find(x => x.id.toString() === id);
+                if (item && item.type === 'bolo-card' && item.boloData) {
+                    if(window.openBoloModal && window.loadBoloBackToEditor) {
+                        window.openBoloModal();
+                        window.loadBoloBackToEditor(item.boloData);
+                    }
+                } else {
+                    alert("The selected snapshot is not a valid BOLO card.");
+                    return;
+                }
+            } else if (checkedBoxes.length > 1) {
+                alert("Please select only ONE Most Wanted card to load into the editor.");
+                return;
+            } else {
+                if(window.openBoloModal) {
+                    window.openBoloModal();
+                }
+            }
+            
+            // Uncheck boxes
+            checkedBoxes.forEach(cb => cb.checked = false);
+            
+            // Auto-close vault if full screen mode is active
+            if (typeof window.toggleFullscreen === 'function') {
+                const vaultPanel = document.getElementById('panel-vault');
+                if (vaultPanel && vaultPanel.classList.contains('is-maximized')) {
+                    window.toggleFullscreen('panel-vault');
+                }
+            }
+        });
+    }
+
+    const vaultToGametagBtn = document.getElementById('vault-to-gametag-btn');
+    if (vaultToGametagBtn) {
+        vaultToGametagBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const checkedBoxes = document.querySelectorAll('.vault-export-checkbox:checked');
+            
+            if (checkedBoxes.length === 1) {
+                const id = checkedBoxes[0].dataset.vaultId;
+                const item = vaultCache.find(x => x.id.toString() === id);
+                if (item && item.type === 'gametag-card' && item.gametagData) {
+                    if(window.openGameTagModal && window.loadGametagBackToEditor) {
+                        window.openGameTagModal();
+                        window.loadGametagBackToEditor(item.gametagData);
+                    }
+                } else {
+                    alert("The selected snapshot is not a valid Field Tag card.");
+                    return;
+                }
+            } else if (checkedBoxes.length > 1) {
+                alert("Please select only ONE Field Tag to load into the editor.");
+                return;
+            } else {
+                if(window.openGameTagModal) {
+                    window.openGameTagModal();
+                }
+            }
+            
+            // Uncheck boxes
+            checkedBoxes.forEach(cb => cb.checked = false);
+            
+            // Auto-close vault if full screen mode is active
+            if (typeof window.toggleFullscreen === 'function') {
+                const vaultPanel = document.getElementById('panel-vault');
+                if (vaultPanel && vaultPanel.classList.contains('is-maximized')) {
+                    window.toggleFullscreen('panel-vault');
+                }
+            }
+        });
+    }
+
     const vaultToAmmoBtn = document.getElementById('vault-to-ammo-btn');
     if (vaultToAmmoBtn) {
         vaultToAmmoBtn.addEventListener('click', (e) => {
@@ -10444,40 +10524,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 const targetEl = document.getElementById('calendar-snapshot-target');
                 if(!targetEl) throw new Error("Snapshot target not found");
                 
-                // FIX: html2canvas captures position: sticky elements at their scrolled offset.
-                // Scroll to 0 first so the header is naturally at the top.
-                const scrollParent = targetEl.parentElement;
-                const originalScrollTop = scrollParent ? scrollParent.scrollTop : 0;
-                if (scrollParent) scrollParent.scrollTop = 0;
-                
-                const canvas = await window.html2canvas(targetEl, {
+                const canvas = await html2canvas(targetEl, {
                     backgroundColor: '#0f172a', // slate-900
-                    scale: Math.max(window.devicePixelRatio || 2, 2),
+                    scale: 1.5,
                     logging: false,
-                    windowWidth: targetEl.scrollWidth,
-                    windowHeight: targetEl.scrollHeight,
                     onclone: (clonedDoc) => {
-                        const clonedTarget = clonedDoc.getElementById('calendar-snapshot-target');
-                        if (clonedTarget) {
-                            clonedTarget.style.height = 'max-content';
-                            clonedTarget.style.width = targetEl.offsetWidth + 'px';
-                            clonedTarget.style.overflow = 'visible';
-                            
-                            // Fix transparent backgrounds for sticky headers
-                            const header = clonedTarget.querySelector('#calendar-days-header');
-                            if (header) {
-                                header.style.backgroundColor = 'rgba(17,24,39,1)'; // Solid gray-900
-                                header.style.backdropFilter = 'none';
-                                header.style.position = 'static'; // Safely prevent sticky overlaps without breaking classes
-                            }
-                            
-                            const monthNav = clonedTarget.querySelector('.sticky.top-0');
-                            if (monthNav) {
-                                monthNav.style.backgroundColor = 'rgba(17,24,39,1)';
-                                monthNav.style.position = 'static'; // Safely prevent sticky overlaps without breaking classes
-                            }
-                        }
-                        
                         Array.from(targetEl.querySelectorAll('textarea')).forEach(originalTa => {
                             if (!originalTa.id) return;
                             const cloneTa = clonedDoc.getElementById(originalTa.id);
@@ -10494,8 +10545,6 @@ document.addEventListener('DOMContentLoaded', () => {
                         });
                     }
                 });
-                
-                if (scrollParent) scrollParent.scrollTop = originalScrollTop;
                 
                 const imgData = canvas.toDataURL('image/jpeg', 0.85);
                 const timestamp = Date.now();

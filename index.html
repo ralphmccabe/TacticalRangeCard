@@ -21,7 +21,7 @@
                     errorUI.style.cssText = 'position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.98);color:#ef4444;z-index:999999;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:monospace;padding:20px;text-align:center;';
                     document.body.appendChild(errorUI);
                 }
-                errorUI.innerHTML = '<h1 style="font-size:24px;font-weight:bold;margin-bottom:10px;">FATAL SYSTEM ERROR</h1><p style="font-size:12px;color:#fca5a5;margin-bottom:30px;max-width:80%;word-wrap:break-word;">' + msg + '</p><button onclick="localStorage.clear(); sessionStorage.clear(); window.location.reload(true);" style="background:#dc2626;color:white;padding:15px 30px;border:none;border-radius:5px;font-weight:bold;font-size:16px;cursor:pointer;">FACTORY RESET & RESTART</button>';
+                errorUI.innerHTML = '<h1 style="font-size:24px;font-weight:bold;margin-bottom:10px;">FATAL SYSTEM ERROR</h1><p style="font-size:12px;color:#fca5a5;margin-bottom:30px;max-width:80%;word-wrap:break-word;">' + msg + '</p><button aria-label="Action Button" onclick="localStorage.clear(); sessionStorage.clear(); window.location.reload(true);" style="background:#dc2626;color:white;padding:15px 30px;border:none;border-radius:5px;font-weight:bold;font-size:16px;cursor:pointer;">FACTORY RESET & RESTART</button>';
             };
             if (document.body) renderError();
             else window.addEventListener('DOMContentLoaded', renderError);
@@ -35,10 +35,6 @@
     
     <title>Tactical Range Card</title>
     <script>
-        // Force HTTPS for Service Worker capabilities unless testing locally
-        if (location.protocol === 'http:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
-            location.replace(`https:${location.href.substring(location.protocol.length)}`);
-        }
         if (window.location.protocol !== 'file:') {
             const link = document.createElement('link');
             link.rel = 'manifest';
@@ -65,11 +61,10 @@
     <meta name="apple-mobile-web-app-title" content="Range Card">
 
     <!-- TAILWIND CSS -->
-    <link rel="stylesheet" href="tailwind.css?v=1.0">
+    <link rel="stylesheet" href="tailwind.css?v=1.1">
     <!-- Leaflet CSS: non-render-blocking (map styles not needed for first paint) -->
     <!-- LOCAL LIBS: CDN references removed to eliminate Edge Tracking Prevention warnings -->
-    <link rel="stylesheet" href="lib/leaflet.css" media="print" onload="this.media='all'">
-    <noscript><link rel="stylesheet" href="lib/leaflet.css"></noscript>
+    <link rel="stylesheet" href="lib/leaflet.css">
     <script src="lib/leaflet.js" defer></script>
     <script src="lib/Sortable.min.js" defer></script>
     <!-- tesseract: lazy-loaded on first OCR scan only — not needed at startup -->
@@ -78,176 +73,10 @@
     <link rel="preload" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@400;600;800&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
     <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@400;600;800&display=swap"></noscript>
     
-    <!-- MISSION BRIEFING MODAL -->
-    <div id="missionBriefingModal" class="fixed inset-0 bg-black/90 backdrop-blur-md z-[200] hidden flex items-center justify-center p-4" style="z-index: 100050;">
 
-        <div class="bg-gray-900 border-2 border-neon-green w-full max-w-6xl h-[90vh] rounded-xl flex flex-col overflow-hidden shadow-[0_0_30px_rgba(34,197,94,0.3)]">
-            <!-- Header -->
-            <div class="p-3 border-b-2 border-neon-green flex flex-wrap justify-between items-center bg-gray-950 gap-y-3 gap-x-2">
-                <div class="flex items-center gap-2 md:gap-3">
-                    <i data-lucide="clipboard-list" class="w-4 h-4 md:w-5 md:h-5 text-neon-green shrink-0"></i>
-                    <h2 class="text-sm md:text-lg font-black uppercase text-white tracking-widest truncate">TACTICAL MISSION BRIEFING</h2>
-                </div>
-                <div class="flex items-center gap-2 flex-wrap justify-end shrink-0">
-                    <button id="rework-briefing-btn" class="hidden text-[9px] md:text-[10px] bg-amber-950/80 text-amber-300 px-2 py-1.5 md:px-3 rounded-lg border border-amber-700 hover:bg-amber-600 hover:text-white transition-colors flex items-center gap-1.5 font-bold uppercase tracking-wider whitespace-nowrap shrink-0" aria-label="Action Button">
-                        <i data-lucide="wrench" class="w-3 h-3 md:w-4 md:h-4"></i> REWORK INTEL
-                    </button>
-                    <button id="briefing-to-vault-btn-top" class="hidden text-[9px] md:text-[10px] bg-purple-950/80 text-purple-300 px-2 py-1.5 md:px-3 rounded-lg border border-purple-700 hover:bg-purple-600 hover:text-white transition-colors flex items-center gap-1.5 font-bold uppercase tracking-wider whitespace-nowrap shrink-0" aria-label="Action Button">
-                        <i data-lucide="archive" class="w-3 h-3 md:w-4 md:h-4"></i> INTEL VAULT
-                    </button>
-                    <button id="closeBriefingBtn" aria-label="Close modal" class="p-4 bg-gray-800 rounded-lg group hover:bg-red-900 transition-colors shrink-0" onclick="event.stopPropagation()">
-                        <i data-lucide="x" class="w-8 h-8 text-white"></i>
-                    </button>
-                </div>
-            </div>
-
-            <!-- Content Area (Split flex-row on md screens) -->
-            <div class="flex-1 flex flex-col md:flex-row overflow-hidden">
-                
-                <!-- Left: Form -->
-                <div class="flex flex-col overflow-y-auto bg-gray-900 border-b md:border-b-0 md:border-r border-gray-800 flex-1 min-w-0">
-                    <div id="briefing-snapshot-target" class="flex-1 flex flex-col custom-scrollbar">
-                        <!-- Metadata Row -->
-                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 p-4 border-b border-gray-800 bg-gray-900/50 shrink-0">
-                            <div>
-                                <label class="block text-[8px] font-black text-gray-400 uppercase tracking-widest mb-1">Mission Identifier</label>
-                                <label for="briefing-mission-name" class="sr-only">OP NAME / TARGET</label><input type="text" id="briefing-mission-name" maxlength="40" class="w-full bg-black/60 border border-gray-700 rounded px-3 py-2 text-xs text-white font-mono focus:border-neon-green outline-none uppercase" placeholder="OP NAME / TARGET" aria-label="OP NAME / TARGET">
-                            </div>
-                            <div>
-                                <label class="block text-[8px] font-black text-gray-400 uppercase tracking-widest mb-1">Commanding Officer / Instructor</label>
-                                <label for="briefing-commander" class="sr-only">NAME / CALLSIGN</label><input type="text" id="briefing-commander" maxlength="40" class="w-full bg-black/60 border border-gray-700 rounded px-3 py-2 text-xs text-white font-mono focus:border-neon-green outline-none uppercase" placeholder="NAME / CALLSIGN" aria-label="NAME / CALLSIGN">
-                            </div>
-                            <div>
-                                <label class="block text-[8px] font-black text-gray-400 uppercase tracking-widest mb-1">Timestamp</label>
-                                <div class="w-full bg-black/60 border border-gray-800 rounded px-3 py-2 text-xs text-gray-400 font-mono" id="briefing-timestamp">--:--:--</div>
-                            </div>
-                        </div>
-
-                        <!-- Top Half: ASSIGNMENT -->
-                        <div class="flex-1 min-h-[250px] p-4 flex flex-col relative border-b border-gray-800">
-                            <label class="block text-[10px] font-black text-blue-400 uppercase tracking-[0.2em] mb-2 flex items-center gap-2">
-                                <i data-lucide="crosshair" class="w-3 h-3"></i> PHASE 1: MISSION ASSIGNMENT & INTELLIGENCE
-                            </label>
-                            <textarea id="briefing-assignment-text" aria-label="Assignment Text" maxlength="1500" class="flex-1 w-full bg-black/60 border border-gray-700 rounded-lg p-4 text-sm text-blue-100 font-mono focus:border-blue-500 outline-none resize-none relative z-10 leading-relaxed custom-scrollbar placeholder-gray-600" placeholder="ENTER INITIAL MISSION PARAMETERS, ROE, WEATHER, TARGET DETAILS..."></textarea>
-                        </div>
-
-                        <!-- Bottom Half: DEBRIEF -->
-                        <div class="flex-1 min-h-[250px] p-4 flex flex-col relative">
-                            <label class="block text-[10px] font-black text-emerald-400 uppercase tracking-[0.2em] mb-2 flex items-center gap-2">
-                                <i data-lucide="check-circle" class="w-3 h-3"></i> PHASE 2: ACTION DEBRIEF & AFTER ACTION REPORT (AAR)
-                            </label>
-                            <textarea id="briefing-debrief-text" aria-label="Debrief Text" maxlength="1500" class="flex-1 w-full bg-black/60 border border-gray-700 rounded-lg p-4 text-sm text-emerald-50 font-mono focus:border-emerald-500 outline-none resize-none leading-relaxed custom-scrollbar placeholder-gray-600" placeholder="ENTER POST-MISSION SUMMARY, ROUNDS EXPENDED, CONFIRMED HITS, COMPLICATIONS..."></textarea>
-                        </div>
-                    </div>
-
-                    <!-- Footer Buttons -->
-                    <div class="p-3 border-t border-gray-800 bg-gray-950 flex justify-end gap-3 shrink-0">
-                        <button id="briefing-clear-btn" class="bg-red-900 text-white font-extrabold py-2.5 px-4 rounded-lg uppercase tracking-wider text-xs shadow-lg hover:bg-red-800 transition-all flex items-center gap-2" aria-label="Action Button">
-                            <i data-lucide="trash-2" class="w-4 h-4"></i> CLEAR FORM
-                        </button>
-                        <button id="briefing-save-inventory-btn" class="bg-emerald-600 text-white font-extrabold px-6 py-2.5 rounded-lg uppercase tracking-wider text-xs shadow-lg hover:bg-emerald-500 transition-all flex items-center gap-2" aria-label="Action Button">
-                            <i data-lucide="save" class="w-4 h-4"></i> SAVE TO INVENTORY
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Right: Saved Briefings -->
-                <div class="flex flex-col bg-gray-950 p-5 overflow-y-auto flex-1 min-w-0">
-                    <div class="text-[10px] font-black uppercase text-gray-400 tracking-wider border-b border-gray-800 pb-2 mb-4 flex justify-between items-center">
-                        <span>Mission Briefings Inventory</span>
-                        <i data-lucide="clipboard-list" class="w-3.5 h-3.5 opacity-40"></i>
-                    </div>
-                    
-                    <div id="briefingLibraryList" class="grid grid-cols-1 xl:grid-cols-2 gap-4">
-                        <!-- Dynamic Briefings injected here -->
-                    </div>
-                </div>
-                
-            </div>
-        </div>
-    </div>
-
-    <!-- OPERATIONAL CALENDAR MODAL -->
-    <div id="calendarModal" class="fixed inset-0 bg-black/90 backdrop-blur-md z-[200] hidden flex items-center justify-center p-4" style="z-index: 100050;">
-        <div class="bg-gray-900 border-2 border-neon-green w-full max-w-6xl h-[90vh] rounded-xl flex flex-col overflow-hidden shadow-[0_0_30px_rgba(34,197,94,0.3)]">
-            <!-- Header -->
-            <div class="p-3 border-b-2 border-neon-green flex flex-wrap justify-between items-center bg-gray-950 gap-y-3 gap-x-2">
-                <div class="flex items-center gap-2 md:gap-3">
-                    <i data-lucide="calendar" class="w-4 h-4 md:w-5 md:h-5 text-neon-green shrink-0"></i>
-                    <h2 class="text-sm md:text-lg font-black uppercase text-white tracking-widest truncate">OPERATIONAL CALENDAR</h2>
-                </div>
-                <div class="flex items-center gap-2 flex-wrap justify-end shrink-0">
-                    <button id="rework-calendar-btn" class="hidden text-[9px] md:text-[10px] bg-amber-950/80 text-amber-300 px-2 py-1.5 md:px-3 rounded-lg border border-amber-700 hover:bg-amber-600 hover:text-white transition-colors flex items-center gap-1.5 font-bold uppercase tracking-wider whitespace-nowrap shrink-0" aria-label="Action Button">
-                        <i data-lucide="wrench" class="w-3 h-3 md:w-4 md:h-4"></i> REWORK CALENDAR
-                    </button>
-                    <button id="calendar-to-vault-btn-top" class="hidden text-[9px] md:text-[10px] bg-purple-950/80 text-purple-300 px-2 py-1.5 md:px-3 rounded-lg border border-purple-700 hover:bg-purple-600 hover:text-white transition-colors flex items-center gap-1.5 font-bold uppercase tracking-wider whitespace-nowrap shrink-0" aria-label="Action Button">
-                        <i data-lucide="archive" class="w-3 h-3 md:w-4 md:h-4"></i> INTEL VAULT
-                    </button>
-                    <button id="closeCalendarBtn" aria-label="Close modal" class="p-4 bg-gray-800 rounded-lg group hover:bg-red-900 transition-colors shrink-0" onclick="event.stopPropagation()">
-                        <i data-lucide="x" class="w-8 h-8 text-white"></i>
-                    </button>
-                </div>
-            </div>
-
-            <!-- Content Area -->
-            <div class="flex-1 flex flex-col md:flex-row overflow-hidden">
-                <!-- Left: Form -->
-                <div class="flex flex-col overflow-y-auto bg-gray-900 border-b md:border-b-0 md:border-r border-gray-800 flex-1 min-w-0">
-                    <div id="calendar-snapshot-target" class="flex-1 flex flex-col custom-scrollbar bg-gray-900 p-2 md:p-4">
-                        <div class="sticky top-0 z-20 bg-gray-900 pb-2 -mt-2 pt-2 md:-mt-4 md:pt-4">
-                            <!-- Month Navigation -->
-                            <div class="flex justify-between items-center mb-4 bg-gray-950 p-2 rounded border border-gray-800">
-                                <button id="calendar-prev-month" class="text-neon-green hover:text-white p-2 transition-colors" aria-label="Previous Month"><i data-lucide="chevron-left" class="w-6 h-6"></i></button>
-                                <h3 id="calendar-month-year" class="text-white font-bold tracking-widest text-lg uppercase font-mono">JUNE 2026</h3>
-                                <button id="calendar-next-month" class="text-neon-green hover:text-white p-2 transition-colors" aria-label="Next Month"><i data-lucide="chevron-right" class="w-6 h-6"></i></button>
-                            </div>
-                            
-                            <!-- Grid Header -->
-                            <div id="calendar-days-header" class="grid grid-cols-7 gap-1 md:gap-2 mb-2 text-center text-[10px] md:text-xs font-black uppercase tracking-wider text-gray-500 transition-colors sticky top-0 z-30 bg-gray-900/95 backdrop-blur py-2 border-b border-gray-800/50 shadow-md">
-                                <div class="transition-colors duration-200 py-1 rounded">SUN</div>
-                                <div class="transition-colors duration-200 py-1 rounded">MON</div>
-                                <div class="transition-colors duration-200 py-1 rounded">TUE</div>
-                                <div class="transition-colors duration-200 py-1 rounded">WED</div>
-                                <div class="transition-colors duration-200 py-1 rounded">THU</div>
-                                <div class="transition-colors duration-200 py-1 rounded">FRI</div>
-                                <div class="transition-colors duration-200 py-1 rounded">SAT</div>
-                            </div>
-                        </div>
-                        
-                        <!-- Calendar Grid -->
-                        <div id="calendar-grid" class="grid grid-cols-7 gap-1 md:gap-2 flex-1 auto-rows-[minmax(60px,1fr)]">
-                            <!-- JS injects days here -->
-                        </div>
-                    </div>
-
-                    <!-- Footer Buttons -->
-                    <div class="p-3 border-t border-gray-800 bg-gray-950 flex justify-end gap-3 shrink-0">
-                        <button id="calendar-clear-btn" class="bg-red-900 text-white font-extrabold py-2.5 px-4 rounded-lg uppercase tracking-wider text-xs shadow-lg hover:bg-red-800 transition-all flex items-center gap-2" aria-label="Action Button">
-                            <i data-lucide="trash-2" class="w-4 h-4"></i> CLEAR MONTH
-                        </button>
-                        <button id="calendar-save-inventory-btn" class="bg-emerald-600 text-white font-extrabold px-6 py-2.5 rounded-lg uppercase tracking-wider text-xs shadow-lg hover:bg-emerald-500 transition-all flex items-center gap-2" aria-label="Action Button">
-                            <i data-lucide="save" class="w-4 h-4"></i> SAVE TO INVENTORY
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Right: Saved Calendars -->
-                <div class="flex flex-col bg-gray-950 p-5 overflow-y-auto flex-1 min-w-0">
-                    <div class="text-[10px] font-black uppercase text-gray-400 tracking-wider border-b border-gray-800 pb-2 mb-4 flex justify-between items-center">
-                        <span>Operational Calendar Inventory</span>
-                        <i data-lucide="calendar" class="w-3.5 h-3.5 opacity-40"></i>
-                    </div>
-                    
-                    <div id="calendarLibraryList" class="grid grid-cols-1 xl:grid-cols-2 gap-4">
-                        <!-- Dynamic Calendars injected here -->
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
     
     <!-- CUSTOM CSS -->
-    <link rel="stylesheet" href="style.css?v=116">
+    <link rel="stylesheet" href="style.css?v=117">
 
     <!-- html2canvas: lazy-loaded on first snapshot/save action -->
     <!-- supabase:    lazy-loaded on first comms connect -->
@@ -285,9 +114,7 @@
             var s = document.createElement('script');
             s.src = 'lucide.min.js?v=1.5';
             s.onload = function() {
-                if (window.lucide) {
-                    setTimeout(function() { window.lucide.createIcons(); }, 50);
-                }
+                if (window.lucide) window.lucide.createIcons();
             };
             document.head.appendChild(s);
         }
@@ -302,10 +129,6 @@
     </script>
     <script src="idb_helper.js?v=1.6" defer></script>
     <script src="lib/crypto-js.min.js" defer></script>
-    <script src="./hud_logic.js?v=8.0.7" defer></script>
-    
-    <!-- Use unminified core logic for sandbox development -->
-    <script src="./trc_core.js?v=8.0.7" defer></script>
     <style>
         :root { --accent-color: #22c55e; --accent-rgb: 34, 197, 94; --neon-green: #4ade80; }
         
@@ -425,7 +248,6 @@
 </head>
 
 <body class="bg-gray-800 text-gray-100 min-h-screen font-sans selection:bg-neon-green selection:text-black overflow-x-hidden">
-    
 
     <!-- SOS FLASH OVERLAY & TOAST -->
     <div id="sos-flash-overlay" class="hidden fixed inset-0 z-[9999] pointer-events-none transition-colors duration-300"></div>
@@ -446,23 +268,32 @@
                         <span class="leading-tight">Tactical Range Card <span id="header-version-display" class="text-white font-bold text-[10px] md:text-xs lowercase italic bg-white/10 px-1 md:px-2 rounded border border-white/30 ml-1"></span></span>
                     </h1>
                     <div class="flex flex-wrap items-center justify-center md:justify-start gap-2 md:gap-3 border-t border-gray-800/50 pt-2">
-                        <button id="siren-deterrent-btn" class="text-red-500 hover:text-red-400 p-1 flex items-center justify-center transition-colors shrink-0 bg-red-950/30 border border-red-500/50 rounded shadow-md shadow-red-900/40" title="Emergency Siren Deterrent" aria-label="Siren">
-                            <i data-lucide="megaphone" class="w-5 h-5 md:w-6 md:h-6"></i>
+                        <button id="siren-deterrent-btn" class="p-1 flex items-center justify-center transition-colors shrink-0 bg-red-950/30 border border-red-500/50 rounded shadow-md shadow-red-900/40" style="color:#ef4444;" title="Emergency Siren Deterrent" aria-label="Siren">
+                            <i data-lucide="megaphone" class="w-5 h-5 md:w-6 md:h-6" style="color:#ef4444;"></i>
                         </button>
-                        <button onclick="openCalendarModal()" class="text-emerald-500 hover:text-emerald-400 p-1 flex items-center justify-center transition-colors shrink-0" title="Operational Calendar" aria-label="Operational Calendar">
-                            <i data-lucide="calendar" class="w-6 h-6"></i>
+                        <button onclick="openCalendarModal()" class="p-1 flex items-center justify-center transition-colors shrink-0" style="color:#22d3ee;" title="Operational Calendar" aria-label="Operational Calendar">
+                            <i data-lucide="calendar" class="w-6 h-6" style="color:#22d3ee;"></i>
                         </button>
-                        <button onclick="openBriefingModal()" class="text-blue-500 hover:text-blue-400 p-1 flex items-center justify-center transition-colors shrink-0" title="Mission Briefing" aria-label="Mission Briefing">
-                            <i data-lucide="clipboard-list" class="w-6 h-6"></i>
+                        <button onclick="openBriefingModal()" class="p-1 flex items-center justify-center transition-colors shrink-0" style="color:#60a5fa;" title="Mission Briefing" aria-label="Mission Briefing">
+                            <i data-lucide="clipboard-list" class="w-6 h-6" style="color:#60a5fa;"></i>
                         </button>
-                        <button id="btn-tactical-hints" onclick="toggleTacticalHints()" class="text-emerald-500 hover:text-emerald-400 p-1 flex items-center justify-center transition-colors shrink-0" title="Quick Reference & Conversions" aria-label="Quick Reference & Conversions">
-                            <i data-lucide="info" class="w-6 h-6"></i>
+                        <button id="btn-tactical-hints" onclick="toggleTacticalHints()" class="p-1 flex items-center justify-center transition-colors shrink-0" style="color:#c084fc;" title="Quick Reference & Conversions" aria-label="Quick Reference & Conversions">
+                            <i data-lucide="info" class="w-6 h-6" style="color:#c084fc;"></i>
                         </button>
-                        <button class="calc-toggle-btn text-blue-500 hover:text-blue-400 p-1 flex items-center justify-center transition-colors shrink-0" title="Tactical Calculator" aria-label="Tactical Calculator">
-                            <i data-lucide="calculator" class="w-6 h-6"></i>
+                        <button class="calc-toggle-btn p-1 flex items-center justify-center transition-colors shrink-0" style="color:#2dd4bf;" title="Tactical Calculator" aria-label="Tactical Calculator">
+                            <i data-lucide="calculator" class="w-6 h-6" style="color:#2dd4bf;"></i>
                         </button>
-                        <button class="remarks-toggle-btn text-yellow-500 hover:text-yellow-400 p-1 flex items-center justify-center transition-colors shrink-0" title="ReMarks Jotter" aria-label="ReMarks Jotter">
-                            <i data-lucide="edit-3" class="w-6 h-6"></i>
+                        <button class="remarks-toggle-btn p-1 flex items-center justify-center transition-colors shrink-0" style="color:#fbbf24;" title="ReMarks Jotter" aria-label="ReMarks Jotter">
+                            <i data-lucide="edit-3" class="w-6 h-6" style="color:#fbbf24;"></i>
+                        </button>
+                        <button id="openBoloBtn" class="text-orange-500 hover:text-white hover:bg-orange-900 p-1 px-2 flex items-center justify-center transition-all shrink-0 font-black uppercase text-[9px] md:text-[10px] tracking-widest border border-orange-500/50 rounded shadow-[0_0_10px_rgba(249,115,22,0.2)]" title="MOST WANTED / BOLO Card" aria-label="BOLO Card">
+                            MOST WANTED
+                        </button>
+                        <button id="openGameTagBtn" class="text-amber-500 hover:text-white hover:bg-amber-900 p-1 px-2 flex items-center justify-center transition-all shrink-0 font-black uppercase text-[9px] md:text-[10px] tracking-widest border border-amber-500/50 rounded shadow-[0_0_10px_rgba(245,158,11,0.2)]" title="FIELD HARVEST TAG" aria-label="Game Tag">
+                            <i data-lucide="tag" class="w-3 h-3 mr-1"></i> FIELD TAG
+                        </button>
+                        <button id="openLicenseBtn" class="text-green-400 hover:text-white hover:bg-green-900 p-1 px-2 flex items-center justify-center transition-all shrink-0 font-black uppercase text-[9px] md:text-[10px] tracking-widest border border-green-500/50 rounded shadow-[0_0_10px_rgba(34,197,94,0.2)]" title="Hunting & Fishing License / ID" aria-label="License Card">
+                            <i data-lucide="shield-check" class="w-3 h-3 mr-1"></i> LICENSES
                         </button>
                     </div>
                 </div>
@@ -489,22 +320,22 @@
 
                     <!-- MODERNIZED 2x2 CIRCULAR DASHBOARD -->
                     <div class="grid grid-cols-2 gap-4 px-2">
-                        <button id="openAmmoLibraryBtn" aria-label="Open Ammo Library" class="col-span-1 aspect-square rounded-full bg-cyan-950/20 border border-cyan-700 text-cyan-400 uppercase flex flex-col items-center justify-center text-center p-3 hover:bg-cyan-900/40 hover:scale-[1.03] transition-all gap-1 shadow-[0_4px_15px_rgba(0,0,0,0.2)]">
+                        <button id="openAmmoLibraryBtn" aria-label="Open Ammo Library" class="circle-btn-ammo col-span-1 aspect-square rounded-full border-2 uppercase flex flex-col items-center justify-center text-center p-3 transition-all gap-1">
                             <i data-lucide="database" class="w-6 h-6 mb-0.5"></i>
                             <span class="text-[9px] font-extrabold leading-normal tracking-wider">AMMO<br/>LIBRARY</span>
                         </button>
 
-                        <button id="toggleReconMapperBtn" class="col-span-1 aspect-square rounded-full bg-indigo-950/40 border border-indigo-500 text-indigo-400 uppercase flex flex-col items-center justify-center text-center p-3 hover:bg-indigo-900/40 hover:scale-[1.03] transition-all gap-1 shadow-[0_4px_15px_rgba(0,0,0,0.2)]" aria-label="Action Button">
+                        <button id="toggleReconMapperBtn" class="circle-btn-mapper col-span-1 aspect-square rounded-full border-2 uppercase flex flex-col items-center justify-center text-center p-3 transition-all gap-1" aria-label="Action Button">
                             <i data-lucide="map" class="w-6 h-6 mb-0.5"></i>
                             <span class="text-[9px] font-extrabold leading-normal tracking-wider">TACTICAL<br/>MAPPER</span>
                         </button>
 
-                        <button id="launchDualHudBtn" class="col-span-1 aspect-square rounded-full bg-orange-600/20 border-2 border-orange-500 text-orange-400 uppercase flex flex-col items-center justify-center text-center p-3 hover:bg-orange-600/40 hover:scale-[1.03] transition-all gap-1 shadow-[0_0_15px_rgba(249,115,22,0.15)] animate-pulse-slow" aria-label="Action Button">
+                        <button id="launchDualHudBtn" class="circle-btn-hud col-span-1 aspect-square rounded-full border-2 uppercase flex flex-col items-center justify-center text-center p-3 transition-all gap-1 animate-pulse-slow" aria-label="Action Button">
                             <i data-lucide="layout-dashboard" class="w-6 h-6 mb-0.5"></i>
                             <span class="text-[9px] font-extrabold leading-normal tracking-wider">DUAL-VIEW<br/>HUD</span>
                         </button>
 
-                        <button id="launchToolsDashboardBtn" class="col-span-1 aspect-square rounded-full bg-yellow-900/20 border-2 border-yellow-400 text-yellow-300 uppercase flex flex-col items-center justify-center text-center p-3 hover:bg-yellow-800/40 hover:scale-[1.03] transition-all gap-1 shadow-[0_0_15px_rgba(250,204,21,0.15)] animate-pulse-slow" aria-label="Action Button">
+                        <button id="launchToolsDashboardBtn" class="circle-btn-tools col-span-1 aspect-square rounded-full border-2 uppercase flex flex-col items-center justify-center text-center p-3 transition-all gap-1" aria-label="Action Button">
                             <i data-lucide="terminal" class="w-6 h-6 mb-0.5"></i>
                             <span class="text-[9px] font-extrabold leading-normal tracking-wider">TOOLS<br/>DASHBOARD</span>
                         </button>
@@ -798,8 +629,8 @@
 
                         <h2 class="section-label">4. Path Drawing</h2>
                         <div class="grid grid-cols-2 gap-2">
-                            <label class="flex items-center gap-2 bg-gray-800 border border-gray-600 rounded p-2 text-xs font-bold cursor-pointer justify-center hover:bg-gray-700">
-                                <label for="recon-pencil-toggle" class="sr-only">Input field</label><input type="checkbox" id="recon-pencil-toggle" class="form-checkbox h-3 w-3 text-neon-green rounded bg-gray-900 border-gray-700 focus:ring-0 focus:ring-offset-0" aria-label="Input field">
+                            <div class="flex items-center gap-2 bg-gray-800 border border-gray-600 rounded p-2 text-xs font-bold cursor-pointer justify-center hover:bg-gray-700">
+                                <label for="recon-pencil-toggle" class="sr-only">Input field</div><input type="checkbox" id="recon-pencil-toggle" class="form-checkbox h-3 w-3 text-neon-green rounded bg-gray-900 border-gray-700 focus:ring-0 focus:ring-offset-0" aria-label="Input field">
                                 <span>🖊️ DRAW PATH</span>
                             </label>
                             <button id="clear-recon-drawings" class="bg-red-950/20 border border-red-900 rounded p-2 text-xs font-bold text-red-500 hover:bg-red-900/40" aria-label="Action Button">🧹 CLEAR WORKSPACE</button>
@@ -807,7 +638,7 @@
                         </div>
 
                         <h2 class="section-label">5. Recon SITREP / Report</h2>
-                        <textarea id="recon-report" aria-label="Recon Report" class="shrink-0 min-h-[6rem] w-full bg-black/30 border border-gray-600 rounded p-2 text-xs text-white h-24 focus:outline-none focus:border-neon-green custom-scrollbar" placeholder="Type tactical report details here..." maxlength="3000"></textarea>
+                        <label for="recon-report" class="sr-only">Type tactical report details here...</label><textarea id="recon-report" aria-label="Recon Report" class="shrink-0 min-h-[6rem] w-full bg-black/30 border border-gray-600 rounded p-2 text-xs text-white h-24 focus:outline-none focus:border-neon-green custom-scrollbar" placeholder="Type tactical report details here..." maxlength="3000"></textarea>
 
                         <h2 class="section-label">6. Recon Database</h2>
                         <div class="grid grid-cols-2 gap-2">
@@ -1246,6 +1077,866 @@
         </div>
     </div>
 
+    <!-- START BOLO MODAL -->
+    <div id="bolo-modal" class="fixed inset-0 bg-black/90 backdrop-blur-md z-[200] hidden flex items-center justify-center p-4" style="z-index: 100050;">
+        <div class="bg-gray-900 border-2 w-full max-w-6xl h-full max-h-[100%] md:h-[90vh] rounded-xl flex flex-col overflow-hidden min-h-0" style="border-color: #ef4444; box-shadow: 0 0 30px rgba(239,68,68,0.3);">
+            <!-- Header -->
+            <div class="p-3 border-b-2 flex flex-wrap justify-between items-center bg-gray-950 gap-y-3 gap-x-2" style="border-color: #ef4444;">
+                <div class="flex items-center gap-2 md:gap-3">
+                    <i data-lucide="crosshair" class="w-4 h-4 md:w-5 md:h-5 shrink-0" style="color: #ef4444;"></i>
+                    <h2 class="text-sm md:text-lg font-black uppercase text-white tracking-widest truncate">BOLO / MOST WANTED</h2>
+                </div>
+                <div class="flex items-center gap-2 flex-wrap justify-end shrink-0">
+                    <button id="closeBoloBtnTop" onclick="closeBoloModal()" aria-label="Close modal" class="p-4 bg-gray-800 rounded-lg group hover:bg-red-900 transition-colors shrink-0">
+                        <i data-lucide="x" class="w-8 h-8 text-white"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Content Area -->
+            <div class="flex-1 flex flex-col md:flex-row overflow-y-auto md:overflow-hidden min-h-0">
+                
+                <!-- Left: Form -->
+                <div class="flex flex-col bg-gray-900 border-b md:border-b-0 md:border-r border-gray-800 shrink-0 md:flex-1 min-w-0 min-h-0 relative">
+                    <div class="flex-1 flex flex-col custom-scrollbar p-4 space-y-4 md:overflow-y-auto md:min-h-0">
+                        
+                        <!-- ══ TYPE TOGGLE ══ -->
+                        <div class="flex bg-black rounded-lg p-1 border border-gray-700 gap-1">
+                            <button aria-label="bolo type btn person" id="bolo-type-btn-person" onclick="setBoloType('person')"
+                                style="flex:1;padding:8px 4px;font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:3px;border-radius:4px;border:2px solid #ef4444;background:#7f1d1d;color:#fca5a5;transition:all 0.2s;">
+                                🚨 PERSON
+                            </button>
+                            <button aria-label="bolo type btn animal" id="bolo-type-btn-animal" onclick="setBoloType('animal')"
+                                style="flex:1;padding:8px 4px;font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:3px;border-radius:4px;border:2px solid #374151;background:transparent;color:#6b7280;transition:all 0.2s;">
+                                🐗 ANIMAL
+                            </button>
+                        </div>
+
+                        <!-- Image Upload -->
+                        <div class="flex flex-col gap-1 text-center">
+                            <div id="bolo-photo-label" class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Suspect Photo</div>
+                            <label for="bolo-image-upload" class="sr-only">bolo image upload</label><input aria-label="bolo image upload" type="file" id="bolo-image-upload" accept="image/*" class="hidden">
+                            <button aria-label="Action Button" onclick="document.getElementById('bolo-image-upload').click()" class="bg-gray-800 border border-gray-600 rounded p-4 flex flex-col items-center justify-center hover:bg-gray-700 transition-colors text-gray-400 relative overflow-hidden h-48 md:h-64">
+                                <img id="bolo-form-preview-img" class="absolute inset-0 w-full h-full object-cover hidden">
+                                <i data-lucide="camera" id="bolo-form-preview-icon" class="w-8 h-8 mb-2 text-red-500 relative z-10"></i>
+                                <span class="text-xs font-bold relative z-10 bg-black/50 px-2 py-1 rounded" id="bolo-image-label">TAP TO UPLOAD PHOTO</span>
+                            </button>
+                        </div>
+
+                        <!-- Agency + Case # (Shared) -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-2">
+                            <div>
+                                <div class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Agency / Issuing Dept</div>
+                                <label for="bolo-input-agency" class="sr-only">e.g. SHERIFF</label><input aria-label="e.g. SHERIFF" type="text" id="bolo-input-agency" class="w-full bg-black border border-gray-700 rounded p-2 text-white font-bold" placeholder="e.g. SHERIFF'S OFFICE">
+                            </div>
+                            <div>
+                                <div class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Case / Incident #</div>
+                                <label for="bolo-input-case" class="sr-only">e.g. INV-2025-0471</label><input aria-label="e.g. INV-2025-0471" type="text" id="bolo-input-case" class="w-full bg-black border border-gray-700 rounded p-2 text-white font-bold" placeholder='e.g. INV-2025-0471'>
+                            </div>
+                        </div>
+
+                        <!-- ══ PERSON FIELDS ══ -->
+                        <div id="bolo-person-fields">
+
+                        <!-- Sex Toggle -->
+                        <div>
+                            <div class="text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-1 block">Sex</div>
+                            <div class="flex gap-1">
+                                <button aria-label="bolo sex btn male" id="bolo-sex-btn-male"    onclick="setBoloSex('male')"
+                                    style="flex:1;padding:7px 4px;font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:2px;border-radius:4px;border:2px solid #374151;background:transparent;color:#6b7280;transition:all 0.2s;">♂ MALE</button>
+                                <button aria-label="bolo sex btn female" id="bolo-sex-btn-female"  onclick="setBoloSex('female')"
+                                    style="flex:1;padding:7px 4px;font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:2px;border-radius:4px;border:2px solid #374151;background:transparent;color:#6b7280;transition:all 0.2s;">♀ FEMALE</button>
+                                <button aria-label="bolo sex btn unknown" id="bolo-sex-btn-unknown" onclick="setBoloSex('unknown')"
+                                    style="flex:1;padding:7px 4px;font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:2px;border-radius:4px;border:2px solid #9ca3af;background:#374151;color:#d1d5db;transition:all 0.2s;">— UNKNOWN</button>
+                            </div>
+                        </div>
+
+                        <!-- Name + Reason/Charges -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <div>
+                                <div class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Name / Alias</div>
+                                <label for="bolo-input-name" class="sr-only">UNKNOWN SUSPECT</label><input aria-label="UNKNOWN SUSPECT" type="text" id="bolo-input-name" class="w-full bg-black border border-gray-700 rounded p-2 text-white font-bold" placeholder='UNKNOWN SUSPECT'>
+                            </div>
+                            <div>
+                                <div class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Reason / Charges</div>
+                                <label for="bolo-input-reason" class="sr-only">WANTED FOR QUESTIONING</label><input aria-label="WANTED FOR QUESTIONING" type="text" id="bolo-input-reason" class="w-full bg-black border border-gray-700 rounded p-2 text-white font-bold" placeholder='WANTED FOR QUESTIONING'>
+                            </div>
+                        </div>
+
+                        <!-- Threat Level / Priority -->
+                        <div>
+                            <div class="text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-1 block">Threat Level / Priority</div>
+                            <input aria-label="bolo input threat" type="hidden" id="bolo-input-threat" value="poi">
+                            <div class="grid grid-cols-3 gap-2">
+                                <button aria-label="bolo threat btn poi" type="button" id="bolo-threat-btn-poi" onclick="setBoloThreatLevel('poi')"
+                                    class="py-2.5 px-1 rounded border-2 text-[10px] font-black uppercase tracking-wider transition-all border-amber-500 bg-amber-900/40 text-amber-400 shadow-[0_0_8px_rgba(245,158,11,0.3)]">
+                                    &#128993; PERSON OF<br>INTEREST
+                                </button>
+                                <button aria-label="bolo threat btn fugitive" type="button" id="bolo-threat-btn-fugitive" onclick="setBoloThreatLevel('fugitive')"
+                                    class="py-2.5 px-1 rounded border-2 text-[10px] font-black uppercase tracking-wider transition-all border-gray-700 bg-gray-900 text-gray-500">
+                                    &#128992; FUGITIVE /<br>AT LARGE
+                                </button>
+                                <button aria-label="bolo threat btn armed" type="button" id="bolo-threat-btn-armed" onclick="setBoloThreatLevel('armed')"
+                                    class="py-2.5 px-1 rounded border-2 text-[10px] font-black uppercase tracking-wider transition-all border-gray-700 bg-gray-900 text-gray-500">
+                                    &#128308; ARMED &amp;<br>DANGEROUS
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Physical Description: 6 fields in 2x3 grid -->
+                        <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+                            <div>
+                                <div class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">D.O.B / Age</div>
+                                <label for="bolo-input-dob" class="sr-only">01/15/1985 (40)</label><input aria-label="01/15/1985 (40)" type="text" id="bolo-input-dob" class="w-full bg-black border border-gray-700 rounded p-2 text-white font-bold" placeholder='01/15/1985 (40)'>
+                            </div>
+                            <div>
+                                <div class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Race / Build</div>
+                                <label for="bolo-input-build" class="sr-only">e.g. Hispanic Male</label><input aria-label="e.g. Hispanic Male" type="text" id="bolo-input-build" class="w-full bg-black border border-gray-700 rounded p-2 text-white font-bold" placeholder='e.g. Hispanic Male'>
+                            </div>
+                            <div>
+                                <div class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Height</div>
+                                <label for="bolo-input-height" class="sr-only">N/A</label><input aria-label="N/A" type="text" id="bolo-input-height" class="w-full bg-black border border-gray-700 rounded p-2 text-white font-bold" placeholder='N/A'>
+                            </div>
+                            <div>
+                                <div class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Weight</div>
+                                <label for="bolo-input-weight" class="sr-only">N/A</label><input aria-label="N/A" type="text" id="bolo-input-weight" class="w-full bg-black border border-gray-700 rounded p-2 text-white font-bold" placeholder='N/A'>
+                            </div>
+                            <div>
+                                <div class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Hair</div>
+                                <label for="bolo-input-hair" class="sr-only">N/A</label><input aria-label="N/A" type="text" id="bolo-input-hair" class="w-full bg-black border border-gray-700 rounded p-2 text-white font-bold" placeholder='N/A'>
+                            </div>
+                            <div>
+                                <div class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Eyes</div>
+                                <label for="bolo-input-eye" class="sr-only">N/A</label><input aria-label="N/A" type="text" id="bolo-input-eye" class="w-full bg-black border border-gray-700 rounded p-2 text-white font-bold" placeholder='N/A'>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 gap-3">
+                            <div>
+                                <div class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Distinguishing Features</div>
+                                <label for="bolo-input-features" class="sr-only">Tattoos, Scars, Piercings, etc.</label><input aria-label="Tattoos, Scars, Piercings, etc." type="text" id="bolo-input-features" class="w-full bg-black border border-gray-700 rounded p-2 text-white font-bold" placeholder='Tattoos, Scars, Piercings, etc.'>
+                            </div>
+                            <div>
+                                <div class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Last Seen / Location</div>
+                                <label for="bolo-input-lastseen" class="sr-only">e.g. 1st St &amp; Main</label><input aria-label="e.g. 1st St &amp; Main" type="text" id="bolo-input-lastseen" class="w-full bg-black border border-gray-700 rounded p-2 text-white font-bold" placeholder='e.g. 1st St &amp; Main'>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <div>
+                                <div class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Reward</div>
+                                <label for="bolo-input-reward" class="sr-only">$5,000.00</label><input aria-label="$5,000.00" type="text" id="bolo-input-reward" class="w-full bg-black border border-gray-700 rounded p-2 text-white font-bold" placeholder='$5,000.00'>
+                            </div>
+                            <div>
+                                <div class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Warning</div>
+                                <label for="bolo-input-warning" class="sr-only">ARMED AND DANGEROUS</label><input aria-label="ARMED AND DANGEROUS" type="text" id="bolo-input-warning" class="w-full bg-black border border-gray-700 rounded p-2 text-red-500 font-bold" placeholder='ARMED AND DANGEROUS'>
+                            </div>
+                        </div>
+
+                        <div>
+                            <div class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Contact Info / Tip Line</div>
+                            <label for="bolo-input-contact" class="sr-only">Call 911 or Local Agency</label><input aria-label="Call 911 or Local Agency" type="text" id="bolo-input-contact" class="w-full bg-black border border-gray-700 rounded p-2 text-white font-bold" placeholder='Call 911 or Local Agency'>
+                        </div>
+
+                        </div><!-- END bolo-person-fields -->
+
+                        <!-- ══ ANIMAL FIELDS ══ -->
+                        <div id="bolo-animal-fields" style="display:none;">
+
+                        <!-- Species + Sex/Class -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <div>
+                                <div class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Species</div>
+                                <label for="bolo-input-species" class="sr-only">e.g. Wild Boar, Black Bear, Buck</label><input aria-label="e.g. Wild Boar, Black Bear, Buck" type="text" id="bolo-input-species" class="w-full bg-black border border-gray-700 rounded p-2 text-white font-bold" placeholder='e.g. Wild Boar, Black Bear, Buck'>
+                            </div>
+                            <div>
+                                <div class="text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-1 block">Sex / Class</div>
+                                <div class="flex gap-1">
+                                    <button aria-label="bolo sex btn male" id="bolo-sex-btn-male"    onclick="setBoloSex('male')"
+                                        style="flex:1;padding:7px 4px;font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:2px;border-radius:4px;border:2px solid #374151;background:transparent;color:#6b7280;transition:all 0.2s;">♂ MALE</button>
+                                    <button aria-label="bolo sex btn female" id="bolo-sex-btn-female"  onclick="setBoloSex('female')"
+                                        style="flex:1;padding:7px 4px;font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:2px;border-radius:4px;border:2px solid #374151;background:transparent;color:#6b7280;transition:all 0.2s;">♀ FEMALE</button>
+                                    <button aria-label="bolo sex btn unknown" id="bolo-sex-btn-unknown" onclick="setBoloSex('unknown')"
+                                        style="flex:1;padding:7px 4px;font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:2px;border-radius:4px;border:2px solid #9ca3af;background:#374151;color:#d1d5db;transition:all 0.2s;">— UNK</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Animal Threat Level -->
+                        <div>
+                            <div class="text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-1 block">Threat / Classification</div>
+                            <div class="grid grid-cols-3 gap-2">
+                                <button aria-label="bolo animal threat nuisance" id="bolo-animal-threat-nuisance" onclick="setAnimalThreat('nuisance')"
+                                    style="padding:10px 4px;font-size:10px;font-weight:900;text-transform:uppercase;border-radius:4px;border:2px solid #b45309;background:rgba(180,83,9,0.35);color:#fbbf24;">
+                                    🐗 NUISANCE
+                                </button>
+                                <button aria-label="bolo animal threat dangerous" id="bolo-animal-threat-dangerous" onclick="setAnimalThreat('dangerous')"
+                                    style="padding:10px 4px;font-size:10px;font-weight:900;text-transform:uppercase;border-radius:4px;border:2px solid #374151;background:transparent;color:#6b7280;">
+                                    ☠️ DANGEROUS
+                                </button>
+                                <button aria-label="bolo animal threat trophy" id="bolo-animal-threat-trophy" onclick="setAnimalThreat('trophy')"
+                                    style="padding:10px 4px;font-size:10px;font-weight:900;text-transform:uppercase;border-radius:4px;border:2px solid #374151;background:transparent;color:#6b7280;">
+                                    🏆 TROPHY
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Est. Weight + Distinguishing Marks -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <div>
+                                <div class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Est. Weight / Size</div>
+                                <label for="bolo-input-animal-weight" class="sr-only">e.g. 400 lbs, 12-pt rack</label><input aria-label="e.g. 400 lbs, 12-pt rack" type="text" id="bolo-input-animal-weight" class="w-full bg-black border border-gray-700 rounded p-2 text-white font-bold" placeholder='e.g. 400 lbs, 12-pt rack'>
+                            </div>
+                            <div>
+                                <div class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Distinguishing Marks</div>
+                                <label for="bolo-input-animal-marks" class="sr-only">e.g. Scar on left shoulder</label><input aria-label="e.g. Scar on left shoulder" type="text" id="bolo-input-animal-marks" class="w-full bg-black border border-gray-700 rounded p-2 text-white font-bold" placeholder='e.g. Scar on left shoulder'>
+                            </div>
+                        </div>
+
+                        <!-- Territory / Last Seen -->
+                        <div>
+                            <div class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Territory / Last Seen</div>
+                            <label for="bolo-input-animal-territory" class="sr-only">e.g. South pasture, near creek</label><input aria-label="e.g. South pasture, near creek" type="text" id="bolo-input-animal-territory" class="w-full bg-black border border-gray-700 rounded p-2 text-white font-bold" placeholder='e.g. South pasture, near creek'>
+                        </div>
+
+                        <!-- Reward + Contact -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <div>
+                                <div class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Reward / Action</div>
+                                <label for="bolo-input-animal-reward" class="sr-only">e.g. $500 — Dead or Alive</label><input aria-label="e.g. $500 — Dead or Alive" type="text" id="bolo-input-animal-reward" class="w-full bg-black border border-gray-700 rounded p-2 text-white font-bold" placeholder='e.g. $500 — Dead or Alive'>
+                            </div>
+                            <div>
+                                <div class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Contact</div>
+                                <label for="bolo-input-animal-contact" class="sr-only">Ranch Owner / Game Warden</label><input aria-label="Ranch Owner / Game Warden" type="text" id="bolo-input-animal-contact" class="w-full bg-black border border-gray-700 rounded p-2 text-white font-bold" placeholder='Ranch Owner / Game Warden'>
+                            </div>
+                        </div>
+
+                        </div><!-- END bolo-animal-fields -->
+
+                        <!-- Notes (shared) -->
+                        <div>
+                            <div class="text-[10px] text-gray-400 font-bold uppercase tracking-widest flex justify-between items-center">
+                                <span>Notes</span>
+                                <span id="bolo-notes-counter" class="text-gray-600 font-normal">0 / 1000</span>
+                            </div>
+                            <label for="bolo-input-notes" class="sr-only">Additional notes: behavioral patterns, known area, associates, last known sighting, etc.</label><textarea aria-label="Additional notes: behavioral patterns, known area, associates, last known sighting, etc." id="bolo-input-notes" maxlength="1000" rows="4"
+                                oninput="document.getElementById('bolo-notes-counter').innerText = this.value.length + ' / 1000'"
+                                class="w-full bg-black border border-gray-700 rounded p-2 text-white text-sm leading-relaxed resize-y"
+                                placeholder="Additional notes: behavioral patterns, known area, associates, last known sighting, etc."></textarea>
+                        </div>
+                    </div>
+
+                    <!-- Left Form Actions -->
+                    <div class="p-4 bg-gray-950 border-t border-gray-800 flex justify-between shrink-0">
+                        <button aria-label="bolo clear btn" id="bolo-clear-btn" class="text-gray-400 hover:text-white px-4 py-2 border border-gray-600 rounded text-xs font-bold uppercase tracking-widest transition-colors">CLEAR FORM</button>
+                        <div class="flex gap-2">
+                            <button aria-label="rework bolo btn" id="rework-bolo-btn" class="hidden text-amber-500 hover:bg-amber-900 px-4 py-2 border border-amber-500 rounded text-xs font-bold uppercase tracking-widest transition-colors shadow-lg"><i data-lucide="wrench" class="w-4 h-4 inline-block mr-1"></i> REWORK</button>
+                            <button aria-label="bolo to vault btn top" id="bolo-to-vault-btn-top" class="hidden bg-purple-950/80 text-purple-300 font-extrabold py-2.5 px-4 rounded-lg uppercase tracking-wider text-xs shadow-lg hover:bg-purple-900 transition-all border border-purple-700/50"><i data-lucide="archive" class="w-4 h-4 inline-block mr-1"></i> INTEL VAULT</button>
+                            <button aria-label="bolo save inventory btn" id="bolo-save-inventory-btn" class="bg-red-700 hover:bg-red-600 text-white px-4 py-2 rounded text-xs font-bold uppercase tracking-widest transition-colors shadow-[0_0_15px_rgba(220,38,38,0.4)] flex items-center gap-2"><i data-lucide="save" class="w-4 h-4"></i> SAVE BOLO</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right: Saved BOLOs -->
+                <div class="flex flex-col bg-gray-950 p-5 shrink-0 md:overflow-y-auto md:flex-1 min-w-0 min-h-0">
+                    <div class="text-[10px] font-black uppercase text-gray-400 tracking-wider border-b border-gray-800 pb-2 mb-4 flex justify-between items-center">
+                        <span>BOLO Inventory</span>
+                        <span class="text-[9px] text-red-500/60 tracking-widest font-bold">MOST WANTED</span>
+                    </div>
+
+                    <div id="boloLibraryList" class="space-y-3 pb-20">
+                        <div class="text-center text-gray-600 text-xs py-8 italic border border-dashed border-gray-800 rounded-lg">No BOLO cards saved yet.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="bolo-poster-render-zone" style="position: fixed; top: -9999px; left: -9999px; z-index: -9999; width: 600px; height: 850px; background: #080808; font-family: Arial, sans-serif; overflow: hidden;">
+
+        <!-- ══ TOP AGENCY STRIP ══ -->
+        <div style="background: #111111; border-bottom: 3px solid #cc0000; padding: 12px 24px; display: flex; justify-content: space-between; align-items: center;">
+            <span id="bolo-render-agency" style="color: #ff4444; font-size: 12px; font-weight: 900; letter-spacing: 4px; text-transform: uppercase;">TACTICAL RANGE CARD</span>
+            <span style="color: #888888; font-size: 11px; font-weight: 900; letter-spacing: 2px; text-transform: uppercase;">CASE / REPORT # <span id="bolo-render-case" style="color: #ff4444;">N/A</span></span>
+        </div>
+
+        <!-- ══ WANTED HEADER ══ -->
+        <div style="text-align: center; padding: 10px 0 6px; background: #080808;">
+            <div style="color: #cc0000; font-size: 108px; font-weight: 900; line-height: 0.87; letter-spacing: 6px; text-transform: uppercase; font-family: 'Arial Black', Impact, Arial, sans-serif; text-shadow: 0 0 60px rgba(200,0,0,0.45), 3px 3px 0px #4a0000;">WANTED</div>
+            <div style="border-top: 3px solid #cc0000; margin: 10px 24px 8px;"></div>
+            <div id="bolo-render-name" style="color: #ffffff; font-size: 25px; font-weight: 900; letter-spacing: 9px; text-transform: uppercase;">UNKNOWN SUSPECT</div>
+            <div style="border-bottom: 3px solid #cc0000; margin: 8px 24px 5px;"></div>
+            <div id="bolo-render-reason" style="color: #ff4444; font-size: 11.5px; font-weight: 700; letter-spacing: 3px; font-style: italic; text-transform: uppercase;">WANTED FOR QUESTIONING</div>
+        </div>
+
+        <!-- ══ MUGSHOT + DESCRIPTION ══ -->
+        <div style="display: grid; grid-template-columns: 305px 247px; gap: 0; margin: 10px 24px 0;">
+            <!-- Mugshot box -->
+            <div style="background: #111; border: 3px solid #cc0000; position: relative; height: 300px; display: flex; align-items: center; justify-content: center; overflow: hidden;">
+                <img id="bolo-render-img" style="display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover;">
+                <div id="bolo-render-img-placeholder" style="text-align: center; padding: 20px;">
+                    <div style="color: #1e1e1e; font-size: 64px; line-height: 1;">&#128100;</div>
+                    <div style="color: #2e2e2e; font-size: 11px; font-weight: 900; letter-spacing: 4px; margin-top: 10px;">NO PHOTO</div>
+                    <div style="color: #1a1a1a; font-size: 9px; letter-spacing: 2px; margin-top: 4px;">MUGSHOT UNAVAILABLE</div>
+                </div>
+            </div>
+            <!-- Description box -->
+            <div style="background: #ffffff; color: #000000; height: 300px; display: flex; flex-direction: column; overflow: hidden;">
+                <div style="background: #cc0000; padding: 8px 14px; flex-shrink: 0;">
+                    <span style="color: #fff; font-size: 10px; font-weight: 900; letter-spacing: 4px; text-transform: uppercase;">DESCRIPTION</span>
+                </div>
+                <div style="padding: 10px 14px; font-size: 10.5px; line-height: 1.7; flex: 1; overflow: hidden;">
+                    <div><b>Sex:</b>&nbsp;<span id="bolo-render-sex" style="color:#444;">— UNKNOWN</span></div>
+                                    <div><b>D.O.B / Age:</b>&nbsp;<span id="bolo-render-dob" style="color:#444;"></span></div>
+                    <div><b>Race / Build:</b>&nbsp;<span id="bolo-render-build" style="color:#444;"></span></div>
+                    <div><b>Height:</b>&nbsp;<span id="bolo-render-height" style="color:#444;"></span></div>
+                    <div><b>Weight:</b>&nbsp;<span id="bolo-render-weight" style="color:#444;"></span></div>
+                    <div><b>Hair Color:</b>&nbsp;<span id="bolo-render-hair" style="color:#444;"></span></div>
+                    <div><b>Eye Color:</b>&nbsp;<span id="bolo-render-eye" style="color:#444;"></span></div>
+                    <div style="margin-top: 8px; border-top: 1px solid #ddd; padding-top: 7px;">
+                        <div style="font-weight: 900; font-size: 10px; text-transform: uppercase; margin-bottom: 3px;">Distinguishing Features:</div>
+                        <span id="bolo-render-features" style="color: #555; font-style: italic; font-size: 10px;"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ══ LAST SEEN ══ -->
+        <div style="margin: 10px 24px 8px; background: #111111; border-left: 4px solid #cc0000; padding: 9px 14px;">
+            <div style="color: #cc0000; font-size: 9px; font-weight: 900; letter-spacing: 4px; margin-bottom: 4px; text-transform: uppercase;">&#9679;&nbsp; LAST SEEN / LOCATION</div>
+            <div id="bolo-render-lastseen" style="color: #bbbbbb; font-size: 11px; line-height: 1.5;">Unknown location.</div>
+        </div>
+
+        <!-- ══ NOTES (shown only when present) ══ -->
+        <div id="bolo-render-notes-section" style="margin: 0 24px 8px; background: #0d0d0d; border-left: 4px solid #555555; padding: 7px 14px; display: none;">
+            <div style="color: #888888; font-size: 9px; font-weight: 900; letter-spacing: 4px; margin-bottom: 3px; text-transform: uppercase;">&#9679;&nbsp; NOTES</div>
+            <div id="bolo-render-notes" style="color: #999999; font-size: 10px; line-height: 1.5;"></div>
+        </div>
+
+        <!-- ══ REWARD + WARNING ══ -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 0 24px 8px;">
+            <div style="background: #0c0c00; border-left: 4px solid #f59e0b; padding: 9px 14px;">
+                <div style="color: #f59e0b; font-size: 9px; font-weight: 900; letter-spacing: 3px; margin-bottom: 4px; text-transform: uppercase;">&#9679;&nbsp; REWARD</div>
+                <div id="bolo-render-reward" style="color: #ffffff; font-size: 14px; font-weight: 900;">No reward offered.</div>
+            </div>
+            <div style="background: #130000; border-left: 4px solid #cc0000; padding: 9px 14px;">
+                <div style="color: #cc0000; font-size: 9px; font-weight: 900; letter-spacing: 3px; margin-bottom: 4px; text-transform: uppercase;">&#9679;&nbsp; WARNING</div>
+                <div id="bolo-render-warning" style="color: #ff5555; font-size: 13px; font-weight: 900;">Approach with caution.</div>
+            </div>
+        </div>
+
+        <!-- ══ DANGER BANNER ══ -->
+        <div id="bolo-render-threat-banner" style="margin: 0 24px 10px; background: #cc0000; padding: 10px 0; text-align: center;">
+            <span id="bolo-render-threat-text" style="color: #ffffff; font-size: 13px; font-weight: 900; letter-spacing: 6px; text-transform: uppercase; font-family: 'Arial Black', Arial, sans-serif;">&#9888;&nbsp; EXERCISE EXTREME CAUTION &nbsp;&#9888;</span>
+        </div>
+
+        <!-- ══ CONTACT FOOTER ══ -->
+        <div style="margin: 0 24px 8px; border-top: 2px solid #cc0000; padding: 10px 0; display: flex; justify-content: space-between; align-items: center;">
+            <span style="color: #555555; font-size: 9px; line-height: 1.55; max-width: 240px;">Report any sightings to authorities immediately.<br>Do not approach. Do not engage.</span>
+            <span id="bolo-render-contact" style="color: #cc0000; font-size: 16px; font-weight: 900; letter-spacing: 2px; text-transform: uppercase;">CONTACT LOCAL AUTHORITIES</span>
+        </div>
+
+        <!-- ══ BOTTOM SEAL ══ -->
+        <div style="margin: 0 24px; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #333; padding-top: 7px;">
+            <span style="color: #666666; font-size: 8px; letter-spacing: 2px; text-transform: uppercase;">TACTICAL RANGE CARD &bull; INTEL SYSTEM</span>
+            <span style="color: #aa3333; font-size: 8px; letter-spacing: 3px; text-transform: uppercase; font-weight: 900;">OFFICIAL BOLO NOTICE</span>
+        </div>
+
+    </div>
+    <!-- END BOLO MODAL -->
+
+    <!-- ══ ANIMAL BOLO RENDER ZONE (grey theme) ══ -->
+    <div id="bolo-animal-render-zone" style="position:fixed;top:-9999px;left:-9999px;z-index:-9999;width:600px;height:850px;background:#1a1a1a;font-family:Arial,sans-serif;overflow:hidden;">
+
+        <!-- Top Agency Strip -->
+        <div style="background:#111111;border-bottom:3px solid #555555;padding:12px 24px;display:flex;justify-content:space-between;align-items:center;">
+            <span id="bolo-animal-render-agency" style="color:#ffffff;font-size:12px;font-weight:900;letter-spacing:4px;text-transform:uppercase;">TACTICAL RANGE CARD</span>
+            <span style="color:#888888;font-size:11px;font-weight:900;letter-spacing:2px;text-transform:uppercase;">CASE / REPORT # <span id="bolo-animal-render-case" style="color:#ffffff;">N/A</span></span>
+        </div>
+
+        <!-- WANTED Header -->
+        <div style="text-align:center;padding:10px 0 6px;background:#1a1a1a;">
+            <div style="color:#d1d5db;font-size:108px;font-weight:900;line-height:0.87;letter-spacing:6px;text-transform:uppercase;font-family:'Arial Black',Impact,Arial,sans-serif;text-shadow:0 0 40px rgba(180,180,180,0.2),3px 3px 0px #0a0a0a;">WANTED</div>
+            <div style="border-top:3px solid #555;margin:10px 24px 8px;"></div>
+            <div id="bolo-animal-render-species" style="color:#ffffff;font-size:28px;font-weight:900;letter-spacing:9px;text-transform:uppercase;">UNKNOWN SPECIES</div>
+            <div style="border-bottom:3px solid #555;margin:8px 24px 5px;"></div>
+            <div style="color:#9ca3af;font-size:11px;font-weight:700;letter-spacing:3px;font-style:italic;text-transform:uppercase;">WILDLIFE / NUISANCE ANIMAL NOTICE</div>
+        </div>
+
+        <!-- Photo + Description -->
+        <div style="display:grid;grid-template-columns:305px 247px;gap:0;margin:10px 24px 0;">
+            <!-- Photo -->
+            <div style="background:#111;border:3px solid #555;position:relative;height:300px;display:flex;align-items:center;justify-content:center;overflow:hidden;">
+                <img id="bolo-animal-render-img" style="display:none;position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;">
+                <div id="bolo-animal-render-placeholder" style="text-align:center;padding:20px;">
+                    <div style="color:#2e2e2e;font-size:64px;line-height:1;">🐗</div>
+                    <div style="color:#333;font-size:11px;font-weight:900;letter-spacing:4px;margin-top:10px;">NO PHOTO</div>
+                </div>
+            </div>
+            <!-- Description box -->
+            <div style="background:#f5f5f5;color:#000;height:300px;display:flex;flex-direction:column;overflow:hidden;">
+                <div style="background:#444;padding:8px 14px;flex-shrink:0;">
+                    <span style="color:#fff;font-size:10px;font-weight:900;letter-spacing:4px;text-transform:uppercase;">DESCRIPTION</span>
+                </div>
+                <div style="padding:10px 14px;font-size:10.5px;line-height:1.75;flex:1;overflow:hidden;">
+                    <div><b>Sex / Class:</b>&nbsp;<span id="bolo-animal-render-sex" style="color:#444;">— Unknown</span></div>
+                    <div><b>Est. Weight:</b>&nbsp;<span id="bolo-animal-render-weight" style="color:#444;"></span></div>
+                    <div style="margin-top:8px;border-top:1px solid #ddd;padding-top:7px;">
+                        <div style="font-weight:900;font-size:10px;text-transform:uppercase;margin-bottom:3px;">Distinguishing Marks:</div>
+                        <span id="bolo-animal-render-marks" style="color:#555;font-style:italic;font-size:10px;"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Territory -->
+        <div style="margin:10px 24px 8px;background:#111;border-left:4px solid #555;padding:9px 14px;">
+            <div style="color:#9ca3af;font-size:9px;font-weight:900;letter-spacing:4px;margin-bottom:4px;text-transform:uppercase;">&#9679;&nbsp; TERRITORY / LAST SEEN</div>
+            <div id="bolo-animal-render-territory" style="color:#d1d5db;font-size:11px;line-height:1.5;">Unknown area.</div>
+        </div>
+
+        <!-- Notes (hidden when empty) -->
+        <div id="bolo-animal-render-notes-section" style="margin:0 24px 8px;background:#0f0f0f;border-left:4px solid #444;padding:7px 14px;display:none;">
+            <div style="color:#6b7280;font-size:9px;font-weight:900;letter-spacing:4px;margin-bottom:3px;text-transform:uppercase;">&#9679;&nbsp; NOTES</div>
+            <div id="bolo-animal-render-notes" style="color:#9ca3af;font-size:10px;line-height:1.5;"></div>
+        </div>
+
+        <!-- Reward + Contact -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:0 24px 8px;">
+            <div style="background:#0f0f00;border-left:4px solid #b45309;padding:9px 14px;">
+                <div style="color:#b45309;font-size:9px;font-weight:900;letter-spacing:3px;margin-bottom:4px;text-transform:uppercase;">&#9679;&nbsp; REWARD</div>
+                <div id="bolo-animal-render-reward" style="color:#fbbf24;font-size:13px;font-weight:900;">No reward posted.</div>
+            </div>
+            <div style="background:#111;border-left:4px solid #555;padding:9px 14px;">
+                <div style="color:#6b7280;font-size:9px;font-weight:900;letter-spacing:3px;margin-bottom:4px;text-transform:uppercase;">&#9679;&nbsp; CONTACT</div>
+                <div id="bolo-animal-render-contact" style="color:#d1d5db;font-size:11px;font-weight:900;letter-spacing:1px;text-transform:uppercase;">RANCH OWNER</div>
+            </div>
+        </div>
+
+        <!-- Threat Banner -->
+        <div id="bolo-animal-render-banner" style="margin:0 24px 10px;background:#92400e;padding:10px 0;text-align:center;">
+            <span id="bolo-animal-render-banner-text" style="color:#fff;font-size:13px;font-weight:900;letter-spacing:6px;text-transform:uppercase;font-family:'Arial Black',Arial,sans-serif;">&#9888;&nbsp; NUISANCE ANIMAL &nbsp;&#9888;</span>
+        </div>
+
+        <!-- Bottom Seal -->
+        <div style="margin:0 24px;display:flex;justify-content:space-between;align-items:center;border-top:1px solid #333;padding-top:7px;">
+            <span style="color:#444;font-size:8px;letter-spacing:2px;text-transform:uppercase;">TACTICAL RANGE CARD &bull; INTEL SYSTEM</span>
+            <span style="color:#6b7280;font-size:8px;letter-spacing:3px;text-transform:uppercase;font-weight:900;">OFFICIAL WILDLIFE NOTICE</span>
+        </div>
+
+    </div>
+    <!-- END ANIMAL BOLO RENDER ZONE -->
+
+    <!-- START GAME TAG MODAL -->
+    <div id="gametag-modal" class="fixed inset-0 bg-black/90 backdrop-blur-md z-[200] hidden flex items-center justify-center p-4" style="z-index: 100050;">
+        <div class="bg-gray-900 border-2 w-full max-w-6xl h-full max-h-[100%] md:h-[90vh] rounded-xl flex flex-col overflow-hidden min-h-0" style="border-color: #f59e0b; box-shadow: 0 0 30px rgba(245,158,11,0.3);">
+            <!-- Header -->
+            <div class="p-3 border-b-2 flex flex-wrap justify-between items-center bg-gray-950 gap-y-3 gap-x-2" style="border-color: #f59e0b;">
+                <div class="flex items-center gap-2 md:gap-3">
+                    <i data-lucide="tag" class="w-4 h-4 md:w-5 md:h-5 shrink-0" style="color: #f59e0b;"></i>
+                    <h2 class="text-sm md:text-lg font-black uppercase text-white tracking-widest truncate">FIELD HARVEST TAG</h2>
+                </div>
+                <div class="flex items-center gap-2 flex-wrap justify-end shrink-0">
+                    <button id="closeGameTagBtnTop" onclick="closeGameTagModal()" aria-label="Close modal" class="p-4 bg-gray-800 rounded-lg group hover:bg-amber-900 transition-colors shrink-0">
+                        <i data-lucide="x" class="w-8 h-8 text-white"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Content Area -->
+            <div class="flex-1 flex flex-col md:flex-row overflow-y-auto md:overflow-hidden min-h-0">
+                
+                <!-- Left: Form -->
+                <div class="flex flex-col bg-gray-900 border-b md:border-b-0 md:border-r border-gray-800 shrink-0 md:flex-1 min-w-0 min-h-0 relative">
+                    <div class="flex-1 flex flex-col custom-scrollbar p-4 space-y-4 md:overflow-y-auto md:min-h-0">
+                        
+                        <!-- Toggle Big Game / Fish -->
+                        <div class="flex bg-black rounded-lg p-1 border border-gray-700">
+                            <button aria-label="gametag type game" id="gametag-type-game" onclick="setGameTagType('game')" class="flex-1 py-2 text-xs font-black uppercase tracking-widest bg-amber-600 text-white rounded transition-all">BIG GAME</button>
+                            <button aria-label="gametag type fish" id="gametag-type-fish" onclick="setGameTagType('fish')" class="flex-1 py-2 text-xs font-black uppercase tracking-widest text-gray-500 hover:text-white rounded transition-all">FISHING</button>
+                        </div>
+
+                        <!-- Image Upload -->
+                        <div class="flex flex-col gap-1 text-center">
+                            <div class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Harvest Photo</div>
+                            <label for="gametag-image-upload" class="sr-only">gametag image upload</label><input aria-label="gametag image upload" type="file" id="gametag-image-upload" accept="image/*" class="hidden">
+                            <button aria-label="Action Button" onclick="document.getElementById('gametag-image-upload').click()" class="bg-gray-800 border border-gray-600 rounded p-4 flex flex-col items-center justify-center hover:bg-gray-700 transition-colors text-gray-400 relative overflow-hidden h-48 md:h-64">
+                                <img id="gametag-form-preview-img" class="absolute inset-0 w-full h-full object-cover hidden">
+                                <i data-lucide="camera" id="gametag-form-preview-icon" class="w-8 h-8 mb-2 text-amber-500 relative z-10"></i>
+                                <span class="text-xs font-bold relative z-10 bg-black/50 px-2 py-1 rounded" id="gametag-image-label">TAP TO UPLOAD PHOTO</span>
+                            </button>
+                        </div>
+
+                        <!-- Common Fields -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <div>
+                                <div class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Date / Time</div>
+                                <div class="flex gap-2">
+                                    <label for="gametag-input-date" class="sr-only">YYYY-MM-DD HH:MM</label><input aria-label="YYYY-MM-DD HH:MM" type="text" id="gametag-input-date" class="w-full bg-black border border-gray-700 rounded p-2 text-white font-bold" placeholder='YYYY-MM-DD HH:MM'>
+                                    <button aria-label="Action Button" onclick="document.getElementById('gametag-input-date').value = new Date().toLocaleString()" class="bg-gray-700 text-white px-3 rounded hover:bg-gray-600"><i data-lucide="clock" class="w-4 h-4"></i></button>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">GPS Coordinates / Location</div>
+                                <label for="gametag-input-gps" class="sr-only">e.g. 45.123, -110.456 or GMU 42</label><input aria-label="e.g. 45.123, -110.456 or GMU 42" type="text" id="gametag-input-gps" class="w-full bg-black border border-gray-700 rounded p-2 text-white font-bold" placeholder='e.g. 45.123, -110.456 or GMU 42'>
+                            </div>
+                        </div>
+
+                        <!-- Big Game Fields -->
+                        <div id="gametag-fields-game" class="space-y-4">
+                            <div class="grid grid-cols-2 gap-3">
+                                <div>
+                                    <div class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Species</div>
+                                    <label for="gametag-input-game-species" class="sr-only">e.g. Elk, Mule Deer</label><input aria-label="e.g. Elk, Mule Deer" type="text" id="gametag-input-game-species" class="w-full bg-black border border-gray-700 rounded p-2 text-white font-bold" placeholder='e.g. Elk, Mule Deer'>
+                                </div>
+                                <div>
+                                    <div class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Sex</div>
+                                    <label for="gametag-input-game-sex" class="sr-only">e.g. Bull, Cow, Buck</label><input aria-label="e.g. Bull, Cow, Buck" type="text" id="gametag-input-game-sex" class="w-full bg-black border border-gray-700 rounded p-2 text-white font-bold" placeholder='e.g. Bull, Cow, Buck'>
+                                </div>
+                                <div>
+                                    <div class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Weapon / Method</div>
+                                    <label for="gametag-input-game-weapon" class="sr-only">e.g. Rifle, Archery</label><input aria-label="e.g. Rifle, Archery" type="text" id="gametag-input-game-weapon" class="w-full bg-black border border-gray-700 rounded p-2 text-white font-bold" placeholder='e.g. Rifle, Archery'>
+                                </div>
+                                <div>
+                                    <div class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">License / Tag #</div>
+                                    <label for="gametag-input-game-license" class="sr-only">e.g. AZ-998811</label><input aria-label="e.g. AZ-998811" type="text" id="gametag-input-game-license" class="w-full bg-black border border-gray-700 rounded p-2 text-white font-bold" placeholder='e.g. AZ-998811'>
+                                </div>
+                                <div>
+                                    <div class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Antler Points (L/R)</div>
+                                    <label for="gametag-input-game-points" class="sr-only">e.g. 6x6, 4x5, N/A</label><input aria-label="e.g. 6x6, 4x5, N/A" type="text" id="gametag-input-game-points" class="w-full bg-black border border-gray-700 rounded p-2 text-white font-bold" placeholder='e.g. 6x6, 4x5, N/A'>
+                                </div>
+                                <div>
+                                    <div class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Inside Spread (in)</div>
+                                    <label for="gametag-input-game-spread" class="sr-only">e.g. 24</label><input aria-label="e.g. 24" type="text" id="gametag-input-game-spread" class="w-full bg-black border border-gray-700 rounded p-2 text-white font-bold" placeholder='e.g. 24"'>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Fishing Fields -->
+                        <div id="gametag-fields-fish" class="space-y-4 hidden">
+                            <div class="grid grid-cols-2 gap-3">
+                                <div>
+                                    <div class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Species</div>
+                                    <label for="gametag-input-fish-species" class="sr-only">e.g. Largemouth Bass</label><input aria-label="e.g. Largemouth Bass" type="text" id="gametag-input-fish-species" class="w-full bg-black border border-gray-700 rounded p-2 text-white font-bold" placeholder='e.g. Largemouth Bass'>
+                                </div>
+                                <div>
+                                    <div class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Water Body</div>
+                                    <label for="gametag-input-fish-water" class="sr-only">e.g. Lake Mead</label><input aria-label="e.g. Lake Mead" type="text" id="gametag-input-fish-water" class="w-full bg-black border border-gray-700 rounded p-2 text-white font-bold" placeholder='e.g. Lake Mead'>
+                                </div>
+                                <div>
+                                    <div class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Length (in)</div>
+                                    <label for="gametag-input-fish-length" class="sr-only">e.g. 21.5</label><input aria-label="e.g. 21.5" type="text" id="gametag-input-fish-length" class="w-full bg-black border border-gray-700 rounded p-2 text-white font-bold" placeholder='e.g. 21.5"'>
+                                </div>
+                                <div>
+                                    <div class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Weight (lbs)</div>
+                                    <label for="gametag-input-fish-weight" class="sr-only">e.g. 5.2 lbs</label><input aria-label="e.g. 5.2 lbs" type="text" id="gametag-input-fish-weight" class="w-full bg-black border border-gray-700 rounded p-2 text-white font-bold" placeholder='e.g. 5.2 lbs'>
+                                </div>
+                                <div class="col-span-2">
+                                    <div class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Lure / Bait</div>
+                                    <label for="gametag-input-fish-bait" class="sr-only">e.g. Green Pumpkin Jig</label><input aria-label="e.g. Green Pumpkin Jig" type="text" id="gametag-input-fish-bait" class="w-full bg-black border border-gray-700 rounded p-2 text-white font-bold" placeholder='e.g. Green Pumpkin Jig'>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Notes -->
+                        <div>
+                            <div class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Field Notes</div>
+                            <label for="gametag-input-notes" class="sr-only">Weather conditions, behavior, tracking notes...</label><textarea aria-label="Weather conditions, behavior, tracking notes..." id="gametag-input-notes" class="w-full bg-black border border-gray-700 rounded p-2 text-white font-bold h-24" placeholder='Weather conditions, behavior, tracking notes...'></textarea>
+                        </div>
+                    </div>
+
+                    <!-- Footer Buttons -->
+                    <div class="p-3 border-t border-gray-800 bg-gray-950 flex justify-end gap-3 shrink-0 flex-wrap">
+                        <button aria-label="rework gametag btn" id="rework-gametag-btn" class="hidden bg-blue-950/80 text-blue-300 font-extrabold py-2.5 px-4 rounded-lg uppercase tracking-wider text-xs shadow-lg hover:bg-blue-900 transition-all flex items-center gap-2 border border-blue-700/50">
+                            <i data-lucide="wrench" class="w-4 h-4"></i> REWORK TAG
+                        </button>
+                        <button aria-label="gametag to vault btn top" id="gametag-to-vault-btn-top" class="hidden bg-purple-950/80 text-purple-300 font-extrabold py-2.5 px-4 rounded-lg uppercase tracking-wider text-xs shadow-lg hover:bg-purple-900 transition-all flex items-center gap-2 border border-purple-700/50">
+                            <i data-lucide="archive" class="w-4 h-4"></i> INTEL VAULT
+                        </button>
+                        <button aria-label="gametag clear btn" id="gametag-clear-btn" class="bg-red-900 text-white font-extrabold py-2.5 px-4 rounded-lg uppercase tracking-wider text-xs shadow-lg hover:bg-red-800 transition-all flex items-center gap-2">
+                            <i data-lucide="trash-2" class="w-4 h-4"></i> CLEAR FORM
+                        </button>
+                        <button aria-label="gametag save inventory btn" id="gametag-save-inventory-btn" class="bg-amber-500 text-amber-950 font-extrabold px-6 py-2.5 rounded-lg uppercase tracking-wider text-xs shadow-[0_0_20px_rgba(245,158,11,0.2)] hover:bg-amber-400 transition-all flex items-center gap-2">
+                            <i data-lucide="save" class="w-4 h-4"></i> SAVE TO INVENTORY
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Right: Saved Tag Cards -->
+                <div class="flex flex-col bg-gray-950 p-5 shrink-0 md:overflow-y-auto md:flex-1 min-w-0 min-h-0">
+                    <div class="text-[10px] font-black uppercase text-gray-400 tracking-wider border-b border-gray-800 pb-2 mb-4 flex justify-between items-center">
+                        <div class="flex items-center gap-2"><i data-lucide="archive" class="w-4 h-4 text-amber-500"></i> HARVEST INVENTORY</div>
+                        <span class="text-gray-600 text-[8px]">(SELECT TO SEND TO VAULT)</span>
+                    </div>
+                    <div id="gametagLibraryList" class="flex flex-col gap-3 custom-scrollbar flex-1 min-h-0">
+                        <!-- IDB Tags load here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- START LICENSE / ID MODAL -->
+    <div id="license-modal" class="fixed inset-0 bg-black/90 backdrop-blur-md z-[200] hidden flex items-center justify-center p-4" style="z-index: 100050;">
+        <div class="bg-gray-900 border-2 w-full max-w-6xl h-full max-h-[100%] md:h-[90vh] rounded-xl flex flex-col overflow-hidden min-h-0" style="border-color: #22c55e; box-shadow: 0 0 30px rgba(34,197,94,0.3);">
+            <!-- Header -->
+            <div class="p-3 border-b-2 flex flex-wrap justify-between items-center bg-gray-950 gap-y-3 gap-x-2" style="border-color: #22c55e;">
+                <div class="flex items-center gap-2 md:gap-3">
+                    <i data-lucide="shield-check" class="w-4 h-4 md:w-5 md:h-5 shrink-0" style="color: #22c55e;"></i>
+                    <h2 class="text-sm md:text-lg font-black uppercase text-white tracking-widest truncate">HUNTING & FISHING LICENSE / ID</h2>
+                </div>
+                <div class="flex items-center gap-2 flex-wrap justify-end shrink-0">
+                    <button id="closeLicenseBtnTop" onclick="closeLicenseModal()" aria-label="Close modal" class="p-4 bg-gray-800 rounded-lg group hover:bg-green-900 transition-colors shrink-0">
+                        <i data-lucide="x" class="w-8 h-8 text-white"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Content Area -->
+            <div class="flex-1 flex flex-col md:flex-row overflow-y-auto md:overflow-hidden min-h-0">
+
+                <!-- Left: Form -->
+                <div class="flex flex-col bg-gray-900 border-b md:border-b-0 md:border-r border-gray-800 shrink-0 md:flex-1 min-w-0 min-h-0 relative">
+                    <div class="flex-1 flex flex-col custom-scrollbar p-4 space-y-4 md:overflow-y-auto md:min-h-0">
+
+                        <!-- Type Selector -->
+                        <div class="flex bg-black rounded-lg p-1 border border-gray-700 gap-1">
+                            <button aria-label="license type hunting" id="license-type-hunting" onclick="setLicenseType('hunting')" class="flex-1 py-2 text-[10px] font-black uppercase tracking-widest rounded border bg-green-700 text-white border-green-500 transition-all">🦌 HUNTING</button>
+                            <button aria-label="license type fishing" id="license-type-fishing" onclick="setLicenseType('fishing')" class="flex-1 py-2 text-[10px] font-black uppercase tracking-widest rounded border text-gray-500 border-transparent hover:text-white transition-all">🎣 FISHING</button>
+                            <button aria-label="license type both" id="license-type-both"    onclick="setLicenseType('both')"    class="flex-1 py-2 text-[10px] font-black uppercase tracking-widest rounded border text-gray-500 border-transparent hover:text-white transition-all">BOTH</button>
+                            <button aria-label="license type id" id="license-type-id"      onclick="setLicenseType('id')"      class="flex-1 py-2 text-[10px] font-black uppercase tracking-widest rounded border text-gray-500 border-transparent hover:text-white transition-all">🪪 ID</button>
+                        </div>
+
+                        <!-- Photo Upload -->
+                        <div class="flex flex-col gap-1 text-center">
+                            <div class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">License / ID Photo</div>
+                            <label for="license-image-upload" class="sr-only">license image upload</label><input aria-label="license image upload" type="file" id="license-image-upload" accept="image/*" class="hidden">
+                            <button aria-label="Action Button" onclick="document.getElementById('license-image-upload').click()" class="bg-gray-800 border border-gray-600 rounded p-4 flex flex-col items-center justify-center hover:bg-gray-700 transition-colors text-gray-400 relative overflow-hidden h-40 md:h-52">
+                                <img id="license-form-preview-img" class="absolute inset-0 w-full h-full object-contain hidden bg-black">
+                                <i data-lucide="id-card" id="license-form-preview-icon" class="w-8 h-8 mb-2 text-green-500 relative z-10"></i>
+                                <span class="text-xs font-bold relative z-10 bg-black/50 px-2 py-1 rounded" id="license-image-label">TAP TO UPLOAD PHOTO</span>
+                            </button>
+                        </div>
+
+                        <!-- Fields -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <div>
+                                <div class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Full Name</div>
+                                <label for="license-input-name" class="sr-only">John A. Doe</label><input aria-label="John A. Doe" type="text" id="license-input-name" class="w-full bg-black border border-gray-700 rounded p-2 text-white font-bold" placeholder="John A. Doe">
+                            </div>
+                            <div>
+                                <div class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">License / ID Number</div>
+                                <label for="license-input-number" class="sr-only">e.g. AZ-HNT-998811</label><input aria-label="e.g. AZ-HNT-998811" type="text" id="license-input-number" class="w-full bg-black border border-gray-700 rounded p-2 text-white font-bold font-mono" placeholder="e.g. AZ-HNT-998811">
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <div>
+                                <div class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Expiration Date</div>
+                                <label for="license-input-expiry" class="sr-only">e.g. 2025-12-31</label><input aria-label="e.g. 2025-12-31" type="text" id="license-input-expiry" class="w-full bg-black border border-gray-700 rounded p-2 text-white font-bold" placeholder="e.g. 2025-12-31">
+                            </div>
+                            <div>
+                                <div class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Issuing State / Authority</div>
+                                <label for="license-input-state" class="sr-only">e.g. Arizona Game & Fish</label><input aria-label="e.g. Arizona Game & Fish" type="text" id="license-input-state" class="w-full bg-black border border-gray-700 rounded p-2 text-white font-bold" placeholder="e.g. Arizona Game & Fish">
+                            </div>
+                        </div>
+                        <div>
+                            <div class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Notes / Tagged Species / Zones</div>
+                            <label for="license-input-notes" class="sr-only">e.g. Unit 42 Elk, Archery Only, Tags: 2</label><textarea aria-label="e.g. Unit 42 Elk, Archery Only, Tags: 2" id="license-input-notes" class="w-full bg-black border border-gray-700 rounded p-2 text-white font-bold h-20" placeholder="e.g. Unit 42 Elk, Archery Only, Tags: 2"></textarea>
+                        </div>
+                    </div>
+
+                    <!-- Footer Buttons -->
+                    <div class="p-3 border-t border-gray-800 bg-gray-950 flex justify-between items-center gap-2 shrink-0 flex-wrap">
+                        <button aria-label="license clear btn" id="license-clear-btn" class="text-gray-400 hover:text-white px-4 py-2 border border-gray-600 rounded text-xs font-bold uppercase tracking-widest transition-colors">CLEAR FORM</button>
+                        <div class="flex gap-2 flex-wrap justify-end">
+                            <button aria-label="rework license btn" id="rework-license-btn" class="hidden bg-blue-950/80 text-blue-300 font-extrabold py-2.5 px-4 rounded-lg uppercase tracking-wider text-xs shadow-lg hover:bg-blue-900 transition-all flex items-center gap-2 border border-blue-700/50">
+                                <i data-lucide="wrench" class="w-4 h-4"></i> REWORK
+                            </button>
+                            <button aria-label="license to vault btn top" id="license-to-vault-btn-top" class="hidden bg-purple-950/80 text-purple-300 font-extrabold py-2.5 px-4 rounded-lg uppercase tracking-wider text-xs shadow-lg hover:bg-purple-900 transition-all flex items-center gap-2 border border-purple-700/50">
+                                <i data-lucide="archive" class="w-4 h-4"></i> INTEL VAULT
+                            </button>
+                            <button aria-label="license save inventory btn" id="license-save-inventory-btn" class="bg-green-700 hover:bg-green-600 text-white px-4 py-2.5 rounded-lg text-xs font-bold uppercase tracking-widest transition-colors shadow-[0_0_15px_rgba(34,197,94,0.3)] flex items-center gap-2">
+                                <i data-lucide="save" class="w-4 h-4"></i> SAVE LICENSE
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right: Saved Licenses -->
+                <div class="flex flex-col bg-gray-950 p-5 shrink-0 md:overflow-y-auto md:flex-1 min-w-0 min-h-0">
+                    <div class="text-[10px] font-black uppercase text-gray-400 tracking-wider border-b border-gray-800 pb-2 mb-4 flex justify-between items-center">
+                        <div class="flex items-center gap-2"><i data-lucide="archive" class="w-4 h-4 text-green-500"></i> LICENSE INVENTORY</div>
+                        <span class="text-gray-600 text-[8px]">(SELECT TO SEND TO VAULT)</span>
+                    </div>
+                    <div id="licenseLibraryList" class="flex flex-col gap-3 custom-scrollbar flex-1 min-h-0">
+                        <!-- IDB licenses load here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- END LICENSE MODAL -->
+
+    <!-- HIDDEN LICENSE RENDER ZONE (html2canvas target) -->
+    <div id="license-poster-render-zone" style="position: fixed; top: -9999px; left: -9999px; z-index: -9999; width: 800px; height: 500px; background-color: #0d1a0d; font-family: Arial, sans-serif; border: 12px solid #071007; box-sizing: border-box; overflow: hidden; display: flex; flex-direction: column;">
+
+        <!-- Outer accent border -->
+        <div style="position: absolute; inset: 6px; border: 1px solid rgba(34,197,94,0.25); pointer-events: none; z-index: 20;"></div>
+
+        <!-- ══ HEADER BAR ══ -->
+        <div style="background: linear-gradient(135deg, #1a3d14, #245c1c); padding: 9px 18px; display: flex; align-items: center; justify-content: space-between; border-bottom: 3px solid rgba(34,197,94,0.4); flex-shrink: 0;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <div style="width: 9px; height: 9px; border-radius: 50%; background: #4ade80; box-shadow: 0 0 6px rgba(74,222,128,0.7);"></div>
+                <div style="font-size: 8px; color: rgba(255,255,255,0.45); letter-spacing: 0.3em; font-weight: bold; text-transform: uppercase;">OFFICIAL DOCUMENT — TACTICAL RANGE CARD</div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 18px;">
+                <div id="license-render-state" style="font-size: 11px; font-weight: bold; color: #86efac; text-transform: uppercase; letter-spacing: 0.15em;">STATE AUTHORITY</div>
+                <div id="license-render-type" style="font-size: 15px; font-weight: 900; color: #ffffff; letter-spacing: 0.18em; text-transform: uppercase; background: rgba(34,197,94,0.15); padding: 3px 12px; border: 1px solid rgba(34,197,94,0.35); border-radius: 2px;">HUNTING LICENSE</div>
+            </div>
+        </div>
+
+        <!-- ══ BODY: INFO LEFT | PHOTO RIGHT ══ -->
+        <div style="display: flex; flex: 1; min-height: 0;">
+
+            <!-- LEFT — Info panel (text from form) -->
+            <div style="width: 300px; flex-shrink: 0; padding: 16px 18px; display: flex; flex-direction: column; justify-content: space-between; border-right: 2px solid rgba(34,197,94,0.2); background: rgba(0,0,0,0.3);">
+
+                <div>
+                    <!-- Name -->
+                    <div style="margin-bottom: 14px;">
+                        <div style="font-size: 8px; color: rgba(34,197,94,0.65); letter-spacing: 0.3em; text-transform: uppercase; margin-bottom: 3px;">LICENSEE NAME</div>
+                        <div id="license-render-name" style="font-size: 20px; font-weight: 900; color: #ffffff; letter-spacing: 0.06em; text-transform: uppercase; border-bottom: 1px solid rgba(34,197,94,0.2); padding-bottom: 8px;">UNKNOWN</div>
+                    </div>
+
+                    <!-- License # + Expiry -->
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px;">
+                        <div>
+                            <div style="font-size: 8px; color: rgba(34,197,94,0.65); letter-spacing: 0.25em; text-transform: uppercase; margin-bottom: 3px;">LICENSE / ID #</div>
+                            <div id="license-render-number" style="font-size: 13px; font-weight: 900; color: #4ade80; letter-spacing: 0.15em; font-family: monospace;">N/A</div>
+                        </div>
+                        <div>
+                            <div style="font-size: 8px; color: rgba(34,197,94,0.65); letter-spacing: 0.25em; text-transform: uppercase; margin-bottom: 3px;">EXPIRES</div>
+                            <div id="license-render-expiry" style="font-size: 13px; font-weight: 900; color: #fca5a5;">N/A</div>
+                        </div>
+                    </div>
+
+                    <!-- Notes / Species / Zones -->
+                    <div>
+                        <div style="font-size: 8px; color: rgba(34,197,94,0.65); letter-spacing: 0.25em; text-transform: uppercase; margin-bottom: 5px;">NOTES / SPECIES / ZONES</div>
+                        <div id="license-render-notes" style="font-size: 10px; color: rgba(255,255,255,0.7); line-height: 1.65; background: rgba(0,0,0,0.25); border-left: 3px solid rgba(34,197,94,0.3); padding: 8px 10px; border-radius: 1px;">—</div>
+                    </div>
+                </div>
+
+                <!-- Footer -->
+                <div style="border-top: 1px solid rgba(34,197,94,0.18); padding-top: 8px;">
+                    <div style="font-size: 7px; color: rgba(255,255,255,0.2); letter-spacing: 0.15em; text-transform: uppercase; line-height: 1.6;">CARRY THIS LICENSE WHILE IN THE FIELD<br>SUBJECT TO INSPECTION BY AUTHORITIES</div>
+                    <div style="font-size: 8px; color: rgba(34,197,94,0.45); font-weight: bold; letter-spacing: 0.2em; margin-top: 4px;">TRC INTEL SYSTEM</div>
+                </div>
+
+            </div>
+
+            <!-- RIGHT — Big photo area (license / ID scan) -->
+            <div style="flex: 1; background: #060f06; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; overflow: hidden;">
+                <!-- Photo placeholder -->
+                <div id="license-render-nophoto" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; opacity: 0.25; color: #4ade80;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+                    <div style="font-size: 11px; font-weight: 900; letter-spacing: 0.3em; text-transform: uppercase; text-align: center;">UPLOAD LICENSE / ID<br>PHOTO TO DISPLAY HERE</div>
+                </div>
+                <!-- Actual photo — fills the full area, shown when present -->
+                <img id="license-render-photo" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; display: none; background: #060f06;">
+                <!-- Corner label -->
+                <div style="position: absolute; bottom: 8px; right: 10px; font-size: 7px; color: rgba(34,197,94,0.3); letter-spacing: 0.2em; text-transform: uppercase; font-weight: bold;">LICENSE DOCUMENT</div>
+            </div>
+
+        </div>
+    </div>
+    <!-- END LICENSE RENDER ZONE -->
+
+
+
+    <!-- HIDDEN FIELD TAG RENDER ZONE -->
+    <!-- HIDDEN FIELD TAG RENDER ZONE -->
+    <div id="gametag-poster-render-zone" style="width:600px; height:840px; background:#2d3b24; overflow:hidden; border:12px solid #1a2314; font-family: monospace; position: fixed; top: -9999px; left: -9999px; z-index: -9999; display:flex; flex-direction:column;">
+
+        <!-- ══ HEADER STRIP ══ -->
+        <div id="gametag-render-header-strip" style="background:#1a2314; padding:8px 16px; display:flex; justify-content:space-between; align-items:center; border-bottom:3px solid #4a6030; flex-shrink:0;">
+            <div style="display:flex; align-items:center; gap:8px;">
+                <div id="gametag-render-dot" style="width:10px; height:10px; border-radius:50%; background:#8ab040; box-shadow:0 0 6px rgba(138,176,64,0.6);"></div>
+                <span style="color:#8ab040; font-size:9px; font-weight:900; letter-spacing:4px; text-transform:uppercase;">TACTICAL RANGE CARD</span>
+            </div>
+            <div id="gametag-render-date" style="color:#c4b060; font-size:10px; font-weight:900; letter-spacing:2px;">YYYY-MM-DD</div>
+        </div>
+
+        <!-- ══ TITLE BAR ══ -->
+        <div id="gametag-render-title-bar" style="background:#1e2d18; padding:10px 16px 8px; flex-shrink:0; border-bottom:2px solid #3a4a2a;">
+            <div style="color:#ffffff; font-size:28px; font-weight:900; letter-spacing:8px; text-transform:uppercase; line-height:1;" id="gametag-render-type-label">OFFICIAL HARVEST RECORD</div>
+            <div id="gametag-render-subtitle" style="color:#8ab040; font-size:9px; letter-spacing:5px; margin-top:3px; text-transform:uppercase; font-weight:700;">FIELD TAG — WILDLIFE DOCUMENTATION</div>
+        </div>
+
+        <!-- ══ LARGE PHOTO AREA ══ -->
+        <div style="position:relative; flex:0 0 270px; background:#111a0c; overflow:hidden; border-bottom:4px solid #1a2314;">
+            <div id="gametag-render-img-placeholder" style="position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; opacity:0.3; color:#8ab040;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                <div style="font-weight:900; letter-spacing:4px; font-size:11px; margin-top:8px;">NO PHOTO RECORDED</div>
+            </div>
+            <img id="gametag-render-img" class="hidden" style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; filter:contrast(1.1) saturate(0.85) sepia(0.2);">
+            <!-- Species overlay badge -->
+            <div style="position:absolute; bottom:0; left:0; right:0; background:linear-gradient(transparent, rgba(0,0,0,0.85)); padding:18px 16px 10px;">
+                <div style="color:#fbbf24; font-size:9px; font-weight:900; letter-spacing:4px; text-transform:uppercase;">SPECIES / ID</div>
+                <div id="gametag-render-species" style="color:#ffffff; font-size:32px; font-weight:900; letter-spacing:6px; text-transform:uppercase; line-height:1; text-shadow:2px 2px 4px rgba(0,0,0,0.8);">UNKNOWN</div>
+                <div style="display:flex; gap:16px; margin-top:4px; align-items:center;">
+                    <div>
+                        <span id="gametag-render-sex-label" style="color:#8ab040; font-size:8px; font-weight:900; letter-spacing:3px; text-transform:uppercase;">SEX / CLASS: </span>
+                        <span id="gametag-render-sex" style="color:#fbbf24; font-size:14px; font-weight:900; letter-spacing:2px; text-transform:uppercase; text-shadow:1px 1px 3px rgba(0,0,0,0.9);">N/A</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ══ INFO GRID ══ -->
+        <div style="flex:1; padding:7px 12px 6px; display:grid; grid-template-columns:1fr 1fr 1fr; gap:6px; min-height:0;">
+
+            <div style="background:rgba(0,0,0,0.45); border:1px solid rgba(138,176,64,0.3); border-left:3px solid #8ab040; padding:8px 10px; border-radius:2px;">
+                <div style="color:#8ab040; font-size:8px; font-weight:900; letter-spacing:3px; text-transform:uppercase; margin-bottom:3px;">LOCATION / GPS</div>
+                <div id="gametag-render-gps" style="color:#34d399; font-size:10px; font-weight:700; line-height:1.4; word-break:break-all;">N/A</div>
+            </div>
+
+            <div style="background:rgba(0,0,0,0.45); border:1px solid rgba(251,191,36,0.3); border-left:3px solid #f59e0b; padding:8px 10px; border-radius:2px;">
+                <div id="gametag-render-license-label" style="color:#f59e0b; font-size:8px; font-weight:900; letter-spacing:3px; text-transform:uppercase; margin-bottom:3px;">LICENSE / TAG #</div>
+                <div id="gametag-render-license" style="color:#fde047; font-size:16px; font-weight:900; letter-spacing:2px; text-transform:uppercase;">N/A</div>
+            </div>
+
+            <div style="background:rgba(0,0,0,0.45); border:1px solid rgba(249,115,22,0.25); border-left:3px solid #f97316; padding:8px 10px; border-radius:2px;">
+                <div id="gametag-render-stat1-label" style="color:#f97316; font-size:8px; font-weight:900; letter-spacing:3px; text-transform:uppercase; margin-bottom:3px;">ANTLER POINTS (L/R)</div>
+                <div id="gametag-render-stat1" style="color:#fb923c; font-size:20px; font-weight:900; letter-spacing:2px; text-transform:uppercase;">N/A</div>
+                <div id="gametag-render-stat2-label" style="color:#f97316; font-size:8px; font-weight:900; letter-spacing:3px; text-transform:uppercase; margin-top:5px; margin-bottom:2px;">INSIDE SPREAD</div>
+                <div id="gametag-render-stat2" style="color:#fdba74; font-size:15px; font-weight:900; text-transform:uppercase;">N/A</div>
+            </div>
+
+            <!-- Field Notes — spans full width -->
+            <div style="grid-column:1/-1; background:rgba(0,0,0,0.45); border:1px solid rgba(203,213,225,0.12); border-left:3px solid #94a3b8; padding:8px 10px; border-radius:2px;">
+                <div style="color:#94a3b8; font-size:8px; font-weight:900; letter-spacing:3px; text-transform:uppercase; margin-bottom:3px;">FIELD NOTES</div>
+                <div id="gametag-render-notes" style="color:#e2e8f0; font-size:10px; line-height:1.8; font-style:italic;">No notes provided.</div>
+            </div>
+
+        </div>
+
+        <!-- ══ FOOTER ══ -->
+        <div style="background:#111a0c; padding:7px 16px; border-top:2px solid #1a2314; display:flex; justify-content:space-between; align-items:center; flex-shrink:0;">
+            <img id="gametag-render-qr" alt="QR Code" src="https://api.qrserver.com/v1/create-qr-code/?size=80x80&data=TRC-HARVEST-TAG" style="width:44px; height:44px; opacity:0.85;">
+
+            <div style="text-align:center;">
+                <div style="color:#4b5563; font-size:7px; font-weight:900; letter-spacing:2px; text-transform:uppercase;">TEMPORARY FIELD RECORD ONLY — NOT A LEGAL STATE E-TAG</div>
+                <div style="color:#3a4a2a; font-size:7px; letter-spacing:2px; text-transform:uppercase; margin-top:2px;">FOR TACTICAL RANGE CARD LOGGING — UNOFFICIAL DOCUMENT</div>
+            </div>
+            <div style="text-align:right;">
+                <div style="color:#4b5563; font-size:7px; letter-spacing:2px; text-transform:uppercase;">TRC INTEL SYSTEM</div>
+            </div>
+        </div>
+
+    </div>
+
+
     <!-- AMMO LIBRARY MODAL -->
     <div id="ammoLibraryModal" class="fixed inset-0 bg-black/95 backdrop-blur-md z-[100] hidden flex items-center justify-center p-4">
         <div class="bg-gray-900 border-2 border-neon-green w-full max-w-4xl h-[85vh] rounded-xl flex flex-col overflow-hidden shadow-[0_0_30px_rgba(34,197,94,0.3)]">
@@ -1274,39 +1965,39 @@
                     
                     <div class="space-y-3 font-mono text-xs text-black">
                         <div class="flex flex-col gap-1">
-                            <label class="text-[9px] text-gray-500 uppercase">Load / Batch Name</label>
+                            <div class="text-[9px] text-gray-500 uppercase">Load / Batch Name</div>
                             <label for="ammo-name" class="sr-only">e.g. Hornady ELD Match</label><input type="text" id="ammo-name" class="bg-black/60 border border-gray-700 p-2 rounded text-white focus:outline-none focus:border-emerald-500" placeholder="e.g. Hornady ELD Match" maxlength="20" aria-label="e.g. Hornady ELD Match">
                         </div>
                         <div class="flex flex-col gap-1">
-                            <label class="text-[9px] text-gray-500 uppercase">Caliber</label>
+                            <div class="text-[9px] text-gray-500 uppercase">Caliber</div>
                             <label for="ammo-caliber" class="sr-only">e.g. 6.5 Creedmoor</label><input type="text" id="ammo-caliber" class="bg-black/60 border border-gray-700 p-2 rounded text-white focus:outline-none focus:border-emerald-500" placeholder="e.g. 6.5 Creedmoor" maxlength="20" aria-label="e.g. 6.5 Creedmoor">
                         </div>
                         <div class="flex flex-col gap-1">
-                            <label class="text-[9px] text-gray-500 uppercase">Bullet Brand & Weight</label>
+                            <div class="text-[9px] text-gray-500 uppercase">Bullet Brand & Weight</div>
                             <label for="ammo-bullet" class="sr-only">e.g. Hornady 140gr ELD-M</label><input type="text" id="ammo-bullet" class="bg-black/60 border border-gray-700 p-2 rounded text-white focus:outline-none focus:border-emerald-500" placeholder="e.g. Hornady 140gr ELD-M" maxlength="20" aria-label="e.g. Hornady 140gr ELD-M">
                         </div>
                         <div class="flex flex-col gap-1">
-                            <label class="text-[9px] text-gray-500 uppercase">Powder Brand & Charge (gr)</label>
+                            <div class="text-[9px] text-gray-500 uppercase">Powder Brand & Charge (gr)</div>
                             <label for="ammo-powder" class="sr-only">e.g. H4350 - 41.5gr</label><input type="text" id="ammo-powder" class="bg-black/60 border border-gray-700 p-2 rounded text-white focus:outline-none focus:border-emerald-500" placeholder="e.g. H4350 - 41.5gr" maxlength="20" aria-label="e.g. H4350 - 41.5gr">
                         </div>
                         <div class="flex flex-col gap-1">
-                            <label class="text-[9px] text-gray-500 uppercase">Primer Type</label>
+                            <div class="text-[9px] text-gray-500 uppercase">Primer Type</div>
                             <label for="ammo-primer" class="sr-only">e.g. CCI #200</label><input type="text" id="ammo-primer" class="bg-black/60 border border-gray-700 p-2 rounded text-white focus:outline-none focus:border-emerald-500" placeholder="e.g. CCI #200" maxlength="20" aria-label="e.g. CCI #200">
                         </div>
                         <div class="flex flex-col gap-1">
-                            <label class="text-[9px] text-gray-500 uppercase">C.O.L (inches)</label>
+                            <div class="text-[9px] text-gray-500 uppercase">C.O.L (inches)</div>
                             <label for="ammo-col" class="sr-only">e.g. 2.825</label><input type="text" id="ammo-col" class="bg-black/60 border border-gray-700 p-2 rounded text-white focus:outline-none focus:border-emerald-500" placeholder="e.g. 2.825" maxlength="20" aria-label="e.g. 2.825">
                         </div>
                         <div class="flex flex-col gap-1">
-                            <label class="text-[9px] text-gray-500 uppercase">Velocity (FPS)</label>
+                            <div class="text-[9px] text-gray-500 uppercase">Velocity (FPS)</div>
                             <label for="ammo-velocity" class="sr-only">e.g. 2710</label><input type="text" id="ammo-velocity" class="bg-black/60 border border-gray-700 p-2 rounded text-white focus:outline-none focus:border-emerald-500" placeholder="e.g. 2710" maxlength="20" aria-label="e.g. 2710">
                         </div>
                         <div class="flex flex-col gap-1">
-                            <label class="text-[9px] text-gray-500 uppercase">Ballistic Coefficient</label>
+                            <div class="text-[9px] text-gray-500 uppercase">Ballistic Coefficient</div>
                             <label for="ammo-bc" class="sr-only">0.417</label><input type="text" inputmode="decimal" id="ammo-bc" class="bg-black/60 border border-gray-700 p-2 rounded text-white focus:outline-none focus:border-emerald-500" placeholder="0.417" maxlength="20" aria-label="0.417">
                         </div>
                         <div class="flex flex-col gap-1">
-                            <label class="text-[9px] text-gray-500 uppercase">Starting Box Count (Rounds)</label>
+                            <div class="text-[9px] text-gray-500 uppercase">Starting Box Count (Rounds)</div>
                             <label for="ammo-count" class="sr-only">e.g. 100</label><input type="text" inputmode="decimal" id="ammo-count" class="bg-black/60 border border-gray-700 p-2 rounded text-white focus:outline-none focus:border-emerald-500" placeholder="e.g. 100" min="0" aria-label="e.g. 100">
                         </div>
                     </div>
@@ -1337,7 +2028,6 @@
     </div>
 
     <div class="sr-only" aria-hidden="true">
-        <canvas id="mobile-canvas-hold"></canvas><canvas id="mobile-canvas-shot"></canvas>
         <span id="mobile-display-elevation"></span><span id="mobile-display-hold-data"></span><span id="mobile-display-final-dope"></span>
         <div id="noImageMsg"></div>
     </div>
@@ -1432,7 +2122,7 @@
                     <div class="dash-panel-header">
                         <span class="dash-panel-title flex items-center">
                             <i data-lucide="cloud-rain" class="inline w-3 h-3 mr-1 text-blue-400"></i> Atmospheric Telemetry
-                            <button id="bt-kestrel-connect-btn" class="ml-2 text-gray-600 hover:text-blue-500 transition-colors" title="Connect Kestrel (Bluetooth coming soon)">
+                            <button aria-label="bt kestrel connect btn" id="bt-kestrel-connect-btn" class="ml-2 text-gray-600 hover:text-blue-500 transition-colors" title="Connect Kestrel (Bluetooth coming soon)">
                                 <i data-lucide="bluetooth" class="w-3.5 h-3.5"></i>
                             </button>
                         </span>
@@ -1495,7 +2185,7 @@
                             <button id="sync-wx-btn" class="w-full bg-blue-950/40 hover:bg-blue-900/60 border border-blue-900/60 py-1.5 rounded text-[8px] font-black uppercase text-blue-300 flex items-center justify-center gap-1.5 tracking-[0.15em] transition-all active:scale-95" aria-label="Action Button">
                                 <i data-lucide="satellite-dish" class="w-3 h-3"></i> SYNC
                             </button>
-                            <button id="btn-kestrel-bt" class="w-full bg-blue-950/40 opacity-50 border border-blue-900/60 py-1.5 rounded text-[8px] font-black uppercase text-blue-300 flex items-center justify-center gap-1.5 tracking-[0.15em] transition-all" title="Coming Soon: Bluetooth Telemetry" onclick="alert('Bluetooth Telemetry Integration Coming Soon.')">
+                            <button aria-label="btn kestrel bt" id="btn-kestrel-bt" class="w-full bg-blue-950/40 opacity-50 border border-blue-900/60 py-1.5 rounded text-[8px] font-black uppercase text-blue-300 flex items-center justify-center gap-1.5 tracking-[0.15em] transition-all" title="Coming Soon: Bluetooth Telemetry" onclick="alert('Bluetooth Telemetry Integration Coming Soon.')">
                                 <i data-lucide="bluetooth" class="w-3 h-3"></i> TELEM
                             </button>
                             <button id="btn-weather-to-vault" class="w-full bg-emerald-950/40 hover:bg-emerald-900/60 border border-emerald-900/60 py-1.5 rounded text-[8px] font-black uppercase text-emerald-300 flex items-center justify-center gap-1.5 tracking-[0.15em] transition-all active:scale-95" aria-label="Action Button">
@@ -1540,7 +2230,7 @@
                                 <!-- Controls -->
                                 <div class="p-3 border-b border-gray-800 shrink-0 bg-gray-950 flex flex-wrap gap-2 justify-between items-end">
                                     <div>
-                                        <label class="block text-[9px] text-gray-500 uppercase font-bold mb-1">Target Increment</label>
+                                        <div class="block text-[9px] text-gray-500 uppercase font-bold mb-1">Target Increment</div>
                                         <div class="flex bg-gray-900 rounded border border-gray-700 p-0.5" id="matrix-increment-group">
                                             <button class="matrix-inc-btn px-2 py-1 text-xs font-bold rounded transition-colors text-gray-400 hover:text-white" data-inc="10" aria-label="Action Button">10y</button>
                                             <button class="matrix-inc-btn px-2 py-1 text-xs font-bold rounded transition-colors text-gray-400 hover:text-white" data-inc="25" aria-label="Action Button">25y</button>
@@ -1686,7 +2376,7 @@
                                 <div class="relative bg-gray-900/50 border border-gray-800 rounded-sm p-1 group flex flex-col">
                                     <span class="text-[6px] text-yellow-600 font-black uppercase">05: SIGHT HGT</span>
                                     <div class="flex items-baseline gap-1 mt-0.5">
-                                        <label for="bal-input-sh" class="sr-only">1.5</label><input type="text" inputmode="decimal" maxlength="25" id="bal-input-sh" placeholder="1.5" step="0.1" onblur="if(this.value && !this.value.includes('.')) { this.value = this.value.length > 1 ? this.value.slice(0,1) + '.' + this.value.slice(1) : this.value + '.0'; if(typeof runSolverMatrix === 'function') runSolverMatrix(); }" class="bg-transparent text-yellow-500 text-lg font-black font-mono outline-none w-full leading-none" aria-label="1.5">
+                                        <label for="bal-input-sh" class="sr-only">1.5</label><input aria-label="1.5" type="text" inputmode="decimal" maxlength="25" id="bal-input-sh" placeholder="1.5" step="0.1" onblur="if(this.value && !this.value.includes('.')) { this.value = this.value.length > 1 ? this.value.slice(0,1) + '.' + this.value.slice(1) : this.value + '.0'; if(typeof runSolverMatrix === 'function') runSolverMatrix(); }" class="bg-transparent text-yellow-500 text-lg font-black font-mono outline-none w-full leading-none" aria-label="1.5">
                                     </div>
                                     <div class="text-[5px] text-gray-600 font-mono mt-auto">INCHES ABOVE BORE</div>
                                 </div>
@@ -1845,7 +2535,7 @@
                     <!-- The Real Video Stream Target -->
                     <video id="surveillance-stream" autoplay playsinline webkit-playsinline muted class="w-full h-full object-cover hidden z-0"></video>
                     
-                    <img id="surveillance-snapshot-viewer" alt="Surveillance Snapshot" class="w-full h-full object-contain hidden z-10 bg-black absolute inset-0 pointer-events-none">
+                    <img id="surveillance-snapshot-viewer" alt="Surveillance Snapshot" class="w-full h-full object-contain hidden z-10 bg-black absolute inset-0 p-0 pointer-events-none" style="padding: 80px 0;">
                     
                     <!-- Fallback / Placeholder -->
                     <div id="surveillance-placeholder" class="absolute inset-0 flex flex-col items-center justify-center text-center z-0">
@@ -2079,6 +2769,15 @@
                                     <button class="remarks-toggle-btn bg-gray-900 border border-yellow-700 text-yellow-500 p-2 rounded hover:bg-yellow-600 hover:text-black transition-all shadow-[0_0_10px_rgba(234,179,8,0.2)] flex items-center justify-center" title="ReMarks Jotter" aria-label="ReMarks Jotter">
                                         <i data-lucide="edit-3" class="w-5 h-5"></i>
                                     </button>
+                                    <button id="openBoloBtnHud" class="bg-gray-900 border border-red-700 text-red-500 p-2 rounded hover:bg-red-600 hover:text-black transition-all shadow-[0_0_10px_rgba(239,68,68,0.2)] flex items-center justify-center font-black uppercase text-[10px]" title="MOST WANTED / BOLO Card" aria-label="BOLO Card">
+                                        MOST WANTED
+                                    </button>
+                                    <button id="openGameTagBtnHud" class="bg-gray-900 border border-amber-700 text-amber-500 p-2 rounded hover:bg-amber-600 hover:text-black transition-all shadow-[0_0_10px_rgba(245,158,11,0.2)] flex items-center justify-center font-black uppercase text-[10px]" title="FIELD HARVEST TAG" aria-label="Game Tag">
+                                        <i data-lucide="tag" class="w-4 h-4 mr-1"></i> FIELD TAG
+                                    </button>
+                                    <button id="openLicenseBtnHud" class="bg-gray-900 border border-green-700 text-green-400 p-2 rounded hover:bg-green-600 hover:text-black transition-all shadow-[0_0_10px_rgba(34,197,94,0.2)] flex items-center justify-center font-black uppercase text-[10px]" title="Hunting & Fishing License / ID" aria-label="License Card">
+                                        <i data-lucide="shield-check" class="w-4 h-4 mr-1"></i> LICENSES
+                                    </button>
                                 </div>
                                 
                                 <div class="flex items-center gap-2 text-[9px] font-black text-emerald-400 uppercase tracking-widest font-mono bg-black/50 px-2 py-1 border border-gray-800 rounded hidden md:flex shrink-0 ml-2">
@@ -2194,6 +2893,15 @@
                                     <button id="vault-geomatrix-btn" class="text-[8px] bg-cyan-950/80 text-cyan-300 px-2 py-1 rounded border border-cyan-700 hover:bg-cyan-600 hover:text-white transition-colors flex items-center gap-1 font-bold" aria-label="Action Button">
                                         <i data-lucide="navigation" class="w-3 h-3"></i> GEO MATRIX
                                     </button>
+                                    <button id="vault-to-bolo-btn" class="text-[8px] bg-red-950/80 text-red-500 px-2 py-1 rounded border border-red-700 hover:bg-red-600 hover:text-white transition-colors flex items-center gap-1 font-bold uppercase" title="MOST WANTED / BOLO Card" aria-label="BOLO Card">
+                                        <i data-lucide="crosshair" class="w-3 h-3"></i> MOST WANTED
+                                    </button>
+                                    <button id="vault-to-gametag-btn" class="text-[8px] bg-amber-950/80 text-amber-500 px-2 py-1 rounded border border-amber-700 hover:bg-amber-600 hover:text-white transition-colors flex items-center gap-1 font-bold uppercase" title="FIELD HARVEST TAG" aria-label="Game Tag">
+                                        <i data-lucide="tag" class="w-3 h-3"></i> FIELD TAG
+                                    </button>
+                                    <button id="vault-to-license-btn" class="text-[8px] bg-green-950/80 text-green-400 px-2 py-1 rounded border border-green-700 hover:bg-green-600 hover:text-white transition-colors flex items-center gap-1 font-bold uppercase" title="Hunting & Fishing License / ID" aria-label="License Card">
+                                        <i data-lucide="shield-check" class="w-3 h-3"></i> LICENSES
+                                    </button>
                                     <span class="text-[8px] text-gray-500 font-mono uppercase ml-2">Encrypted Cache</span>
                                 </div>
                             </div>
@@ -2226,20 +2934,20 @@
                         </div>
                         <div class="flex flex-col md:flex-row items-stretch md:items-end gap-3 w-full max-w-4xl bg-black/40 p-3 rounded border border-emerald-900/20">
                             <div class="flex-1 space-y-1">
-                                <label class="text-[7px] text-gray-500 uppercase font-black ml-1">Team / Unit</label>
+                                <div class="text-[7px] text-gray-500 uppercase font-black ml-1">Team / Unit</div>
                                 <label for="comms-team" class="sr-only">e.g. ALPHA</label><input type="text" id="comms-team" class="w-full bg-black border border-emerald-900/50 rounded px-2 py-2 text-[10px] text-white focus:border-emerald-500 outline-none uppercase placeholder-gray-800" placeholder="e.g. ALPHA" aria-label="e.g. ALPHA">
                             </div>
                             <div class="flex-1 space-y-1">
-                                <label class="text-[7px] text-emerald-500 uppercase font-black ml-1">Mission Code</label>
+                                <div class="text-[7px] text-emerald-500 uppercase font-black ml-1">Mission Code</div>
                                 <label for="comms-passcode" class="sr-only">MIN 10: 5L+2N+3S</label><input type="password" id="comms-passcode" class="w-full bg-black border border-emerald-500/50 rounded px-2 py-2 text-[10px] text-emerald-400 focus:border-emerald-400 outline-none uppercase placeholder-gray-800 text-center font-black tracking-widest" placeholder="MIN 10: 5L+2N+3S" aria-label="MIN 10: 5L+2N+3S">
                                 <span class="text-[6px] text-gray-600 font-mono uppercase tracking-wider block text-center mt-0.5">5 letters · 2 numbers · 3 special chars</span>
                             </div>
                             <div class="flex-1 space-y-1">
-                                <label class="text-[7px] text-gray-500 uppercase font-black ml-1">Call Sign</label>
+                                <div class="text-[7px] text-gray-500 uppercase font-black ml-1">Call Sign</div>
                                 <label for="comms-callsign" class="sr-only">e.g. CMDPST</label><input type="text" id="comms-callsign" class="w-full bg-black border border-emerald-900/50 rounded px-2 py-2 text-[10px] text-white focus:border-emerald-500 outline-none uppercase placeholder-gray-800" placeholder="e.g. CMDPST" aria-label="e.g. CMDPST">
                             </div>
                             <div class="flex-1 space-y-1">
-                                <label class="text-[7px] text-gray-500 uppercase font-black ml-1">Role</label>
+                                <div class="text-[7px] text-gray-500 uppercase font-black ml-1">Role</div>
                                 <label for="comms-role" class="sr-only">e.g. OPERATIONS</label><input type="text" id="comms-role" class="w-full bg-black border border-emerald-900/50 rounded px-2 py-2 text-[10px] text-white focus:border-emerald-500 outline-none uppercase placeholder-gray-800" placeholder="e.g. OPERATIONS" aria-label="e.g. OPERATIONS">
                             </div>
                             <button id="comms-connect-btn" class="bg-emerald-600 hover:bg-emerald-500 text-white font-black px-6 py-2 rounded text-[10px] uppercase tracking-widest transition-all shadow-[0_0_15px_rgba(16,185,129,0.3)] active:scale-95 h-[34px]" aria-label="Action Button">
@@ -2363,7 +3071,11 @@
         <div id="comms-map" class="flex-1 w-full bg-gray-950 relative z-0"></div>
     </div>
 
-    <!-- MAIN SCRIPT (Already loaded in head) -->
+    <!-- MAIN SCRIPT -->
+    <script src="./trc_core.js?v=8.0.7" defer></script>
+    <script src="./gametag_logic.js?v=1.0" defer></script>
+    <script src="./bolo_logic.js?v=1.0" defer></script>
+    <script src="./license_logic.js?v=1.2" defer></script>
     
     <!-- CUSTOM SAVE PROFILE MODAL -->
     <div id="save-profile-modal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-[1000000] flex items-center justify-center p-4 font-mono">
@@ -2383,7 +3095,7 @@
     <!-- PWA SERVICE WORKER REGISTRATION & API UPDATE CHECK -->
 
     <script>
-        window.APP_VERSION = 'v7.27.31';
+        window.APP_VERSION = 'v7.27.32';
         if(document.getElementById('header-version-display')) {
             document.getElementById('header-version-display').innerText = window.APP_VERSION;
         }
@@ -2422,9 +3134,11 @@
 
         window.addEventListener('load', () => {
             if ('serviceWorker' in navigator && window.location.protocol !== 'file:') {
-                navigator.serviceWorker.register('./sw.js')
-                    .then(reg => console.log('SW Registered!', reg))
-                    .catch(err => console.log('SW Registration failed:', err));
+                navigator.serviceWorker.getRegistrations().then(function(registrations) {
+                    for(let registration of registrations) {
+                        registration.unregister();
+                    }
+                }).catch(err => console.log('SW unregister skipped:', err));
             }
             
             // MANDATORY EULA/UPDATE CHECK
@@ -2644,9 +3358,15 @@
           <p class="text-center text-gray-500 text-xs mb-6">DOCUMENT ID: TRC-TERMS-2026-A</p>
           
           <div class="border border-red-900/50 bg-red-950/20 p-4 rounded mb-6">
-              <h3 class="text-red-500 font-bold mb-2">!!! CRITICAL SAFETY WARNING !!!</h3>
-              <p class="text-red-400/80 text-sm">Ballistic software is for reference and training purposes only. Numerical outputs are theoretical. The user is solely responsible for firearm safety, target identification, and background awareness. Never rely on an application as your sole safety check.</p>
-          </div>
+            <h3 class="text-red-500 font-bold mb-2">!!! CRITICAL SAFETY WARNING !!!</h3>
+            <p class="text-red-400/80 text-sm mb-4">Ballistic software is for reference and training purposes only. Numerical outputs are theoretical. The user is solely responsible for firearm safety, target identification, and background awareness. Never rely on an application as your sole safety check.</p>
+            
+            <h3 class="text-amber-500 font-bold mb-2">HARVEST TAG DISCLAIMER</h3>
+            <p class="text-amber-400/80 text-sm mb-4">The "Field Harvest Tag" feature is for personal logging purposes only. It is NOT an official state-issued E-Tag and does NOT satisfy legal requirements for tagging harvested game in your state. You are solely responsible for following all local and federal hunting/fishing laws.</p>
+            
+            <h3 class="text-red-500 font-bold mb-2">BOLO CARD DISCLAIMER</h3>
+            <p class="text-red-400/80 text-sm">The BOLO / Most Wanted feature is for training and entertainment purposes only.</p>
+        </div>
 
           <div class="space-y-6 text-sm text-gray-300">
               <div>
@@ -2663,7 +3383,6 @@
               </div>
           </div>
       </div>
-  </div>
   </div>
   
 
@@ -2752,7 +3471,7 @@
             <button id="remarks-close-btn" aria-label="Close Remarks Jotter" class="text-gray-500 hover:text-red-400 p-3" onclick="event.stopPropagation()"><i data-lucide="x" class="w-6 h-6"></i></button>
         </div>
         <label for="remarks-title-input" class="sr-only">Note Title...</label><input type="text" id="remarks-title-input" class="w-full bg-black border border-gray-700 rounded p-1 text-[10px] text-yellow-400 font-bold focus:outline-none focus:border-yellow-500 uppercase placeholder-gray-600" placeholder="Note Title..." aria-label="Note Title...">
-        <textarea id="remarks-input" aria-label="Remarks" maxlength="500" class="w-full h-24 bg-black border border-gray-700 rounded p-2 text-[10px] text-yellow-100 font-mono resize-none focus:outline-none focus:border-yellow-500 custom-scrollbar" placeholder="Jot a note... (max 500 chars)"></textarea>
+        <label for="remarks-input" class="sr-only">Jot a note... (max 500 chars)</label><textarea id="remarks-input" aria-label="Remarks" maxlength="500" class="w-full h-24 bg-black border border-gray-700 rounded p-2 text-[10px] text-yellow-100 font-mono resize-none focus:outline-none focus:border-yellow-500 custom-scrollbar" placeholder="Jot a note... (max 500 chars)"></textarea>
         <div class="flex justify-between items-center mt-1">
             <span id="remarks-counter" class="text-[8px] text-gray-500 font-mono">0/500</span>
             <button id="remarks-save-btn" class="bg-yellow-950/50 border border-yellow-800 text-yellow-500 text-[8px] font-black uppercase px-2 py-1 rounded hover:bg-yellow-600 hover:text-black transition-all flex items-center gap-1" aria-label="Action Button"><i data-lucide="save" class="w-2.5 h-2.5"></i> SAVE TO VAULT</button>
@@ -2981,8 +3700,176 @@
             }
         }
     </script>
+    <!-- MISSION BRIEFING MODAL -->
+    <div id="missionBriefingModal" class="fixed inset-0 bg-black/90 backdrop-blur-md z-[200] hidden flex items-center justify-center p-4" style="z-index: 100050;">
+
+        <div class="bg-gray-900 border-2 border-neon-green w-full max-w-6xl h-[90vh] rounded-xl flex flex-col overflow-hidden shadow-[0_0_30px_rgba(34,197,94,0.3)]">
+            <!-- Header -->
+            <div class="p-3 border-b-2 border-neon-green flex flex-wrap justify-between items-center bg-gray-950 gap-y-3 gap-x-2">
+                <div class="flex items-center gap-2 md:gap-3">
+                    <i data-lucide="clipboard-list" class="w-4 h-4 md:w-5 md:h-5 text-neon-green shrink-0"></i>
+                    <h2 class="text-sm md:text-lg font-black uppercase text-white tracking-widest truncate">TACTICAL MISSION BRIEFING</h2>
+                </div>
+                <div class="flex items-center gap-2 flex-wrap justify-end shrink-0">
+                    <button id="rework-briefing-btn" class="hidden text-[9px] md:text-[10px] bg-amber-950/80 text-amber-300 px-2 py-1.5 md:px-3 rounded-lg border border-amber-700 hover:bg-amber-600 hover:text-white transition-colors flex items-center gap-1.5 font-bold uppercase tracking-wider whitespace-nowrap shrink-0" aria-label="Action Button">
+                        <i data-lucide="wrench" class="w-3 h-3 md:w-4 md:h-4"></i> REWORK INTEL
+                    </button>
+                    <button id="briefing-to-vault-btn-top" class="hidden text-[9px] md:text-[10px] bg-purple-950/80 text-purple-300 px-2 py-1.5 md:px-3 rounded-lg border border-purple-700 hover:bg-purple-600 hover:text-white transition-colors flex items-center gap-1.5 font-bold uppercase tracking-wider whitespace-nowrap shrink-0" aria-label="Action Button">
+                        <i data-lucide="archive" class="w-3 h-3 md:w-4 md:h-4"></i> INTEL VAULT
+                    </button>
+                    <button id="closeBriefingBtn" aria-label="Close modal" class="p-4 bg-gray-800 rounded-lg group hover:bg-red-900 transition-colors shrink-0" onclick="event.stopPropagation()">
+                        <i data-lucide="x" class="w-8 h-8 text-white"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Content Area (Split flex-row on md screens) -->
+            <div class="flex-1 flex flex-col md:flex-row overflow-hidden">
+                
+                <!-- Left: Form -->
+                <div class="flex flex-col overflow-y-auto bg-gray-900 border-b md:border-b-0 md:border-r border-gray-800 flex-1 min-w-0">
+                    <div id="briefing-snapshot-target" class="flex-1 flex flex-col custom-scrollbar">
+                        <!-- Metadata Row -->
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 p-4 border-b border-gray-800 bg-gray-900/50 shrink-0">
+                            <div>
+                                <div class="block text-[8px] font-black text-gray-400 uppercase tracking-widest mb-1">Mission Identifier</div>
+                                <label for="briefing-mission-name" class="sr-only">OP NAME / TARGET</label><input type="text" id="briefing-mission-name" maxlength="40" class="w-full bg-black/60 border border-gray-700 rounded px-3 py-2 text-xs text-white font-mono focus:border-neon-green outline-none uppercase" placeholder="OP NAME / TARGET" aria-label="OP NAME / TARGET">
+                            </div>
+                            <div>
+                                <div class="block text-[8px] font-black text-gray-400 uppercase tracking-widest mb-1">Commanding Officer / Instructor</div>
+                                <label for="briefing-commander" class="sr-only">NAME / CALLSIGN</label><input type="text" id="briefing-commander" maxlength="40" class="w-full bg-black/60 border border-gray-700 rounded px-3 py-2 text-xs text-white font-mono focus:border-neon-green outline-none uppercase" placeholder="NAME / CALLSIGN" aria-label="NAME / CALLSIGN">
+                            </div>
+                            <div>
+                                <div class="block text-[8px] font-black text-gray-400 uppercase tracking-widest mb-1">Timestamp</div>
+                                <div class="w-full bg-black/60 border border-gray-800 rounded px-3 py-2 text-xs text-gray-400 font-mono" id="briefing-timestamp">--:--:--</div>
+                            </div>
+                        </div>
+
+                        <!-- Top Half: ASSIGNMENT -->
+                        <div class="flex-1 min-h-[250px] p-4 flex flex-col relative border-b border-gray-800">
+                            <div class="block text-[10px] font-black text-blue-400 uppercase tracking-[0.2em] mb-2 flex items-center gap-2">
+                                <i data-lucide="crosshair" class="w-3 h-3"></i> PHASE 1: MISSION ASSIGNMENT & INTELLIGENCE
+                            </div>
+                            <label for="briefing-assignment-text" class="sr-only">ENTER INITIAL MISSION PARAMETERS, ROE, WEATHER, TARGET DETAILS...</label><textarea id="briefing-assignment-text" aria-label="Assignment Text" maxlength="1500" class="flex-1 w-full bg-black/60 border border-gray-700 rounded-lg p-4 text-sm text-blue-100 font-mono focus:border-blue-500 outline-none resize-none relative z-10 leading-relaxed custom-scrollbar placeholder-gray-600" placeholder="ENTER INITIAL MISSION PARAMETERS, ROE, WEATHER, TARGET DETAILS..."></textarea>
+                        </div>
+
+                        <!-- Bottom Half: DEBRIEF -->
+                        <div class="flex-1 min-h-[250px] p-4 flex flex-col relative">
+                            <div class="block text-[10px] font-black text-emerald-400 uppercase tracking-[0.2em] mb-2 flex items-center gap-2">
+                                <i data-lucide="check-circle" class="w-3 h-3"></i> PHASE 2: ACTION DEBRIEF & AFTER ACTION REPORT (AAR)
+                            </div>
+                            <label for="briefing-debrief-text" class="sr-only">ENTER POST-MISSION SUMMARY, ROUNDS EXPENDED, CONFIRMED HITS, COMPLICATIONS...</label><textarea id="briefing-debrief-text" aria-label="Debrief Text" maxlength="1500" class="flex-1 w-full bg-black/60 border border-gray-700 rounded-lg p-4 text-sm text-emerald-50 font-mono focus:border-emerald-500 outline-none resize-none leading-relaxed custom-scrollbar placeholder-gray-600" placeholder="ENTER POST-MISSION SUMMARY, ROUNDS EXPENDED, CONFIRMED HITS, COMPLICATIONS..."></textarea>
+                        </div>
+                    </div>
+
+                    <!-- Footer Buttons -->
+                    <div class="p-3 border-t border-gray-800 bg-gray-950 flex justify-end gap-3 shrink-0">
+                        <button id="briefing-clear-btn" class="bg-red-900 text-white font-extrabold py-2.5 px-4 rounded-lg uppercase tracking-wider text-xs shadow-lg hover:bg-red-800 transition-all flex items-center gap-2" aria-label="Action Button">
+                            <i data-lucide="trash-2" class="w-4 h-4"></i> CLEAR FORM
+                        </button>
+                        <button id="briefing-save-inventory-btn" class="bg-emerald-600 text-white font-extrabold px-6 py-2.5 rounded-lg uppercase tracking-wider text-xs shadow-lg hover:bg-emerald-500 transition-all flex items-center gap-2" aria-label="Action Button">
+                            <i data-lucide="save" class="w-4 h-4"></i> SAVE TO INVENTORY
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Right: Saved Briefings -->
+                <div class="flex flex-col bg-gray-950 p-5 overflow-y-auto flex-1 min-w-0">
+                    <div class="text-[10px] font-black uppercase text-gray-400 tracking-wider border-b border-gray-800 pb-2 mb-4 flex justify-between items-center">
+                        <span>Mission Briefings Inventory</span>
+                        <i data-lucide="clipboard-list" class="w-3.5 h-3.5 opacity-40"></i>
+                    </div>
+                    
+                    <div id="briefingLibraryList" class="grid grid-cols-1 xl:grid-cols-2 gap-4">
+                        <!-- Dynamic Briefings injected here -->
+                    </div>
+                </div>
+                
+            </div>
+        </div>
+    </div>
+
+    <!-- OPERATIONAL CALENDAR MODAL -->
+    <div id="calendarModal" class="fixed inset-0 bg-black/90 backdrop-blur-md z-[200] hidden flex items-center justify-center p-4" style="z-index: 100050;">
+        <div class="bg-gray-900 border-2 border-neon-green w-full max-w-6xl h-[90vh] rounded-xl flex flex-col overflow-hidden shadow-[0_0_30px_rgba(34,197,94,0.3)]">
+            <!-- Header -->
+            <div class="p-3 border-b-2 border-neon-green flex flex-wrap justify-between items-center bg-gray-950 gap-y-3 gap-x-2">
+                <div class="flex items-center gap-2 md:gap-3">
+                    <i data-lucide="calendar" class="w-4 h-4 md:w-5 md:h-5 text-neon-green shrink-0"></i>
+                    <h2 class="text-sm md:text-lg font-black uppercase text-white tracking-widest truncate">OPERATIONAL CALENDAR</h2>
+                </div>
+                <div class="flex items-center gap-2 flex-wrap justify-end shrink-0">
+                    <button id="rework-calendar-btn" class="hidden text-[9px] md:text-[10px] bg-amber-950/80 text-amber-300 px-2 py-1.5 md:px-3 rounded-lg border border-amber-700 hover:bg-amber-600 hover:text-white transition-colors flex items-center gap-1.5 font-bold uppercase tracking-wider whitespace-nowrap shrink-0" aria-label="Action Button">
+                        <i data-lucide="wrench" class="w-3 h-3 md:w-4 md:h-4"></i> REWORK CALENDAR
+                    </button>
+                    <button id="calendar-to-vault-btn-top" class="hidden text-[9px] md:text-[10px] bg-purple-950/80 text-purple-300 px-2 py-1.5 md:px-3 rounded-lg border border-purple-700 hover:bg-purple-600 hover:text-white transition-colors flex items-center gap-1.5 font-bold uppercase tracking-wider whitespace-nowrap shrink-0" aria-label="Action Button">
+                        <i data-lucide="archive" class="w-3 h-3 md:w-4 md:h-4"></i> INTEL VAULT
+                    </button>
+                    <button id="closeCalendarBtn" aria-label="Close modal" class="p-4 bg-gray-800 rounded-lg group hover:bg-red-900 transition-colors shrink-0" onclick="event.stopPropagation()">
+                        <i data-lucide="x" class="w-8 h-8 text-white"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Content Area -->
+            <div class="flex-1 flex flex-col md:flex-row overflow-hidden">
+                <!-- Left: Form -->
+                <div class="flex flex-col overflow-y-auto bg-gray-900 border-b md:border-b-0 md:border-r border-gray-800 flex-1 min-w-0">
+                    <div id="calendar-snapshot-target" class="flex-1 flex flex-col custom-scrollbar bg-gray-900 p-2 md:p-4">
+                        <div class="sticky top-0 z-20 bg-gray-900 pb-2 -mt-2 pt-2 md:-mt-4 md:pt-4">
+                            <!-- Month Navigation -->
+                            <div class="flex justify-between items-center mb-4 bg-gray-950 p-2 rounded border border-gray-800">
+                                <button id="calendar-prev-month" class="text-neon-green hover:text-white p-2 transition-colors" aria-label="Previous Month"><i data-lucide="chevron-left" class="w-6 h-6"></i></button>
+                                <h3 id="calendar-month-year" class="text-white font-bold tracking-widest text-lg uppercase font-mono">JUNE 2026</h3>
+                                <button id="calendar-next-month" class="text-neon-green hover:text-white p-2 transition-colors" aria-label="Next Month"><i data-lucide="chevron-right" class="w-6 h-6"></i></button>
+                            </div>
+                            
+                            <!-- Grid Header -->
+                            <div id="calendar-days-header" class="grid grid-cols-7 gap-1 md:gap-2 mb-2 text-center text-[10px] md:text-xs font-black uppercase tracking-wider text-gray-500 transition-colors sticky top-0 z-30 bg-gray-900/95 backdrop-blur py-2 border-b border-gray-800/50 shadow-md">
+                                <div class="transition-colors duration-200 py-1 rounded">SUN</div>
+                                <div class="transition-colors duration-200 py-1 rounded">MON</div>
+                                <div class="transition-colors duration-200 py-1 rounded">TUE</div>
+                                <div class="transition-colors duration-200 py-1 rounded">WED</div>
+                                <div class="transition-colors duration-200 py-1 rounded">THU</div>
+                                <div class="transition-colors duration-200 py-1 rounded">FRI</div>
+                                <div class="transition-colors duration-200 py-1 rounded">SAT</div>
+                            </div>
+                        </div>
+                        
+                        <!-- Calendar Grid -->
+                        <div id="calendar-grid" class="grid grid-cols-7 gap-1 md:gap-2 flex-1 auto-rows-[minmax(60px,1fr)]">
+                            <!-- JS injects days here -->
+                        </div>
+                    </div>
+
+                    <!-- Footer Buttons -->
+                    <div class="p-3 border-t border-gray-800 bg-gray-950 flex justify-end gap-3 shrink-0">
+                        <button id="calendar-clear-btn" class="bg-red-900 text-white font-extrabold py-2.5 px-4 rounded-lg uppercase tracking-wider text-xs shadow-lg hover:bg-red-800 transition-all flex items-center gap-2" aria-label="Action Button">
+                            <i data-lucide="trash-2" class="w-4 h-4"></i> CLEAR MONTH
+                        </button>
+                        <button id="calendar-save-inventory-btn" class="bg-emerald-600 text-white font-extrabold px-6 py-2.5 rounded-lg uppercase tracking-wider text-xs shadow-lg hover:bg-emerald-500 transition-all flex items-center gap-2" aria-label="Action Button">
+                            <i data-lucide="save" class="w-4 h-4"></i> SAVE TO INVENTORY
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Right: Saved Calendars -->
+                <div class="flex flex-col bg-gray-950 p-5 overflow-y-auto flex-1 min-w-0">
+                    <div class="text-[10px] font-black uppercase text-gray-400 tracking-wider border-b border-gray-800 pb-2 mb-4 flex justify-between items-center">
+                        <span>Operational Calendar Inventory</span>
+                        <i data-lucide="calendar" class="w-3.5 h-3.5 opacity-40"></i>
+                    </div>
+                    
+                    <div id="calendarLibraryList" class="grid grid-cols-1 xl:grid-cols-2 gap-4">
+                        <!-- Dynamic Calendars injected here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </body>
 </html>
+
 
 
 
