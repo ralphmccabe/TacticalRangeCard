@@ -629,8 +629,8 @@
 
                         <h2 class="section-label">4. Path Drawing</h2>
                         <div class="grid grid-cols-2 gap-2">
-                            <label class="flex items-center gap-2 bg-gray-800 border border-gray-600 rounded p-2 text-xs font-bold cursor-pointer justify-center hover:bg-gray-700">
-                                <label for="recon-pencil-toggle" class="sr-only">Input field</label><input type="checkbox" id="recon-pencil-toggle" class="form-checkbox h-3 w-3 text-neon-green rounded bg-gray-900 border-gray-700 focus:ring-0 focus:ring-offset-0" aria-label="Input field">
+                            <div class="flex items-center gap-2 bg-gray-800 border border-gray-600 rounded p-2 text-xs font-bold cursor-pointer justify-center hover:bg-gray-700">
+                                <label for="recon-pencil-toggle" class="sr-only">Input field</div><input type="checkbox" id="recon-pencil-toggle" class="form-checkbox h-3 w-3 text-neon-green rounded bg-gray-900 border-gray-700 focus:ring-0 focus:ring-offset-0" aria-label="Input field">
                                 <span>🖊️ DRAW PATH</span>
                             </label>
                             <button id="clear-recon-drawings" class="bg-red-950/20 border border-red-900 rounded p-2 text-xs font-bold text-red-500 hover:bg-red-900/40" aria-label="Action Button">🧹 CLEAR WORKSPACE</button>
@@ -1114,7 +1114,7 @@
 
                         <!-- Image Upload -->
                         <div class="flex flex-col gap-1 text-center">
-                            <label id="bolo-photo-label" class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Suspect Photo</label>
+                            <div id="bolo-photo-label" class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Suspect Photo</div>
                             <label for="bolo-image-upload" class="sr-only">bolo image upload</label><input aria-label="bolo image upload" type="file" id="bolo-image-upload" accept="image/*" class="hidden">
                             <button aria-label="Action Button" onclick="document.getElementById('bolo-image-upload').click()" class="bg-gray-800 border border-gray-600 rounded p-4 flex flex-col items-center justify-center hover:bg-gray-700 transition-colors text-gray-400 relative overflow-hidden h-48 md:h-64">
                                 <img id="bolo-form-preview-img" class="absolute inset-0 w-full h-full object-cover hidden">
@@ -1126,11 +1126,11 @@
                         <!-- Agency + Case # (Shared) -->
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-2">
                             <div>
-                                <label class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Agency / Issuing Dept</label>
+                                <div class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Agency / Issuing Dept</div>
                                 <label for="bolo-input-agency" class="sr-only">e.g. SHERIFF</label><input aria-label="e.g. SHERIFF" type="text" id="bolo-input-agency" class="w-full bg-black border border-gray-700 rounded p-2 text-white font-bold" placeholder="e.g. SHERIFF'S OFFICE">
                             </div>
                             <div>
-                                <label class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Case / Incident #</label>
+                                <div class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Case / Incident #</div>
                                 <label for="bolo-input-case" class="sr-only">e.g. INV-2025-0471</label><input aria-label="e.g. INV-2025-0471" type="text" id="bolo-input-case" class="w-full bg-black border border-gray-700 rounded p-2 text-white font-bold" placeholder='e.g. INV-2025-0471'>
                             </div>
                         </div>
@@ -1140,7 +1140,7 @@
 
                         <!-- Sex Toggle -->
                         <div>
-                            <label class="text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-1 block">Sex</label>
+                            <div class="text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-1 block">Sex</div>
                             <div class="flex gap-1">
                                 <button aria-label="bolo sex btn male" id="bolo-sex-btn-male"    onclick="setBoloSex('male')"
                                     style="flex:1;padding:7px 4px;font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:2px;border-radius:4px;border:2px solid #374151;background:transparent;color:#6b7280;transition:all 0.2s;">♂ MALE</button>
@@ -1154,18 +1154,18 @@
                         <!-- Name + Reason/Charges -->
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                             <div>
-                                <label class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Name / Alias</label>
+                                <div class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Name / Alias</div>
                                 <label for="bolo-input-name" class="sr-only">UNKNOWN SUSPECT</label><input aria-label="UNKNOWN SUSPECT" type="text" id="bolo-input-name" class="w-full bg-black border border-gray-700 rounded p-2 text-white font-bold" placeholder='UNKNOWN SUSPECT'>
                             </div>
                             <div>
-                                <label class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Reason / Charges</label>
+                                <div class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Reason / Charges</div>
                                 <label for="bolo-input-reason" class="sr-only">WANTED FOR QUESTIONING</label><input aria-label="WANTED FOR QUESTIONING" type="text" id="bolo-input-reason" class="w-full bg-black border border-gray-700 rounded p-2 text-white font-bold" placeholder='WANTED FOR QUESTIONING'>
                             </div>
                         </div>
 
                         <!-- Threat Level / Priority -->
                         <div>
-                            <label class="text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-1 block">Threat Level / Priority</label>
+                            <div class="text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-1 block">Threat Level / Priority</div>
                             <input aria-label="bolo input threat" type="hidden" id="bolo-input-threat" value="poi">
                             <div class="grid grid-cols-3 gap-2">
                                 <button aria-label="bolo threat btn poi" type="button" id="bolo-threat-btn-poi" onclick="setBoloThreatLevel('poi')"
@@ -1186,55 +1186,55 @@
                         <!-- Physical Description: 6 fields in 2x3 grid -->
                         <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
                             <div>
-                                <label class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">D.O.B / Age</label>
+                                <div class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">D.O.B / Age</div>
                                 <label for="bolo-input-dob" class="sr-only">01/15/1985 (40)</label><input aria-label="01/15/1985 (40)" type="text" id="bolo-input-dob" class="w-full bg-black border border-gray-700 rounded p-2 text-white font-bold" placeholder='01/15/1985 (40)'>
                             </div>
                             <div>
-                                <label class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Race / Build</label>
+                                <div class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Race / Build</div>
                                 <label for="bolo-input-build" class="sr-only">e.g. Hispanic Male</label><input aria-label="e.g. Hispanic Male" type="text" id="bolo-input-build" class="w-full bg-black border border-gray-700 rounded p-2 text-white font-bold" placeholder='e.g. Hispanic Male'>
                             </div>
                             <div>
-                                <label class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Height</label>
+                                <div class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Height</div>
                                 <label for="bolo-input-height" class="sr-only">N/A</label><input aria-label="N/A" type="text" id="bolo-input-height" class="w-full bg-black border border-gray-700 rounded p-2 text-white font-bold" placeholder='N/A'>
                             </div>
                             <div>
-                                <label class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Weight</label>
+                                <div class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Weight</div>
                                 <label for="bolo-input-weight" class="sr-only">N/A</label><input aria-label="N/A" type="text" id="bolo-input-weight" class="w-full bg-black border border-gray-700 rounded p-2 text-white font-bold" placeholder='N/A'>
                             </div>
                             <div>
-                                <label class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Hair</label>
+                                <div class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Hair</div>
                                 <label for="bolo-input-hair" class="sr-only">N/A</label><input aria-label="N/A" type="text" id="bolo-input-hair" class="w-full bg-black border border-gray-700 rounded p-2 text-white font-bold" placeholder='N/A'>
                             </div>
                             <div>
-                                <label class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Eyes</label>
+                                <div class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Eyes</div>
                                 <label for="bolo-input-eye" class="sr-only">N/A</label><input aria-label="N/A" type="text" id="bolo-input-eye" class="w-full bg-black border border-gray-700 rounded p-2 text-white font-bold" placeholder='N/A'>
                             </div>
                         </div>
 
                         <div class="grid grid-cols-1 gap-3">
                             <div>
-                                <label class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Distinguishing Features</label>
+                                <div class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Distinguishing Features</div>
                                 <label for="bolo-input-features" class="sr-only">Tattoos, Scars, Piercings, etc.</label><input aria-label="Tattoos, Scars, Piercings, etc." type="text" id="bolo-input-features" class="w-full bg-black border border-gray-700 rounded p-2 text-white font-bold" placeholder='Tattoos, Scars, Piercings, etc.'>
                             </div>
                             <div>
-                                <label class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Last Seen / Location</label>
+                                <div class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Last Seen / Location</div>
                                 <label for="bolo-input-lastseen" class="sr-only">e.g. 1st St &amp; Main</label><input aria-label="e.g. 1st St &amp; Main" type="text" id="bolo-input-lastseen" class="w-full bg-black border border-gray-700 rounded p-2 text-white font-bold" placeholder='e.g. 1st St &amp; Main'>
                             </div>
                         </div>
 
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                             <div>
-                                <label class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Reward</label>
+                                <div class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Reward</div>
                                 <label for="bolo-input-reward" class="sr-only">$5,000.00</label><input aria-label="$5,000.00" type="text" id="bolo-input-reward" class="w-full bg-black border border-gray-700 rounded p-2 text-white font-bold" placeholder='$5,000.00'>
                             </div>
                             <div>
-                                <label class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Warning</label>
+                                <div class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Warning</div>
                                 <label for="bolo-input-warning" class="sr-only">ARMED AND DANGEROUS</label><input aria-label="ARMED AND DANGEROUS" type="text" id="bolo-input-warning" class="w-full bg-black border border-gray-700 rounded p-2 text-red-500 font-bold" placeholder='ARMED AND DANGEROUS'>
                             </div>
                         </div>
 
                         <div>
-                            <label class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Contact Info / Tip Line</label>
+                            <div class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Contact Info / Tip Line</div>
                             <label for="bolo-input-contact" class="sr-only">Call 911 or Local Agency</label><input aria-label="Call 911 or Local Agency" type="text" id="bolo-input-contact" class="w-full bg-black border border-gray-700 rounded p-2 text-white font-bold" placeholder='Call 911 or Local Agency'>
                         </div>
 
@@ -1246,11 +1246,11 @@
                         <!-- Species + Sex/Class -->
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                             <div>
-                                <label class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Species</label>
+                                <div class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Species</div>
                                 <label for="bolo-input-species" class="sr-only">e.g. Wild Boar, Black Bear, Buck</label><input aria-label="e.g. Wild Boar, Black Bear, Buck" type="text" id="bolo-input-species" class="w-full bg-black border border-gray-700 rounded p-2 text-white font-bold" placeholder='e.g. Wild Boar, Black Bear, Buck'>
                             </div>
                             <div>
-                                <label class="text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-1 block">Sex / Class</label>
+                                <div class="text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-1 block">Sex / Class</div>
                                 <div class="flex gap-1">
                                     <button aria-label="bolo sex btn male" id="bolo-sex-btn-male"    onclick="setBoloSex('male')"
                                         style="flex:1;padding:7px 4px;font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:2px;border-radius:4px;border:2px solid #374151;background:transparent;color:#6b7280;transition:all 0.2s;">♂ MALE</button>
@@ -1264,7 +1264,7 @@
 
                         <!-- Animal Threat Level -->
                         <div>
-                            <label class="text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-1 block">Threat / Classification</label>
+                            <div class="text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-1 block">Threat / Classification</div>
                             <div class="grid grid-cols-3 gap-2">
                                 <button aria-label="bolo animal threat nuisance" id="bolo-animal-threat-nuisance" onclick="setAnimalThreat('nuisance')"
                                     style="padding:10px 4px;font-size:10px;font-weight:900;text-transform:uppercase;border-radius:4px;border:2px solid #b45309;background:rgba(180,83,9,0.35);color:#fbbf24;">
@@ -1284,29 +1284,29 @@
                         <!-- Est. Weight + Distinguishing Marks -->
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                             <div>
-                                <label class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Est. Weight / Size</label>
+                                <div class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Est. Weight / Size</div>
                                 <label for="bolo-input-animal-weight" class="sr-only">e.g. 400 lbs, 12-pt rack</label><input aria-label="e.g. 400 lbs, 12-pt rack" type="text" id="bolo-input-animal-weight" class="w-full bg-black border border-gray-700 rounded p-2 text-white font-bold" placeholder='e.g. 400 lbs, 12-pt rack'>
                             </div>
                             <div>
-                                <label class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Distinguishing Marks</label>
+                                <div class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Distinguishing Marks</div>
                                 <label for="bolo-input-animal-marks" class="sr-only">e.g. Scar on left shoulder</label><input aria-label="e.g. Scar on left shoulder" type="text" id="bolo-input-animal-marks" class="w-full bg-black border border-gray-700 rounded p-2 text-white font-bold" placeholder='e.g. Scar on left shoulder'>
                             </div>
                         </div>
 
                         <!-- Territory / Last Seen -->
                         <div>
-                            <label class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Territory / Last Seen</label>
+                            <div class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Territory / Last Seen</div>
                             <label for="bolo-input-animal-territory" class="sr-only">e.g. South pasture, near creek</label><input aria-label="e.g. South pasture, near creek" type="text" id="bolo-input-animal-territory" class="w-full bg-black border border-gray-700 rounded p-2 text-white font-bold" placeholder='e.g. South pasture, near creek'>
                         </div>
 
                         <!-- Reward + Contact -->
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                             <div>
-                                <label class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Reward / Action</label>
+                                <div class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Reward / Action</div>
                                 <label for="bolo-input-animal-reward" class="sr-only">e.g. $500 — Dead or Alive</label><input aria-label="e.g. $500 — Dead or Alive" type="text" id="bolo-input-animal-reward" class="w-full bg-black border border-gray-700 rounded p-2 text-white font-bold" placeholder='e.g. $500 — Dead or Alive'>
                             </div>
                             <div>
-                                <label class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Contact</label>
+                                <div class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Contact</div>
                                 <label for="bolo-input-animal-contact" class="sr-only">Ranch Owner / Game Warden</label><input aria-label="Ranch Owner / Game Warden" type="text" id="bolo-input-animal-contact" class="w-full bg-black border border-gray-700 rounded p-2 text-white font-bold" placeholder='Ranch Owner / Game Warden'>
                             </div>
                         </div>
@@ -1315,10 +1315,10 @@
 
                         <!-- Notes (shared) -->
                         <div>
-                            <label class="text-[10px] text-gray-400 font-bold uppercase tracking-widest flex justify-between items-center">
+                            <div class="text-[10px] text-gray-400 font-bold uppercase tracking-widest flex justify-between items-center">
                                 <span>Notes</span>
                                 <span id="bolo-notes-counter" class="text-gray-600 font-normal">0 / 1000</span>
-                            </label>
+                            </div>
                             <label for="bolo-input-notes" class="sr-only">Additional notes: behavioral patterns, known area, associates, last known sighting, etc.</label><textarea aria-label="Additional notes: behavioral patterns, known area, associates, last known sighting, etc." id="bolo-input-notes" maxlength="1000" rows="4"
                                 oninput="document.getElementById('bolo-notes-counter').innerText = this.value.length + ' / 1000'"
                                 class="w-full bg-black border border-gray-700 rounded p-2 text-white text-sm leading-relaxed resize-y"
@@ -1558,7 +1558,7 @@
 
                         <!-- Image Upload -->
                         <div class="flex flex-col gap-1 text-center">
-                            <label class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Harvest Photo</label>
+                            <div class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Harvest Photo</div>
                             <label for="gametag-image-upload" class="sr-only">gametag image upload</label><input aria-label="gametag image upload" type="file" id="gametag-image-upload" accept="image/*" class="hidden">
                             <button aria-label="Action Button" onclick="document.getElementById('gametag-image-upload').click()" class="bg-gray-800 border border-gray-600 rounded p-4 flex flex-col items-center justify-center hover:bg-gray-700 transition-colors text-gray-400 relative overflow-hidden h-48 md:h-64">
                                 <img id="gametag-form-preview-img" class="absolute inset-0 w-full h-full object-cover hidden">
@@ -1570,14 +1570,14 @@
                         <!-- Common Fields -->
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                             <div>
-                                <label class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Date / Time</label>
+                                <div class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Date / Time</div>
                                 <div class="flex gap-2">
                                     <label for="gametag-input-date" class="sr-only">YYYY-MM-DD HH:MM</label><input aria-label="YYYY-MM-DD HH:MM" type="text" id="gametag-input-date" class="w-full bg-black border border-gray-700 rounded p-2 text-white font-bold" placeholder='YYYY-MM-DD HH:MM'>
                                     <button aria-label="Action Button" onclick="document.getElementById('gametag-input-date').value = new Date().toLocaleString()" class="bg-gray-700 text-white px-3 rounded hover:bg-gray-600"><i data-lucide="clock" class="w-4 h-4"></i></button>
                                 </div>
                             </div>
                             <div>
-                                <label class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">GPS Coordinates / Location</label>
+                                <div class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">GPS Coordinates / Location</div>
                                 <label for="gametag-input-gps" class="sr-only">e.g. 45.123, -110.456 or GMU 42</label><input aria-label="e.g. 45.123, -110.456 or GMU 42" type="text" id="gametag-input-gps" class="w-full bg-black border border-gray-700 rounded p-2 text-white font-bold" placeholder='e.g. 45.123, -110.456 or GMU 42'>
                             </div>
                         </div>
@@ -1586,27 +1586,27 @@
                         <div id="gametag-fields-game" class="space-y-4">
                             <div class="grid grid-cols-2 gap-3">
                                 <div>
-                                    <label class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Species</label>
+                                    <div class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Species</div>
                                     <label for="gametag-input-game-species" class="sr-only">e.g. Elk, Mule Deer</label><input aria-label="e.g. Elk, Mule Deer" type="text" id="gametag-input-game-species" class="w-full bg-black border border-gray-700 rounded p-2 text-white font-bold" placeholder='e.g. Elk, Mule Deer'>
                                 </div>
                                 <div>
-                                    <label class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Sex</label>
+                                    <div class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Sex</div>
                                     <label for="gametag-input-game-sex" class="sr-only">e.g. Bull, Cow, Buck</label><input aria-label="e.g. Bull, Cow, Buck" type="text" id="gametag-input-game-sex" class="w-full bg-black border border-gray-700 rounded p-2 text-white font-bold" placeholder='e.g. Bull, Cow, Buck'>
                                 </div>
                                 <div>
-                                    <label class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Weapon / Method</label>
+                                    <div class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Weapon / Method</div>
                                     <label for="gametag-input-game-weapon" class="sr-only">e.g. Rifle, Archery</label><input aria-label="e.g. Rifle, Archery" type="text" id="gametag-input-game-weapon" class="w-full bg-black border border-gray-700 rounded p-2 text-white font-bold" placeholder='e.g. Rifle, Archery'>
                                 </div>
                                 <div>
-                                    <label class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">License / Tag #</label>
+                                    <div class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">License / Tag #</div>
                                     <label for="gametag-input-game-license" class="sr-only">e.g. AZ-998811</label><input aria-label="e.g. AZ-998811" type="text" id="gametag-input-game-license" class="w-full bg-black border border-gray-700 rounded p-2 text-white font-bold" placeholder='e.g. AZ-998811'>
                                 </div>
                                 <div>
-                                    <label class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Antler Points (L/R)</label>
+                                    <div class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Antler Points (L/R)</div>
                                     <label for="gametag-input-game-points" class="sr-only">e.g. 6x6, 4x5, N/A</label><input aria-label="e.g. 6x6, 4x5, N/A" type="text" id="gametag-input-game-points" class="w-full bg-black border border-gray-700 rounded p-2 text-white font-bold" placeholder='e.g. 6x6, 4x5, N/A'>
                                 </div>
                                 <div>
-                                    <label class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Inside Spread (in)</label>
+                                    <div class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Inside Spread (in)</div>
                                     <label for="gametag-input-game-spread" class="sr-only">e.g. 24</label><input aria-label="e.g. 24" type="text" id="gametag-input-game-spread" class="w-full bg-black border border-gray-700 rounded p-2 text-white font-bold" placeholder='e.g. 24"'>
                                 </div>
                             </div>
@@ -1616,23 +1616,23 @@
                         <div id="gametag-fields-fish" class="space-y-4 hidden">
                             <div class="grid grid-cols-2 gap-3">
                                 <div>
-                                    <label class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Species</label>
+                                    <div class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Species</div>
                                     <label for="gametag-input-fish-species" class="sr-only">e.g. Largemouth Bass</label><input aria-label="e.g. Largemouth Bass" type="text" id="gametag-input-fish-species" class="w-full bg-black border border-gray-700 rounded p-2 text-white font-bold" placeholder='e.g. Largemouth Bass'>
                                 </div>
                                 <div>
-                                    <label class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Water Body</label>
+                                    <div class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Water Body</div>
                                     <label for="gametag-input-fish-water" class="sr-only">e.g. Lake Mead</label><input aria-label="e.g. Lake Mead" type="text" id="gametag-input-fish-water" class="w-full bg-black border border-gray-700 rounded p-2 text-white font-bold" placeholder='e.g. Lake Mead'>
                                 </div>
                                 <div>
-                                    <label class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Length (in)</label>
+                                    <div class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Length (in)</div>
                                     <label for="gametag-input-fish-length" class="sr-only">e.g. 21.5</label><input aria-label="e.g. 21.5" type="text" id="gametag-input-fish-length" class="w-full bg-black border border-gray-700 rounded p-2 text-white font-bold" placeholder='e.g. 21.5"'>
                                 </div>
                                 <div>
-                                    <label class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Weight (lbs)</label>
+                                    <div class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Weight (lbs)</div>
                                     <label for="gametag-input-fish-weight" class="sr-only">e.g. 5.2 lbs</label><input aria-label="e.g. 5.2 lbs" type="text" id="gametag-input-fish-weight" class="w-full bg-black border border-gray-700 rounded p-2 text-white font-bold" placeholder='e.g. 5.2 lbs'>
                                 </div>
                                 <div class="col-span-2">
-                                    <label class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Lure / Bait</label>
+                                    <div class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Lure / Bait</div>
                                     <label for="gametag-input-fish-bait" class="sr-only">e.g. Green Pumpkin Jig</label><input aria-label="e.g. Green Pumpkin Jig" type="text" id="gametag-input-fish-bait" class="w-full bg-black border border-gray-700 rounded p-2 text-white font-bold" placeholder='e.g. Green Pumpkin Jig'>
                                 </div>
                             </div>
@@ -1640,7 +1640,7 @@
 
                         <!-- Notes -->
                         <div>
-                            <label class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Field Notes</label>
+                            <div class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Field Notes</div>
                             <label for="gametag-input-notes" class="sr-only">Weather conditions, behavior, tracking notes...</label><textarea aria-label="Weather conditions, behavior, tracking notes..." id="gametag-input-notes" class="w-full bg-black border border-gray-700 rounded p-2 text-white font-bold h-24" placeholder='Weather conditions, behavior, tracking notes...'></textarea>
                         </div>
                     </div>
@@ -1709,7 +1709,7 @@
 
                         <!-- Photo Upload -->
                         <div class="flex flex-col gap-1 text-center">
-                            <label class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">License / ID Photo</label>
+                            <div class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">License / ID Photo</div>
                             <label for="license-image-upload" class="sr-only">license image upload</label><input aria-label="license image upload" type="file" id="license-image-upload" accept="image/*" class="hidden">
                             <button aria-label="Action Button" onclick="document.getElementById('license-image-upload').click()" class="bg-gray-800 border border-gray-600 rounded p-4 flex flex-col items-center justify-center hover:bg-gray-700 transition-colors text-gray-400 relative overflow-hidden h-40 md:h-52">
                                 <img id="license-form-preview-img" class="absolute inset-0 w-full h-full object-contain hidden bg-black">
@@ -1721,26 +1721,26 @@
                         <!-- Fields -->
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                             <div>
-                                <label class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Full Name</label>
+                                <div class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Full Name</div>
                                 <label for="license-input-name" class="sr-only">John A. Doe</label><input aria-label="John A. Doe" type="text" id="license-input-name" class="w-full bg-black border border-gray-700 rounded p-2 text-white font-bold" placeholder="John A. Doe">
                             </div>
                             <div>
-                                <label class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">License / ID Number</label>
+                                <div class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">License / ID Number</div>
                                 <label for="license-input-number" class="sr-only">e.g. AZ-HNT-998811</label><input aria-label="e.g. AZ-HNT-998811" type="text" id="license-input-number" class="w-full bg-black border border-gray-700 rounded p-2 text-white font-bold font-mono" placeholder="e.g. AZ-HNT-998811">
                             </div>
                         </div>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                             <div>
-                                <label class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Expiration Date</label>
+                                <div class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Expiration Date</div>
                                 <label for="license-input-expiry" class="sr-only">e.g. 2025-12-31</label><input aria-label="e.g. 2025-12-31" type="text" id="license-input-expiry" class="w-full bg-black border border-gray-700 rounded p-2 text-white font-bold" placeholder="e.g. 2025-12-31">
                             </div>
                             <div>
-                                <label class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Issuing State / Authority</label>
+                                <div class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Issuing State / Authority</div>
                                 <label for="license-input-state" class="sr-only">e.g. Arizona Game & Fish</label><input aria-label="e.g. Arizona Game & Fish" type="text" id="license-input-state" class="w-full bg-black border border-gray-700 rounded p-2 text-white font-bold" placeholder="e.g. Arizona Game & Fish">
                             </div>
                         </div>
                         <div>
-                            <label class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Notes / Tagged Species / Zones</label>
+                            <div class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Notes / Tagged Species / Zones</div>
                             <label for="license-input-notes" class="sr-only">e.g. Unit 42 Elk, Archery Only, Tags: 2</label><textarea aria-label="e.g. Unit 42 Elk, Archery Only, Tags: 2" id="license-input-notes" class="w-full bg-black border border-gray-700 rounded p-2 text-white font-bold h-20" placeholder="e.g. Unit 42 Elk, Archery Only, Tags: 2"></textarea>
                         </div>
                     </div>
@@ -1965,39 +1965,39 @@
                     
                     <div class="space-y-3 font-mono text-xs text-black">
                         <div class="flex flex-col gap-1">
-                            <label class="text-[9px] text-gray-500 uppercase">Load / Batch Name</label>
+                            <div class="text-[9px] text-gray-500 uppercase">Load / Batch Name</div>
                             <label for="ammo-name" class="sr-only">e.g. Hornady ELD Match</label><input type="text" id="ammo-name" class="bg-black/60 border border-gray-700 p-2 rounded text-white focus:outline-none focus:border-emerald-500" placeholder="e.g. Hornady ELD Match" maxlength="20" aria-label="e.g. Hornady ELD Match">
                         </div>
                         <div class="flex flex-col gap-1">
-                            <label class="text-[9px] text-gray-500 uppercase">Caliber</label>
+                            <div class="text-[9px] text-gray-500 uppercase">Caliber</div>
                             <label for="ammo-caliber" class="sr-only">e.g. 6.5 Creedmoor</label><input type="text" id="ammo-caliber" class="bg-black/60 border border-gray-700 p-2 rounded text-white focus:outline-none focus:border-emerald-500" placeholder="e.g. 6.5 Creedmoor" maxlength="20" aria-label="e.g. 6.5 Creedmoor">
                         </div>
                         <div class="flex flex-col gap-1">
-                            <label class="text-[9px] text-gray-500 uppercase">Bullet Brand & Weight</label>
+                            <div class="text-[9px] text-gray-500 uppercase">Bullet Brand & Weight</div>
                             <label for="ammo-bullet" class="sr-only">e.g. Hornady 140gr ELD-M</label><input type="text" id="ammo-bullet" class="bg-black/60 border border-gray-700 p-2 rounded text-white focus:outline-none focus:border-emerald-500" placeholder="e.g. Hornady 140gr ELD-M" maxlength="20" aria-label="e.g. Hornady 140gr ELD-M">
                         </div>
                         <div class="flex flex-col gap-1">
-                            <label class="text-[9px] text-gray-500 uppercase">Powder Brand & Charge (gr)</label>
+                            <div class="text-[9px] text-gray-500 uppercase">Powder Brand & Charge (gr)</div>
                             <label for="ammo-powder" class="sr-only">e.g. H4350 - 41.5gr</label><input type="text" id="ammo-powder" class="bg-black/60 border border-gray-700 p-2 rounded text-white focus:outline-none focus:border-emerald-500" placeholder="e.g. H4350 - 41.5gr" maxlength="20" aria-label="e.g. H4350 - 41.5gr">
                         </div>
                         <div class="flex flex-col gap-1">
-                            <label class="text-[9px] text-gray-500 uppercase">Primer Type</label>
+                            <div class="text-[9px] text-gray-500 uppercase">Primer Type</div>
                             <label for="ammo-primer" class="sr-only">e.g. CCI #200</label><input type="text" id="ammo-primer" class="bg-black/60 border border-gray-700 p-2 rounded text-white focus:outline-none focus:border-emerald-500" placeholder="e.g. CCI #200" maxlength="20" aria-label="e.g. CCI #200">
                         </div>
                         <div class="flex flex-col gap-1">
-                            <label class="text-[9px] text-gray-500 uppercase">C.O.L (inches)</label>
+                            <div class="text-[9px] text-gray-500 uppercase">C.O.L (inches)</div>
                             <label for="ammo-col" class="sr-only">e.g. 2.825</label><input type="text" id="ammo-col" class="bg-black/60 border border-gray-700 p-2 rounded text-white focus:outline-none focus:border-emerald-500" placeholder="e.g. 2.825" maxlength="20" aria-label="e.g. 2.825">
                         </div>
                         <div class="flex flex-col gap-1">
-                            <label class="text-[9px] text-gray-500 uppercase">Velocity (FPS)</label>
+                            <div class="text-[9px] text-gray-500 uppercase">Velocity (FPS)</div>
                             <label for="ammo-velocity" class="sr-only">e.g. 2710</label><input type="text" id="ammo-velocity" class="bg-black/60 border border-gray-700 p-2 rounded text-white focus:outline-none focus:border-emerald-500" placeholder="e.g. 2710" maxlength="20" aria-label="e.g. 2710">
                         </div>
                         <div class="flex flex-col gap-1">
-                            <label class="text-[9px] text-gray-500 uppercase">Ballistic Coefficient</label>
+                            <div class="text-[9px] text-gray-500 uppercase">Ballistic Coefficient</div>
                             <label for="ammo-bc" class="sr-only">0.417</label><input type="text" inputmode="decimal" id="ammo-bc" class="bg-black/60 border border-gray-700 p-2 rounded text-white focus:outline-none focus:border-emerald-500" placeholder="0.417" maxlength="20" aria-label="0.417">
                         </div>
                         <div class="flex flex-col gap-1">
-                            <label class="text-[9px] text-gray-500 uppercase">Starting Box Count (Rounds)</label>
+                            <div class="text-[9px] text-gray-500 uppercase">Starting Box Count (Rounds)</div>
                             <label for="ammo-count" class="sr-only">e.g. 100</label><input type="text" inputmode="decimal" id="ammo-count" class="bg-black/60 border border-gray-700 p-2 rounded text-white focus:outline-none focus:border-emerald-500" placeholder="e.g. 100" min="0" aria-label="e.g. 100">
                         </div>
                     </div>
@@ -2230,7 +2230,7 @@
                                 <!-- Controls -->
                                 <div class="p-3 border-b border-gray-800 shrink-0 bg-gray-950 flex flex-wrap gap-2 justify-between items-end">
                                     <div>
-                                        <label class="block text-[9px] text-gray-500 uppercase font-bold mb-1">Target Increment</label>
+                                        <div class="block text-[9px] text-gray-500 uppercase font-bold mb-1">Target Increment</div>
                                         <div class="flex bg-gray-900 rounded border border-gray-700 p-0.5" id="matrix-increment-group">
                                             <button class="matrix-inc-btn px-2 py-1 text-xs font-bold rounded transition-colors text-gray-400 hover:text-white" data-inc="10" aria-label="Action Button">10y</button>
                                             <button class="matrix-inc-btn px-2 py-1 text-xs font-bold rounded transition-colors text-gray-400 hover:text-white" data-inc="25" aria-label="Action Button">25y</button>
@@ -2934,20 +2934,20 @@
                         </div>
                         <div class="flex flex-col md:flex-row items-stretch md:items-end gap-3 w-full max-w-4xl bg-black/40 p-3 rounded border border-emerald-900/20">
                             <div class="flex-1 space-y-1">
-                                <label class="text-[7px] text-gray-500 uppercase font-black ml-1">Team / Unit</label>
+                                <div class="text-[7px] text-gray-500 uppercase font-black ml-1">Team / Unit</div>
                                 <label for="comms-team" class="sr-only">e.g. ALPHA</label><input type="text" id="comms-team" class="w-full bg-black border border-emerald-900/50 rounded px-2 py-2 text-[10px] text-white focus:border-emerald-500 outline-none uppercase placeholder-gray-800" placeholder="e.g. ALPHA" aria-label="e.g. ALPHA">
                             </div>
                             <div class="flex-1 space-y-1">
-                                <label class="text-[7px] text-emerald-500 uppercase font-black ml-1">Mission Code</label>
+                                <div class="text-[7px] text-emerald-500 uppercase font-black ml-1">Mission Code</div>
                                 <label for="comms-passcode" class="sr-only">MIN 10: 5L+2N+3S</label><input type="password" id="comms-passcode" class="w-full bg-black border border-emerald-500/50 rounded px-2 py-2 text-[10px] text-emerald-400 focus:border-emerald-400 outline-none uppercase placeholder-gray-800 text-center font-black tracking-widest" placeholder="MIN 10: 5L+2N+3S" aria-label="MIN 10: 5L+2N+3S">
                                 <span class="text-[6px] text-gray-600 font-mono uppercase tracking-wider block text-center mt-0.5">5 letters · 2 numbers · 3 special chars</span>
                             </div>
                             <div class="flex-1 space-y-1">
-                                <label class="text-[7px] text-gray-500 uppercase font-black ml-1">Call Sign</label>
+                                <div class="text-[7px] text-gray-500 uppercase font-black ml-1">Call Sign</div>
                                 <label for="comms-callsign" class="sr-only">e.g. CMDPST</label><input type="text" id="comms-callsign" class="w-full bg-black border border-emerald-900/50 rounded px-2 py-2 text-[10px] text-white focus:border-emerald-500 outline-none uppercase placeholder-gray-800" placeholder="e.g. CMDPST" aria-label="e.g. CMDPST">
                             </div>
                             <div class="flex-1 space-y-1">
-                                <label class="text-[7px] text-gray-500 uppercase font-black ml-1">Role</label>
+                                <div class="text-[7px] text-gray-500 uppercase font-black ml-1">Role</div>
                                 <label for="comms-role" class="sr-only">e.g. OPERATIONS</label><input type="text" id="comms-role" class="w-full bg-black border border-emerald-900/50 rounded px-2 py-2 text-[10px] text-white focus:border-emerald-500 outline-none uppercase placeholder-gray-800" placeholder="e.g. OPERATIONS" aria-label="e.g. OPERATIONS">
                             </div>
                             <button id="comms-connect-btn" class="bg-emerald-600 hover:bg-emerald-500 text-white font-black px-6 py-2 rounded text-[10px] uppercase tracking-widest transition-all shadow-[0_0_15px_rgba(16,185,129,0.3)] active:scale-95 h-[34px]" aria-label="Action Button">
@@ -3732,32 +3732,32 @@
                         <!-- Metadata Row -->
                         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 p-4 border-b border-gray-800 bg-gray-900/50 shrink-0">
                             <div>
-                                <label class="block text-[8px] font-black text-gray-400 uppercase tracking-widest mb-1">Mission Identifier</label>
+                                <div class="block text-[8px] font-black text-gray-400 uppercase tracking-widest mb-1">Mission Identifier</div>
                                 <label for="briefing-mission-name" class="sr-only">OP NAME / TARGET</label><input type="text" id="briefing-mission-name" maxlength="40" class="w-full bg-black/60 border border-gray-700 rounded px-3 py-2 text-xs text-white font-mono focus:border-neon-green outline-none uppercase" placeholder="OP NAME / TARGET" aria-label="OP NAME / TARGET">
                             </div>
                             <div>
-                                <label class="block text-[8px] font-black text-gray-400 uppercase tracking-widest mb-1">Commanding Officer / Instructor</label>
+                                <div class="block text-[8px] font-black text-gray-400 uppercase tracking-widest mb-1">Commanding Officer / Instructor</div>
                                 <label for="briefing-commander" class="sr-only">NAME / CALLSIGN</label><input type="text" id="briefing-commander" maxlength="40" class="w-full bg-black/60 border border-gray-700 rounded px-3 py-2 text-xs text-white font-mono focus:border-neon-green outline-none uppercase" placeholder="NAME / CALLSIGN" aria-label="NAME / CALLSIGN">
                             </div>
                             <div>
-                                <label class="block text-[8px] font-black text-gray-400 uppercase tracking-widest mb-1">Timestamp</label>
+                                <div class="block text-[8px] font-black text-gray-400 uppercase tracking-widest mb-1">Timestamp</div>
                                 <div class="w-full bg-black/60 border border-gray-800 rounded px-3 py-2 text-xs text-gray-400 font-mono" id="briefing-timestamp">--:--:--</div>
                             </div>
                         </div>
 
                         <!-- Top Half: ASSIGNMENT -->
                         <div class="flex-1 min-h-[250px] p-4 flex flex-col relative border-b border-gray-800">
-                            <label class="block text-[10px] font-black text-blue-400 uppercase tracking-[0.2em] mb-2 flex items-center gap-2">
+                            <div class="block text-[10px] font-black text-blue-400 uppercase tracking-[0.2em] mb-2 flex items-center gap-2">
                                 <i data-lucide="crosshair" class="w-3 h-3"></i> PHASE 1: MISSION ASSIGNMENT & INTELLIGENCE
-                            </label>
+                            </div>
                             <label for="briefing-assignment-text" class="sr-only">ENTER INITIAL MISSION PARAMETERS, ROE, WEATHER, TARGET DETAILS...</label><textarea id="briefing-assignment-text" aria-label="Assignment Text" maxlength="1500" class="flex-1 w-full bg-black/60 border border-gray-700 rounded-lg p-4 text-sm text-blue-100 font-mono focus:border-blue-500 outline-none resize-none relative z-10 leading-relaxed custom-scrollbar placeholder-gray-600" placeholder="ENTER INITIAL MISSION PARAMETERS, ROE, WEATHER, TARGET DETAILS..."></textarea>
                         </div>
 
                         <!-- Bottom Half: DEBRIEF -->
                         <div class="flex-1 min-h-[250px] p-4 flex flex-col relative">
-                            <label class="block text-[10px] font-black text-emerald-400 uppercase tracking-[0.2em] mb-2 flex items-center gap-2">
+                            <div class="block text-[10px] font-black text-emerald-400 uppercase tracking-[0.2em] mb-2 flex items-center gap-2">
                                 <i data-lucide="check-circle" class="w-3 h-3"></i> PHASE 2: ACTION DEBRIEF & AFTER ACTION REPORT (AAR)
-                            </label>
+                            </div>
                             <label for="briefing-debrief-text" class="sr-only">ENTER POST-MISSION SUMMARY, ROUNDS EXPENDED, CONFIRMED HITS, COMPLICATIONS...</label><textarea id="briefing-debrief-text" aria-label="Debrief Text" maxlength="1500" class="flex-1 w-full bg-black/60 border border-gray-700 rounded-lg p-4 text-sm text-emerald-50 font-mono focus:border-emerald-500 outline-none resize-none leading-relaxed custom-scrollbar placeholder-gray-600" placeholder="ENTER POST-MISSION SUMMARY, ROUNDS EXPENDED, CONFIRMED HITS, COMPLICATIONS..."></textarea>
                         </div>
                     </div>
