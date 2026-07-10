@@ -243,6 +243,8 @@ if(boloSaveInventoryBtn) {
             data.contact      = document.getElementById('bolo-input-contact').value || '';
             if (!data.name && !data.reason && !data.image) { alert('Fill out at least a Name or Charges.'); return; }
         } else {
+            data.agency          = document.getElementById('bolo-input-agency').value           || '';
+            data.case_num        = document.getElementById('bolo-input-case').value             || '';
             data.species         = document.getElementById('bolo-input-species').value          || '';
             data.animal_sex      = currentBoloSex;
             data.animal_weight   = document.getElementById('bolo-input-animal-weight').value    || '';
@@ -368,6 +370,8 @@ window.loadBoloBackToEditor = function(bolo) {
         window.setBoloSex(bolo.sex || 'unknown');
     } else {
         const set = (id, val) => { const el = document.getElementById(id); if(el) el.value = val || ''; };
+        set('bolo-input-agency',           bolo.agency);
+        set('bolo-input-case',             bolo.case_num);
         set('bolo-input-species',          bolo.species);
         set('bolo-input-animal-weight',    bolo.animal_weight);
         set('bolo-input-animal-marks',     bolo.animal_marks);
@@ -509,6 +513,8 @@ if (boloToVaultBtnTop) {
         } else {
             // ── Populate Animal poster ──
             const el = id => document.getElementById(id);
+            el('bolo-animal-render-agency').innerText  = bolo.agency   || 'TACTICAL RANGE CARD';
+            el('bolo-animal-render-case').innerText    = bolo.case_num || 'N/A';
             const threatLabels = { nuisance: 'NUISANCE ANIMAL', dangerous: 'DANGEROUS / AT LARGE', trophy: 'TROPHY ANIMAL' };
             const threatBannerCfg = {
                 nuisance:  { bg: '#92400e', text: '\u26A0  NUISANCE ANIMAL  \u2014  REPORT TO RANCH OWNER  \u26A0' },

@@ -64,8 +64,7 @@
     <link rel="stylesheet" href="tailwind.css?v=1.1">
     <!-- Leaflet CSS: non-render-blocking (map styles not needed for first paint) -->
     <!-- LOCAL LIBS: CDN references removed to eliminate Edge Tracking Prevention warnings -->
-    <link rel="stylesheet" href="lib/leaflet.css" media="print" onload="this.media='all'">
-    <noscript><link rel="stylesheet" href="lib/leaflet.css"></noscript>
+    <link rel="stylesheet" href="lib/leaflet.css">
     <script src="lib/leaflet.js" defer></script>
     <script src="lib/Sortable.min.js" defer></script>
     <!-- tesseract: lazy-loaded on first OCR scan only — not needed at startup -->
@@ -74,176 +73,10 @@
     <link rel="preload" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@400;600;800&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
     <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@400;600;800&display=swap"></noscript>
     
-    <!-- MISSION BRIEFING MODAL -->
-    <div id="missionBriefingModal" class="fixed inset-0 bg-black/90 backdrop-blur-md z-[200] hidden flex items-center justify-center p-4" style="z-index: 100050;">
 
-        <div class="bg-gray-900 border-2 border-neon-green w-full max-w-6xl h-[90vh] rounded-xl flex flex-col overflow-hidden shadow-[0_0_30px_rgba(34,197,94,0.3)]">
-            <!-- Header -->
-            <div class="p-3 border-b-2 border-neon-green flex flex-wrap justify-between items-center bg-gray-950 gap-y-3 gap-x-2">
-                <div class="flex items-center gap-2 md:gap-3">
-                    <i data-lucide="clipboard-list" class="w-4 h-4 md:w-5 md:h-5 text-neon-green shrink-0"></i>
-                    <h2 class="text-sm md:text-lg font-black uppercase text-white tracking-widest truncate">TACTICAL MISSION BRIEFING</h2>
-                </div>
-                <div class="flex items-center gap-2 flex-wrap justify-end shrink-0">
-                    <button id="rework-briefing-btn" class="hidden text-[9px] md:text-[10px] bg-amber-950/80 text-amber-300 px-2 py-1.5 md:px-3 rounded-lg border border-amber-700 hover:bg-amber-600 hover:text-white transition-colors flex items-center gap-1.5 font-bold uppercase tracking-wider whitespace-nowrap shrink-0" aria-label="Action Button">
-                        <i data-lucide="wrench" class="w-3 h-3 md:w-4 md:h-4"></i> REWORK INTEL
-                    </button>
-                    <button id="briefing-to-vault-btn-top" class="hidden text-[9px] md:text-[10px] bg-purple-950/80 text-purple-300 px-2 py-1.5 md:px-3 rounded-lg border border-purple-700 hover:bg-purple-600 hover:text-white transition-colors flex items-center gap-1.5 font-bold uppercase tracking-wider whitespace-nowrap shrink-0" aria-label="Action Button">
-                        <i data-lucide="archive" class="w-3 h-3 md:w-4 md:h-4"></i> INTEL VAULT
-                    </button>
-                    <button id="closeBriefingBtn" aria-label="Close modal" class="p-4 bg-gray-800 rounded-lg group hover:bg-red-900 transition-colors shrink-0" onclick="event.stopPropagation()">
-                        <i data-lucide="x" class="w-8 h-8 text-white"></i>
-                    </button>
-                </div>
-            </div>
-
-            <!-- Content Area (Split flex-row on md screens) -->
-            <div class="flex-1 flex flex-col md:flex-row overflow-hidden">
-                
-                <!-- Left: Form -->
-                <div class="flex flex-col overflow-y-auto bg-gray-900 border-b md:border-b-0 md:border-r border-gray-800 flex-1 min-w-0">
-                    <div id="briefing-snapshot-target" class="flex-1 flex flex-col custom-scrollbar">
-                        <!-- Metadata Row -->
-                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 p-4 border-b border-gray-800 bg-gray-900/50 shrink-0">
-                            <div>
-                                <label class="block text-[8px] font-black text-gray-400 uppercase tracking-widest mb-1">Mission Identifier</label>
-                                <label for="briefing-mission-name" class="sr-only">OP NAME / TARGET</label><input type="text" id="briefing-mission-name" maxlength="40" class="w-full bg-black/60 border border-gray-700 rounded px-3 py-2 text-xs text-white font-mono focus:border-neon-green outline-none uppercase" placeholder="OP NAME / TARGET" aria-label="OP NAME / TARGET">
-                            </div>
-                            <div>
-                                <label class="block text-[8px] font-black text-gray-400 uppercase tracking-widest mb-1">Commanding Officer / Instructor</label>
-                                <label for="briefing-commander" class="sr-only">NAME / CALLSIGN</label><input type="text" id="briefing-commander" maxlength="40" class="w-full bg-black/60 border border-gray-700 rounded px-3 py-2 text-xs text-white font-mono focus:border-neon-green outline-none uppercase" placeholder="NAME / CALLSIGN" aria-label="NAME / CALLSIGN">
-                            </div>
-                            <div>
-                                <label class="block text-[8px] font-black text-gray-400 uppercase tracking-widest mb-1">Timestamp</label>
-                                <div class="w-full bg-black/60 border border-gray-800 rounded px-3 py-2 text-xs text-gray-400 font-mono" id="briefing-timestamp">--:--:--</div>
-                            </div>
-                        </div>
-
-                        <!-- Top Half: ASSIGNMENT -->
-                        <div class="flex-1 min-h-[250px] p-4 flex flex-col relative border-b border-gray-800">
-                            <label class="block text-[10px] font-black text-blue-400 uppercase tracking-[0.2em] mb-2 flex items-center gap-2">
-                                <i data-lucide="crosshair" class="w-3 h-3"></i> PHASE 1: MISSION ASSIGNMENT & INTELLIGENCE
-                            </label>
-                            <textarea id="briefing-assignment-text" aria-label="Assignment Text" maxlength="1500" class="flex-1 w-full bg-black/60 border border-gray-700 rounded-lg p-4 text-sm text-blue-100 font-mono focus:border-blue-500 outline-none resize-none relative z-10 leading-relaxed custom-scrollbar placeholder-gray-600" placeholder="ENTER INITIAL MISSION PARAMETERS, ROE, WEATHER, TARGET DETAILS..."></textarea>
-                        </div>
-
-                        <!-- Bottom Half: DEBRIEF -->
-                        <div class="flex-1 min-h-[250px] p-4 flex flex-col relative">
-                            <label class="block text-[10px] font-black text-emerald-400 uppercase tracking-[0.2em] mb-2 flex items-center gap-2">
-                                <i data-lucide="check-circle" class="w-3 h-3"></i> PHASE 2: ACTION DEBRIEF & AFTER ACTION REPORT (AAR)
-                            </label>
-                            <textarea id="briefing-debrief-text" aria-label="Debrief Text" maxlength="1500" class="flex-1 w-full bg-black/60 border border-gray-700 rounded-lg p-4 text-sm text-emerald-50 font-mono focus:border-emerald-500 outline-none resize-none leading-relaxed custom-scrollbar placeholder-gray-600" placeholder="ENTER POST-MISSION SUMMARY, ROUNDS EXPENDED, CONFIRMED HITS, COMPLICATIONS..."></textarea>
-                        </div>
-                    </div>
-
-                    <!-- Footer Buttons -->
-                    <div class="p-3 border-t border-gray-800 bg-gray-950 flex justify-end gap-3 shrink-0">
-                        <button id="briefing-clear-btn" class="bg-red-900 text-white font-extrabold py-2.5 px-4 rounded-lg uppercase tracking-wider text-xs shadow-lg hover:bg-red-800 transition-all flex items-center gap-2" aria-label="Action Button">
-                            <i data-lucide="trash-2" class="w-4 h-4"></i> CLEAR FORM
-                        </button>
-                        <button id="briefing-save-inventory-btn" class="bg-emerald-600 text-white font-extrabold px-6 py-2.5 rounded-lg uppercase tracking-wider text-xs shadow-lg hover:bg-emerald-500 transition-all flex items-center gap-2" aria-label="Action Button">
-                            <i data-lucide="save" class="w-4 h-4"></i> SAVE TO INVENTORY
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Right: Saved Briefings -->
-                <div class="flex flex-col bg-gray-950 p-5 overflow-y-auto flex-1 min-w-0">
-                    <div class="text-[10px] font-black uppercase text-gray-400 tracking-wider border-b border-gray-800 pb-2 mb-4 flex justify-between items-center">
-                        <span>Mission Briefings Inventory</span>
-                        <i data-lucide="clipboard-list" class="w-3.5 h-3.5 opacity-40"></i>
-                    </div>
-                    
-                    <div id="briefingLibraryList" class="grid grid-cols-1 xl:grid-cols-2 gap-4">
-                        <!-- Dynamic Briefings injected here -->
-                    </div>
-                </div>
-                
-            </div>
-        </div>
-    </div>
-
-    <!-- OPERATIONAL CALENDAR MODAL -->
-    <div id="calendarModal" class="fixed inset-0 bg-black/90 backdrop-blur-md z-[200] hidden flex items-center justify-center p-4" style="z-index: 100050;">
-        <div class="bg-gray-900 border-2 border-neon-green w-full max-w-6xl h-[90vh] rounded-xl flex flex-col overflow-hidden shadow-[0_0_30px_rgba(34,197,94,0.3)]">
-            <!-- Header -->
-            <div class="p-3 border-b-2 border-neon-green flex flex-wrap justify-between items-center bg-gray-950 gap-y-3 gap-x-2">
-                <div class="flex items-center gap-2 md:gap-3">
-                    <i data-lucide="calendar" class="w-4 h-4 md:w-5 md:h-5 text-neon-green shrink-0"></i>
-                    <h2 class="text-sm md:text-lg font-black uppercase text-white tracking-widest truncate">OPERATIONAL CALENDAR</h2>
-                </div>
-                <div class="flex items-center gap-2 flex-wrap justify-end shrink-0">
-                    <button id="rework-calendar-btn" class="hidden text-[9px] md:text-[10px] bg-amber-950/80 text-amber-300 px-2 py-1.5 md:px-3 rounded-lg border border-amber-700 hover:bg-amber-600 hover:text-white transition-colors flex items-center gap-1.5 font-bold uppercase tracking-wider whitespace-nowrap shrink-0" aria-label="Action Button">
-                        <i data-lucide="wrench" class="w-3 h-3 md:w-4 md:h-4"></i> REWORK CALENDAR
-                    </button>
-                    <button id="calendar-to-vault-btn-top" class="hidden text-[9px] md:text-[10px] bg-purple-950/80 text-purple-300 px-2 py-1.5 md:px-3 rounded-lg border border-purple-700 hover:bg-purple-600 hover:text-white transition-colors flex items-center gap-1.5 font-bold uppercase tracking-wider whitespace-nowrap shrink-0" aria-label="Action Button">
-                        <i data-lucide="archive" class="w-3 h-3 md:w-4 md:h-4"></i> INTEL VAULT
-                    </button>
-                    <button id="closeCalendarBtn" aria-label="Close modal" class="p-4 bg-gray-800 rounded-lg group hover:bg-red-900 transition-colors shrink-0" onclick="event.stopPropagation()">
-                        <i data-lucide="x" class="w-8 h-8 text-white"></i>
-                    </button>
-                </div>
-            </div>
-
-            <!-- Content Area -->
-            <div class="flex-1 flex flex-col md:flex-row overflow-hidden">
-                <!-- Left: Form -->
-                <div class="flex flex-col overflow-y-auto bg-gray-900 border-b md:border-b-0 md:border-r border-gray-800 flex-1 min-w-0">
-                    <div id="calendar-snapshot-target" class="flex-1 flex flex-col custom-scrollbar bg-gray-900 p-2 md:p-4">
-                        <div class="sticky top-0 z-20 bg-gray-900 pb-2 -mt-2 pt-2 md:-mt-4 md:pt-4">
-                            <!-- Month Navigation -->
-                            <div class="flex justify-between items-center mb-4 bg-gray-950 p-2 rounded border border-gray-800">
-                                <button id="calendar-prev-month" class="text-neon-green hover:text-white p-2 transition-colors" aria-label="Previous Month"><i data-lucide="chevron-left" class="w-6 h-6"></i></button>
-                                <h3 id="calendar-month-year" class="text-white font-bold tracking-widest text-lg uppercase font-mono">JUNE 2026</h3>
-                                <button id="calendar-next-month" class="text-neon-green hover:text-white p-2 transition-colors" aria-label="Next Month"><i data-lucide="chevron-right" class="w-6 h-6"></i></button>
-                            </div>
-                            
-                            <!-- Grid Header -->
-                            <div id="calendar-days-header" class="grid grid-cols-7 gap-1 md:gap-2 mb-2 text-center text-[10px] md:text-xs font-black uppercase tracking-wider text-gray-500 transition-colors sticky top-0 z-30 bg-gray-900/95 backdrop-blur py-2 border-b border-gray-800/50 shadow-md">
-                                <div class="transition-colors duration-200 py-1 rounded">SUN</div>
-                                <div class="transition-colors duration-200 py-1 rounded">MON</div>
-                                <div class="transition-colors duration-200 py-1 rounded">TUE</div>
-                                <div class="transition-colors duration-200 py-1 rounded">WED</div>
-                                <div class="transition-colors duration-200 py-1 rounded">THU</div>
-                                <div class="transition-colors duration-200 py-1 rounded">FRI</div>
-                                <div class="transition-colors duration-200 py-1 rounded">SAT</div>
-                            </div>
-                        </div>
-                        
-                        <!-- Calendar Grid -->
-                        <div id="calendar-grid" class="grid grid-cols-7 gap-1 md:gap-2 flex-1 auto-rows-[minmax(60px,1fr)]">
-                            <!-- JS injects days here -->
-                        </div>
-                    </div>
-
-                    <!-- Footer Buttons -->
-                    <div class="p-3 border-t border-gray-800 bg-gray-950 flex justify-end gap-3 shrink-0">
-                        <button id="calendar-clear-btn" class="bg-red-900 text-white font-extrabold py-2.5 px-4 rounded-lg uppercase tracking-wider text-xs shadow-lg hover:bg-red-800 transition-all flex items-center gap-2" aria-label="Action Button">
-                            <i data-lucide="trash-2" class="w-4 h-4"></i> CLEAR MONTH
-                        </button>
-                        <button id="calendar-save-inventory-btn" class="bg-emerald-600 text-white font-extrabold px-6 py-2.5 rounded-lg uppercase tracking-wider text-xs shadow-lg hover:bg-emerald-500 transition-all flex items-center gap-2" aria-label="Action Button">
-                            <i data-lucide="save" class="w-4 h-4"></i> SAVE TO INVENTORY
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Right: Saved Calendars -->
-                <div class="flex flex-col bg-gray-950 p-5 overflow-y-auto flex-1 min-w-0">
-                    <div class="text-[10px] font-black uppercase text-gray-400 tracking-wider border-b border-gray-800 pb-2 mb-4 flex justify-between items-center">
-                        <span>Operational Calendar Inventory</span>
-                        <i data-lucide="calendar" class="w-3.5 h-3.5 opacity-40"></i>
-                    </div>
-                    
-                    <div id="calendarLibraryList" class="grid grid-cols-1 xl:grid-cols-2 gap-4">
-                        <!-- Dynamic Calendars injected here -->
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
     
     <!-- CUSTOM CSS -->
-    <link rel="stylesheet" href="style.css?v=116">
+    <link rel="stylesheet" href="style.css?v=117">
 
     <!-- html2canvas: lazy-loaded on first snapshot/save action -->
     <!-- supabase:    lazy-loaded on first comms connect -->
@@ -487,22 +320,22 @@
 
                     <!-- MODERNIZED 2x2 CIRCULAR DASHBOARD -->
                     <div class="grid grid-cols-2 gap-4 px-2">
-                        <button id="openAmmoLibraryBtn" aria-label="Open Ammo Library" class="col-span-1 aspect-square rounded-full bg-cyan-950/20 border border-cyan-700 text-cyan-400 uppercase flex flex-col items-center justify-center text-center p-3 hover:bg-cyan-900/40 hover:scale-[1.03] transition-all gap-1 shadow-[0_4px_15px_rgba(0,0,0,0.2)]">
+                        <button id="openAmmoLibraryBtn" aria-label="Open Ammo Library" class="circle-btn-ammo col-span-1 aspect-square rounded-full border-2 uppercase flex flex-col items-center justify-center text-center p-3 transition-all gap-1">
                             <i data-lucide="database" class="w-6 h-6 mb-0.5"></i>
                             <span class="text-[9px] font-extrabold leading-normal tracking-wider">AMMO<br/>LIBRARY</span>
                         </button>
 
-                        <button id="toggleReconMapperBtn" class="col-span-1 aspect-square rounded-full bg-indigo-950/40 border border-indigo-500 text-indigo-400 uppercase flex flex-col items-center justify-center text-center p-3 hover:bg-indigo-900/40 hover:scale-[1.03] transition-all gap-1 shadow-[0_4px_15px_rgba(0,0,0,0.2)]" aria-label="Action Button">
+                        <button id="toggleReconMapperBtn" class="circle-btn-mapper col-span-1 aspect-square rounded-full border-2 uppercase flex flex-col items-center justify-center text-center p-3 transition-all gap-1" aria-label="Action Button">
                             <i data-lucide="map" class="w-6 h-6 mb-0.5"></i>
                             <span class="text-[9px] font-extrabold leading-normal tracking-wider">TACTICAL<br/>MAPPER</span>
                         </button>
 
-                        <button id="launchDualHudBtn" class="col-span-1 aspect-square rounded-full bg-orange-600/20 border-2 border-orange-500 text-orange-400 uppercase flex flex-col items-center justify-center text-center p-3 hover:bg-orange-600/40 hover:scale-[1.03] transition-all gap-1 shadow-[0_0_15px_rgba(249,115,22,0.15)] animate-pulse-slow" aria-label="Action Button">
+                        <button id="launchDualHudBtn" class="circle-btn-hud col-span-1 aspect-square rounded-full border-2 uppercase flex flex-col items-center justify-center text-center p-3 transition-all gap-1 animate-pulse-slow" aria-label="Action Button">
                             <i data-lucide="layout-dashboard" class="w-6 h-6 mb-0.5"></i>
                             <span class="text-[9px] font-extrabold leading-normal tracking-wider">DUAL-VIEW<br/>HUD</span>
                         </button>
 
-                        <button id="launchToolsDashboardBtn" class="col-span-1 aspect-square rounded-full bg-yellow-900/20 border-2 border-yellow-400 text-yellow-300 uppercase flex flex-col items-center justify-center text-center p-3 hover:bg-yellow-800/40 hover:scale-[1.03] transition-all gap-1 shadow-[0_0_15px_rgba(250,204,21,0.15)] animate-pulse-slow" aria-label="Action Button">
+                        <button id="launchToolsDashboardBtn" class="circle-btn-tools col-span-1 aspect-square rounded-full border-2 uppercase flex flex-col items-center justify-center text-center p-3 transition-all gap-1" aria-label="Action Button">
                             <i data-lucide="terminal" class="w-6 h-6 mb-0.5"></i>
                             <span class="text-[9px] font-extrabold leading-normal tracking-wider">TOOLS<br/>DASHBOARD</span>
                         </button>
@@ -1290,6 +1123,18 @@
                             </button>
                         </div>
 
+                        <!-- Agency + Case # (Shared) -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-2">
+                            <div>
+                                <label class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Agency / Issuing Dept</label>
+                                <input type="text" id="bolo-input-agency" class="w-full bg-black border border-gray-700 rounded p-2 text-white font-bold" placeholder="e.g. SHERIFF'S OFFICE">
+                            </div>
+                            <div>
+                                <label class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Case / Incident #</label>
+                                <input type="text" id="bolo-input-case" class="w-full bg-black border border-gray-700 rounded p-2 text-white font-bold" placeholder='e.g. INV-2025-0471'>
+                            </div>
+                        </div>
+
                         <!-- ══ PERSON FIELDS ══ -->
                         <div id="bolo-person-fields">
 
@@ -1303,18 +1148,6 @@
                                     style="flex:1;padding:7px 4px;font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:2px;border-radius:4px;border:2px solid #374151;background:transparent;color:#6b7280;transition:all 0.2s;">♀ FEMALE</button>
                                 <button id="bolo-sex-btn-unknown" onclick="setBoloSex('unknown')"
                                     style="flex:1;padding:7px 4px;font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:2px;border-radius:4px;border:2px solid #9ca3af;background:#374151;color:#d1d5db;transition:all 0.2s;">— UNKNOWN</button>
-                            </div>
-                        </div>
-
-                        <!-- Agency + Case # -->
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                            <div>
-                                <label class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Agency / Issuing Dept</label>
-                                <input type="text" id="bolo-input-agency" class="w-full bg-black border border-gray-700 rounded p-2 text-white font-bold" placeholder="e.g. SHERIFF'S OFFICE">
-                            </div>
-                            <div>
-                                <label class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Case / Incident #</label>
-                                <input type="text" id="bolo-input-case" class="w-full bg-black border border-gray-700 rounded p-2 text-white font-bold" placeholder='e.g. INV-2025-0471'>
                             </div>
                         </div>
 
@@ -1522,9 +1355,9 @@
     <div id="bolo-poster-render-zone" style="position: fixed; top: -9999px; left: -9999px; z-index: -9999; width: 600px; height: 850px; background: #080808; font-family: Arial, sans-serif; overflow: hidden;">
 
         <!-- ══ TOP AGENCY STRIP ══ -->
-        <div style="background: #130000; border-bottom: 2px solid #cc0000; padding: 7px 22px; display: flex; justify-content: space-between; align-items: center;">
-            <span id="bolo-render-agency" style="color: #cc0000; font-size: 9px; font-weight: 900; letter-spacing: 4px; text-transform: uppercase;">TACTICAL RANGE CARD</span>
-            <span style="color: #444; font-size: 9px; letter-spacing: 2px; text-transform: uppercase;">CASE&nbsp;#:&nbsp;<span id="bolo-render-case" style="color: #cc0000; font-weight: 900;">N/A</span></span>
+        <div style="background: #111111; border-bottom: 3px solid #cc0000; padding: 12px 24px; display: flex; justify-content: space-between; align-items: center;">
+            <span id="bolo-render-agency" style="color: #ff4444; font-size: 12px; font-weight: 900; letter-spacing: 4px; text-transform: uppercase;">TACTICAL RANGE CARD</span>
+            <span style="color: #888888; font-size: 11px; font-weight: 900; letter-spacing: 2px; text-transform: uppercase;">CASE / REPORT # <span id="bolo-render-case" style="color: #ff4444;">N/A</span></span>
         </div>
 
         <!-- ══ WANTED HEADER ══ -->
@@ -1616,9 +1449,9 @@
     <div id="bolo-animal-render-zone" style="position:fixed;top:-9999px;left:-9999px;z-index:-9999;width:600px;height:850px;background:#1a1a1a;font-family:Arial,sans-serif;overflow:hidden;">
 
         <!-- Top Agency Strip -->
-        <div style="background:#111;border-bottom:2px solid #555;padding:7px 22px;display:flex;justify-content:space-between;align-items:center;">
-            <span style="color:#9ca3af;font-size:9px;font-weight:900;letter-spacing:4px;text-transform:uppercase;">TACTICAL RANGE CARD</span>
-            <span id="bolo-animal-render-type-label" style="color:#9ca3af;font-size:9px;font-weight:900;letter-spacing:3px;text-transform:uppercase;">NUISANCE ANIMAL</span>
+        <div style="background:#111111;border-bottom:3px solid #555555;padding:12px 24px;display:flex;justify-content:space-between;align-items:center;">
+            <span id="bolo-animal-render-agency" style="color:#ffffff;font-size:12px;font-weight:900;letter-spacing:4px;text-transform:uppercase;">TACTICAL RANGE CARD</span>
+            <span style="color:#888888;font-size:11px;font-weight:900;letter-spacing:2px;text-transform:uppercase;">CASE / REPORT # <span id="bolo-animal-render-case" style="color:#ffffff;">N/A</span></span>
         </div>
 
         <!-- WANTED Header -->
@@ -2195,7 +2028,6 @@
     </div>
 
     <div class="sr-only" aria-hidden="true">
-        <canvas id="mobile-canvas-hold"></canvas><canvas id="mobile-canvas-shot"></canvas>
         <span id="mobile-display-elevation"></span><span id="mobile-display-hold-data"></span><span id="mobile-display-final-dope"></span>
         <div id="noImageMsg"></div>
     </div>
@@ -2703,7 +2535,7 @@
                     <!-- The Real Video Stream Target -->
                     <video id="surveillance-stream" autoplay playsinline webkit-playsinline muted class="w-full h-full object-cover hidden z-0"></video>
                     
-                    <img id="surveillance-snapshot-viewer" alt="Surveillance Snapshot" class="w-full h-full object-contain hidden z-10 bg-black absolute inset-0 pointer-events-none">
+                    <img id="surveillance-snapshot-viewer" alt="Surveillance Snapshot" class="w-full h-full object-contain hidden z-10 bg-black absolute inset-0 p-0 pointer-events-none" style="padding: 80px 0;">
                     
                     <!-- Fallback / Placeholder -->
                     <div id="surveillance-placeholder" class="absolute inset-0 flex flex-col items-center justify-center text-center z-0">
@@ -3868,6 +3700,173 @@
             }
         }
     </script>
+    <!-- MISSION BRIEFING MODAL -->
+    <div id="missionBriefingModal" class="fixed inset-0 bg-black/90 backdrop-blur-md z-[200] hidden flex items-center justify-center p-4" style="z-index: 100050;">
+
+        <div class="bg-gray-900 border-2 border-neon-green w-full max-w-6xl h-[90vh] rounded-xl flex flex-col overflow-hidden shadow-[0_0_30px_rgba(34,197,94,0.3)]">
+            <!-- Header -->
+            <div class="p-3 border-b-2 border-neon-green flex flex-wrap justify-between items-center bg-gray-950 gap-y-3 gap-x-2">
+                <div class="flex items-center gap-2 md:gap-3">
+                    <i data-lucide="clipboard-list" class="w-4 h-4 md:w-5 md:h-5 text-neon-green shrink-0"></i>
+                    <h2 class="text-sm md:text-lg font-black uppercase text-white tracking-widest truncate">TACTICAL MISSION BRIEFING</h2>
+                </div>
+                <div class="flex items-center gap-2 flex-wrap justify-end shrink-0">
+                    <button id="rework-briefing-btn" class="hidden text-[9px] md:text-[10px] bg-amber-950/80 text-amber-300 px-2 py-1.5 md:px-3 rounded-lg border border-amber-700 hover:bg-amber-600 hover:text-white transition-colors flex items-center gap-1.5 font-bold uppercase tracking-wider whitespace-nowrap shrink-0" aria-label="Action Button">
+                        <i data-lucide="wrench" class="w-3 h-3 md:w-4 md:h-4"></i> REWORK INTEL
+                    </button>
+                    <button id="briefing-to-vault-btn-top" class="hidden text-[9px] md:text-[10px] bg-purple-950/80 text-purple-300 px-2 py-1.5 md:px-3 rounded-lg border border-purple-700 hover:bg-purple-600 hover:text-white transition-colors flex items-center gap-1.5 font-bold uppercase tracking-wider whitespace-nowrap shrink-0" aria-label="Action Button">
+                        <i data-lucide="archive" class="w-3 h-3 md:w-4 md:h-4"></i> INTEL VAULT
+                    </button>
+                    <button id="closeBriefingBtn" aria-label="Close modal" class="p-4 bg-gray-800 rounded-lg group hover:bg-red-900 transition-colors shrink-0" onclick="event.stopPropagation()">
+                        <i data-lucide="x" class="w-8 h-8 text-white"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Content Area (Split flex-row on md screens) -->
+            <div class="flex-1 flex flex-col md:flex-row overflow-hidden">
+                
+                <!-- Left: Form -->
+                <div class="flex flex-col overflow-y-auto bg-gray-900 border-b md:border-b-0 md:border-r border-gray-800 flex-1 min-w-0">
+                    <div id="briefing-snapshot-target" class="flex-1 flex flex-col custom-scrollbar">
+                        <!-- Metadata Row -->
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 p-4 border-b border-gray-800 bg-gray-900/50 shrink-0">
+                            <div>
+                                <label class="block text-[8px] font-black text-gray-400 uppercase tracking-widest mb-1">Mission Identifier</label>
+                                <label for="briefing-mission-name" class="sr-only">OP NAME / TARGET</label><input type="text" id="briefing-mission-name" maxlength="40" class="w-full bg-black/60 border border-gray-700 rounded px-3 py-2 text-xs text-white font-mono focus:border-neon-green outline-none uppercase" placeholder="OP NAME / TARGET" aria-label="OP NAME / TARGET">
+                            </div>
+                            <div>
+                                <label class="block text-[8px] font-black text-gray-400 uppercase tracking-widest mb-1">Commanding Officer / Instructor</label>
+                                <label for="briefing-commander" class="sr-only">NAME / CALLSIGN</label><input type="text" id="briefing-commander" maxlength="40" class="w-full bg-black/60 border border-gray-700 rounded px-3 py-2 text-xs text-white font-mono focus:border-neon-green outline-none uppercase" placeholder="NAME / CALLSIGN" aria-label="NAME / CALLSIGN">
+                            </div>
+                            <div>
+                                <label class="block text-[8px] font-black text-gray-400 uppercase tracking-widest mb-1">Timestamp</label>
+                                <div class="w-full bg-black/60 border border-gray-800 rounded px-3 py-2 text-xs text-gray-400 font-mono" id="briefing-timestamp">--:--:--</div>
+                            </div>
+                        </div>
+
+                        <!-- Top Half: ASSIGNMENT -->
+                        <div class="flex-1 min-h-[250px] p-4 flex flex-col relative border-b border-gray-800">
+                            <label class="block text-[10px] font-black text-blue-400 uppercase tracking-[0.2em] mb-2 flex items-center gap-2">
+                                <i data-lucide="crosshair" class="w-3 h-3"></i> PHASE 1: MISSION ASSIGNMENT & INTELLIGENCE
+                            </label>
+                            <textarea id="briefing-assignment-text" aria-label="Assignment Text" maxlength="1500" class="flex-1 w-full bg-black/60 border border-gray-700 rounded-lg p-4 text-sm text-blue-100 font-mono focus:border-blue-500 outline-none resize-none relative z-10 leading-relaxed custom-scrollbar placeholder-gray-600" placeholder="ENTER INITIAL MISSION PARAMETERS, ROE, WEATHER, TARGET DETAILS..."></textarea>
+                        </div>
+
+                        <!-- Bottom Half: DEBRIEF -->
+                        <div class="flex-1 min-h-[250px] p-4 flex flex-col relative">
+                            <label class="block text-[10px] font-black text-emerald-400 uppercase tracking-[0.2em] mb-2 flex items-center gap-2">
+                                <i data-lucide="check-circle" class="w-3 h-3"></i> PHASE 2: ACTION DEBRIEF & AFTER ACTION REPORT (AAR)
+                            </label>
+                            <textarea id="briefing-debrief-text" aria-label="Debrief Text" maxlength="1500" class="flex-1 w-full bg-black/60 border border-gray-700 rounded-lg p-4 text-sm text-emerald-50 font-mono focus:border-emerald-500 outline-none resize-none leading-relaxed custom-scrollbar placeholder-gray-600" placeholder="ENTER POST-MISSION SUMMARY, ROUNDS EXPENDED, CONFIRMED HITS, COMPLICATIONS..."></textarea>
+                        </div>
+                    </div>
+
+                    <!-- Footer Buttons -->
+                    <div class="p-3 border-t border-gray-800 bg-gray-950 flex justify-end gap-3 shrink-0">
+                        <button id="briefing-clear-btn" class="bg-red-900 text-white font-extrabold py-2.5 px-4 rounded-lg uppercase tracking-wider text-xs shadow-lg hover:bg-red-800 transition-all flex items-center gap-2" aria-label="Action Button">
+                            <i data-lucide="trash-2" class="w-4 h-4"></i> CLEAR FORM
+                        </button>
+                        <button id="briefing-save-inventory-btn" class="bg-emerald-600 text-white font-extrabold px-6 py-2.5 rounded-lg uppercase tracking-wider text-xs shadow-lg hover:bg-emerald-500 transition-all flex items-center gap-2" aria-label="Action Button">
+                            <i data-lucide="save" class="w-4 h-4"></i> SAVE TO INVENTORY
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Right: Saved Briefings -->
+                <div class="flex flex-col bg-gray-950 p-5 overflow-y-auto flex-1 min-w-0">
+                    <div class="text-[10px] font-black uppercase text-gray-400 tracking-wider border-b border-gray-800 pb-2 mb-4 flex justify-between items-center">
+                        <span>Mission Briefings Inventory</span>
+                        <i data-lucide="clipboard-list" class="w-3.5 h-3.5 opacity-40"></i>
+                    </div>
+                    
+                    <div id="briefingLibraryList" class="grid grid-cols-1 xl:grid-cols-2 gap-4">
+                        <!-- Dynamic Briefings injected here -->
+                    </div>
+                </div>
+                
+            </div>
+        </div>
+    </div>
+
+    <!-- OPERATIONAL CALENDAR MODAL -->
+    <div id="calendarModal" class="fixed inset-0 bg-black/90 backdrop-blur-md z-[200] hidden flex items-center justify-center p-4" style="z-index: 100050;">
+        <div class="bg-gray-900 border-2 border-neon-green w-full max-w-6xl h-[90vh] rounded-xl flex flex-col overflow-hidden shadow-[0_0_30px_rgba(34,197,94,0.3)]">
+            <!-- Header -->
+            <div class="p-3 border-b-2 border-neon-green flex flex-wrap justify-between items-center bg-gray-950 gap-y-3 gap-x-2">
+                <div class="flex items-center gap-2 md:gap-3">
+                    <i data-lucide="calendar" class="w-4 h-4 md:w-5 md:h-5 text-neon-green shrink-0"></i>
+                    <h2 class="text-sm md:text-lg font-black uppercase text-white tracking-widest truncate">OPERATIONAL CALENDAR</h2>
+                </div>
+                <div class="flex items-center gap-2 flex-wrap justify-end shrink-0">
+                    <button id="rework-calendar-btn" class="hidden text-[9px] md:text-[10px] bg-amber-950/80 text-amber-300 px-2 py-1.5 md:px-3 rounded-lg border border-amber-700 hover:bg-amber-600 hover:text-white transition-colors flex items-center gap-1.5 font-bold uppercase tracking-wider whitespace-nowrap shrink-0" aria-label="Action Button">
+                        <i data-lucide="wrench" class="w-3 h-3 md:w-4 md:h-4"></i> REWORK CALENDAR
+                    </button>
+                    <button id="calendar-to-vault-btn-top" class="hidden text-[9px] md:text-[10px] bg-purple-950/80 text-purple-300 px-2 py-1.5 md:px-3 rounded-lg border border-purple-700 hover:bg-purple-600 hover:text-white transition-colors flex items-center gap-1.5 font-bold uppercase tracking-wider whitespace-nowrap shrink-0" aria-label="Action Button">
+                        <i data-lucide="archive" class="w-3 h-3 md:w-4 md:h-4"></i> INTEL VAULT
+                    </button>
+                    <button id="closeCalendarBtn" aria-label="Close modal" class="p-4 bg-gray-800 rounded-lg group hover:bg-red-900 transition-colors shrink-0" onclick="event.stopPropagation()">
+                        <i data-lucide="x" class="w-8 h-8 text-white"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Content Area -->
+            <div class="flex-1 flex flex-col md:flex-row overflow-hidden">
+                <!-- Left: Form -->
+                <div class="flex flex-col overflow-y-auto bg-gray-900 border-b md:border-b-0 md:border-r border-gray-800 flex-1 min-w-0">
+                    <div id="calendar-snapshot-target" class="flex-1 flex flex-col custom-scrollbar bg-gray-900 p-2 md:p-4">
+                        <div class="sticky top-0 z-20 bg-gray-900 pb-2 -mt-2 pt-2 md:-mt-4 md:pt-4">
+                            <!-- Month Navigation -->
+                            <div class="flex justify-between items-center mb-4 bg-gray-950 p-2 rounded border border-gray-800">
+                                <button id="calendar-prev-month" class="text-neon-green hover:text-white p-2 transition-colors" aria-label="Previous Month"><i data-lucide="chevron-left" class="w-6 h-6"></i></button>
+                                <h3 id="calendar-month-year" class="text-white font-bold tracking-widest text-lg uppercase font-mono">JUNE 2026</h3>
+                                <button id="calendar-next-month" class="text-neon-green hover:text-white p-2 transition-colors" aria-label="Next Month"><i data-lucide="chevron-right" class="w-6 h-6"></i></button>
+                            </div>
+                            
+                            <!-- Grid Header -->
+                            <div id="calendar-days-header" class="grid grid-cols-7 gap-1 md:gap-2 mb-2 text-center text-[10px] md:text-xs font-black uppercase tracking-wider text-gray-500 transition-colors sticky top-0 z-30 bg-gray-900/95 backdrop-blur py-2 border-b border-gray-800/50 shadow-md">
+                                <div class="transition-colors duration-200 py-1 rounded">SUN</div>
+                                <div class="transition-colors duration-200 py-1 rounded">MON</div>
+                                <div class="transition-colors duration-200 py-1 rounded">TUE</div>
+                                <div class="transition-colors duration-200 py-1 rounded">WED</div>
+                                <div class="transition-colors duration-200 py-1 rounded">THU</div>
+                                <div class="transition-colors duration-200 py-1 rounded">FRI</div>
+                                <div class="transition-colors duration-200 py-1 rounded">SAT</div>
+                            </div>
+                        </div>
+                        
+                        <!-- Calendar Grid -->
+                        <div id="calendar-grid" class="grid grid-cols-7 gap-1 md:gap-2 flex-1 auto-rows-[minmax(60px,1fr)]">
+                            <!-- JS injects days here -->
+                        </div>
+                    </div>
+
+                    <!-- Footer Buttons -->
+                    <div class="p-3 border-t border-gray-800 bg-gray-950 flex justify-end gap-3 shrink-0">
+                        <button id="calendar-clear-btn" class="bg-red-900 text-white font-extrabold py-2.5 px-4 rounded-lg uppercase tracking-wider text-xs shadow-lg hover:bg-red-800 transition-all flex items-center gap-2" aria-label="Action Button">
+                            <i data-lucide="trash-2" class="w-4 h-4"></i> CLEAR MONTH
+                        </button>
+                        <button id="calendar-save-inventory-btn" class="bg-emerald-600 text-white font-extrabold px-6 py-2.5 rounded-lg uppercase tracking-wider text-xs shadow-lg hover:bg-emerald-500 transition-all flex items-center gap-2" aria-label="Action Button">
+                            <i data-lucide="save" class="w-4 h-4"></i> SAVE TO INVENTORY
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Right: Saved Calendars -->
+                <div class="flex flex-col bg-gray-950 p-5 overflow-y-auto flex-1 min-w-0">
+                    <div class="text-[10px] font-black uppercase text-gray-400 tracking-wider border-b border-gray-800 pb-2 mb-4 flex justify-between items-center">
+                        <span>Operational Calendar Inventory</span>
+                        <i data-lucide="calendar" class="w-3.5 h-3.5 opacity-40"></i>
+                    </div>
+                    
+                    <div id="calendarLibraryList" class="grid grid-cols-1 xl:grid-cols-2 gap-4">
+                        <!-- Dynamic Calendars injected here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </body>
 </html>
 
