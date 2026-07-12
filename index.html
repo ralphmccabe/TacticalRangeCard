@@ -1117,7 +1117,7 @@
                             <div id="bolo-photo-label" class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Suspect Photo</div>
                             <label for="bolo-image-upload" class="sr-only">bolo image upload</label><input aria-label="bolo image upload" type="file" id="bolo-image-upload" accept="image/*" class="hidden">
                             <button aria-label="Action Button" onclick="document.getElementById('bolo-image-upload').click()" class="bg-gray-800 border border-gray-600 rounded p-4 flex flex-col items-center justify-center hover:bg-gray-700 transition-colors text-gray-400 relative overflow-hidden h-48 md:h-64">
-                                <img id="bolo-form-preview-img" class="absolute inset-0 w-full h-full object-cover hidden">
+                                <img id="bolo-form-preview-img" class="absolute inset-0 w-full h-full object-contain hidden bg-black">
                                 <i data-lucide="camera" id="bolo-form-preview-icon" class="w-8 h-8 mb-2 text-red-500 relative z-10"></i>
                                 <span class="text-xs font-bold relative z-10 bg-black/50 px-2 py-1 rounded" id="bolo-image-label">TAP TO UPLOAD PHOTO</span>
                             </button>
@@ -1552,7 +1552,7 @@
                         
                         <!-- Toggle Big Game / Fish -->
                         <div class="flex bg-black rounded-lg p-1 border border-gray-700">
-                            <button aria-label="gametag type game" id="gametag-type-game" onclick="setGameTagType('game')" class="flex-1 py-2 text-xs font-black uppercase tracking-widest bg-amber-600 text-white rounded transition-all">BIG GAME</button>
+                            <button aria-label="gametag type game" id="gametag-type-game" onclick="setGameTagType('game')" class="flex-1 py-2 text-xs font-black uppercase tracking-widest rounded transition-all" style="background-color: #f59e0b; color: #451a03;">BIG GAME</button>
                             <button aria-label="gametag type fish" id="gametag-type-fish" onclick="setGameTagType('fish')" class="flex-1 py-2 text-xs font-black uppercase tracking-widest text-gray-500 hover:text-white rounded transition-all">FISHING</button>
                         </div>
 
@@ -1561,7 +1561,7 @@
                             <div class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Harvest Photo</div>
                             <label for="gametag-image-upload" class="sr-only">gametag image upload</label><input aria-label="gametag image upload" type="file" id="gametag-image-upload" accept="image/*" class="hidden">
                             <button aria-label="Action Button" onclick="document.getElementById('gametag-image-upload').click()" class="bg-gray-800 border border-gray-600 rounded p-4 flex flex-col items-center justify-center hover:bg-gray-700 transition-colors text-gray-400 relative overflow-hidden h-48 md:h-64">
-                                <img id="gametag-form-preview-img" class="absolute inset-0 w-full h-full object-cover hidden">
+                                <img id="gametag-form-preview-img" class="absolute inset-0 w-full h-full object-contain hidden bg-black">
                                 <i data-lucide="camera" id="gametag-form-preview-icon" class="w-8 h-8 mb-2 text-amber-500 relative z-10"></i>
                                 <span class="text-xs font-bold relative z-10 bg-black/50 px-2 py-1 rounded" id="gametag-image-label">TAP TO UPLOAD PHOTO</span>
                             </button>
@@ -1701,10 +1701,10 @@
 
                         <!-- Type Selector -->
                         <div class="flex bg-black rounded-lg p-1 border border-gray-700 gap-1">
-                            <button aria-label="license type hunting" id="license-type-hunting" onclick="setLicenseType('hunting')" class="flex-1 py-2 text-[10px] font-black uppercase tracking-widest rounded border bg-green-700 text-white border-green-500 transition-all">🦌 HUNTING</button>
-                            <button aria-label="license type fishing" id="license-type-fishing" onclick="setLicenseType('fishing')" class="flex-1 py-2 text-[10px] font-black uppercase tracking-widest rounded border text-gray-500 border-transparent hover:text-white transition-all">🎣 FISHING</button>
-                            <button aria-label="license type both" id="license-type-both"    onclick="setLicenseType('both')"    class="flex-1 py-2 text-[10px] font-black uppercase tracking-widest rounded border text-gray-500 border-transparent hover:text-white transition-all">BOTH</button>
-                            <button aria-label="license type id" id="license-type-id"      onclick="setLicenseType('id')"      class="flex-1 py-2 text-[10px] font-black uppercase tracking-widest rounded border text-gray-500 border-transparent hover:text-white transition-all">🪪 ID</button>
+                            <button aria-label="license type hunting" id="license-type-hunting" onclick="setLicenseType('hunting')" class="flex-1 py-2 text-[10px] font-black uppercase tracking-widest rounded border transition-all">🦌 HUNTING</button>
+                            <button aria-label="license type fishing" id="license-type-fishing" onclick="setLicenseType('fishing')" class="flex-1 py-2 text-[10px] font-black uppercase tracking-widest rounded border transition-all">🎣 FISHING</button>
+                            <button aria-label="license type both" id="license-type-both"    onclick="setLicenseType('both')"    class="flex-1 py-2 text-[10px] font-black uppercase tracking-widest rounded border transition-all">BOTH</button>
+                            <button aria-label="license type id" id="license-type-id"      onclick="setLicenseType('id')"      class="flex-1 py-2 text-[10px] font-black uppercase tracking-widest rounded border transition-all">🪪 ID</button>
                         </div>
 
                         <!-- Photo Upload -->
@@ -2535,7 +2535,7 @@
                     <!-- The Real Video Stream Target -->
                     <video id="surveillance-stream" autoplay playsinline webkit-playsinline muted class="w-full h-full object-cover hidden z-0"></video>
                     
-                    <img id="surveillance-snapshot-viewer" alt="Surveillance Snapshot" class="w-full h-full object-contain hidden z-10 bg-black absolute inset-0 p-0 pointer-events-none" style="padding: 80px 0;">
+                    <img id="surveillance-snapshot-viewer" alt="Surveillance Snapshot" class="w-full h-full object-contain hidden z-10 bg-black absolute inset-0 p-0 pointer-events-none">
                     
                     <!-- Fallback / Placeholder -->
                     <div id="surveillance-placeholder" class="absolute inset-0 flex flex-col items-center justify-center text-center z-0">
@@ -3072,10 +3072,10 @@
     </div>
 
     <!-- MAIN SCRIPT -->
-    <script src="./trc_core.js?v=8.0.7" defer></script>
-    <script src="./gametag_logic.js?v=1.0" defer></script>
-    <script src="./bolo_logic.js?v=1.0" defer></script>
-    <script src="./license_logic.js?v=1.2" defer></script>
+    <script src="./trc_core.js?v=8.0.20" defer></script>
+    <script src="./gametag_logic.js?v=1.14" defer></script>
+    <script src="./bolo_logic.js?v=1.9" defer></script>
+    <script src="./license_logic.js?v=1.11" defer></script>
     
     <!-- CUSTOM SAVE PROFILE MODAL -->
     <div id="save-profile-modal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-[1000000] flex items-center justify-center p-4 font-mono">
@@ -3095,7 +3095,7 @@
     <!-- PWA SERVICE WORKER REGISTRATION & API UPDATE CHECK -->
 
     <script>
-        window.APP_VERSION = 'v7.27.32';
+        window.APP_VERSION = 'v7.27.33';
         if(document.getElementById('header-version-display')) {
             document.getElementById('header-version-display').innerText = window.APP_VERSION;
         }
@@ -3330,7 +3330,7 @@
           <div class="space-y-6 text-sm text-gray-300">
               <div>
                   <h3 class="text-white font-bold mb-2">1. GEOSPATIAL DATA (GPS)</h3>
-                  <p>Tactical Range Card PRO utilizes high-precision GNSS sensors to calculate Earth-rotation (Coriolis) and target vector solutions. This data is processed locally on your device. We do not transmit your live location to external servers unless you explicitly engage the 'Tac Comms' mission mode, which shares location only with your authenticated team members.</p>
+                  <p>Tactical Range Card utilizes high-precision GNSS sensors to calculate Earth-rotation (Coriolis) and target vector solutions. This data is processed locally on your device. We do not transmit your live location to external servers unless you explicitly engage the 'Tac Comms' mission mode, which shares location only with your authenticated team members.</p>
               </div>
               <div>
                   <h3 class="text-white font-bold mb-2">2. OPTICAL & ACOUSTIC SENSORS</h3>
@@ -3370,12 +3370,12 @@
 
           <div class="space-y-6 text-sm text-gray-300">
               <div>
-                  <h3 class="text-white font-bold mb-2">1. USAGE LICENSE</h3>
-                  <p>Tactical Range Card PRO grants the user a non-exclusive license for personal or professional training use. Redistribution, reverse engineering, or unauthorized extraction of the ballistic matrix engine is strictly prohibited.</p>
+                  <h3 class="text-white font-bold mb-2">1. TACTICAL RANGE CARD</h3>
+                  <p>Tactical Range Card grants the user a non-exclusive license for personal or professional training use. Redistribution, reverse engineering, or unauthorized extraction of the ballistic matrix engine is strictly prohibited.</p>
               </div>
               <div>
                   <h3 class="text-white font-bold mb-2">2. LIABILITY LIMITATION & IMMUNITY</h3>
-                  <p>The developers of Tactical Range Card PRO shall not be held liable for any damages, injuries, negligence, or legal incidents resulting from the use or misuse of this software. This application is strictly a reference tool. The creators cannot be pursued in a court of law and hold absolute immunity from liability for any consequences, including but not limited to use during active shooter situations, tactical engagements, or emergency scenarios. By using this application, the user accepts total, unconditional liability for all outcomes in the field.</p>
+                  <p>The developers of Tactical Range Card shall not be held liable for any damages, injuries, negligence, or legal incidents resulting from the use or misuse of this software. This application is strictly a reference tool. The creators cannot be pursued in a court of law and hold absolute immunity from liability for any consequences, including but not limited to use during active shooter situations, tactical engagements, or emergency scenarios. By using this application, the user accepts total, unconditional liability for all outcomes in the field.</p>
               </div>
               <div>
                   <h3 class="text-white font-bold mb-2">3. PREMIUM LICENSE & ACCESS</h3>
@@ -3869,6 +3869,7 @@
     </div>
 </body>
 </html>
+
 
 
 

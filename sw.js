@@ -1,14 +1,17 @@
-/* TRC-VERSION - v7.27.32 */
-const CACHE_NAME = 'trc-v7.27.32';
+/* TRC-VERSION - v7.27.33 */
+const CACHE_NAME = 'trc-v7.27.33';
 const ASSETS = [
     './',
-    './index.html?v=7.27.1',
+    './index.html?v=7.27.7',
     './style.css?v=1.7',
-    './trc_core.js?v=8.0.7',
+    './trc_core.js?v=8.0.11',
     './manifest.json',
     './icon-512.png',
     './icon-192.png',
     './splash-page.jpg',
+    './gametag_logic.js?v=1.4',
+    './bolo_logic.js?v=1.3',
+    './license_logic.js?v=1.5',
     './tailwind.css',
     './lucide.min.js?v=1.5',
     './html2canvas.min.js?v=1.5',
@@ -96,6 +99,7 @@ self.addEventListener('fetch', event => {
         })
     );
 });
+
 
 
 
