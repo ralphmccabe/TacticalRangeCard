@@ -12,6 +12,7 @@ const boloToVaultBtnTop = document.getElementById('bolo-to-vault-btn-top');
 
 let currentBoloImage = null;
 let activeBoloId = null;
+let selectedBoloId = null;
 let currentBoloThreatLevel = 'poi';   // 'poi' | 'fugitive' | 'armed'
 let currentBoloType = 'person';        // 'person' | 'animal'
 let currentBoloSex = 'unknown';        // 'male' | 'female' | 'unknown'
@@ -282,7 +283,7 @@ async function renderBoloLibrary() {
         allBolos.sort((a,b) => Number(b.id) - Number(a.id));
         allBolos.forEach(bolo => {
             const isPerson    = (bolo.bolo_type || 'person') === 'person';
-            const isActive    = activeBoloId === bolo.id;
+            const isActive    = selectedBoloId === bolo.id;
             const dateStr     = new Date(bolo.timestamp).toLocaleString();
             const displayName = isPerson ? (bolo.name || 'UNKNOWN') : (bolo.species || 'UNKNOWN ANIMAL');
             const displaySub  = isPerson ? (bolo.reason || 'WANTED') : (bolo.animal_territory || bolo.animal_threat || 'NUISANCE ANIMAL');
@@ -292,15 +293,18 @@ async function renderBoloLibrary() {
             const typeLabel   = isPerson ? '👤 PERSON' : '🐗 ANIMAL';
 
             const card = document.createElement('div');
-            card.className = `p-3 rounded-lg border-2 cursor-pointer transition-all ${cardBg} ${cardBorder} hover:border-gray-600`;
+            card.className = `relative p-3 rounded-lg border-2 cursor-pointer transition-all ${cardBg} ${cardBorder} hover:border-gray-600`;
             card.innerHTML = `
-                <div class="flex items-start justify-between mb-2">
-                    <div class="font-black text-[10px] uppercase tracking-widest truncate max-w-[150px]" style="color:${accentColor}">${displayName}</div>
+                <div class="absolute top-2 left-2 z-30 bg-black/60 p-1 rounded pointer-events-auto">
+                    <input type="checkbox" aria-label="Select BOLO" class="w-4 h-4 cursor-pointer bg-black/50 border border-gray-500 rounded text-red-500 focus:ring-red-500/50" ${isActive ? 'checked' : ''} onclick="event.stopPropagation(); window.selectBolo('${bolo.id}')">
+                </div>
+                <div class="flex items-start justify-between mb-2 pointer-events-none">
+                    <div class="font-black text-[10px] uppercase tracking-widest truncate max-w-[150px]" style="color:${accentColor}; padding-left: 32px;">${displayName}</div>
                     <div class="flex gap-1 items-center shrink-0">
                         <span class="text-[8px] font-bold px-1 py-0.5 rounded" style="background:rgba(255,255,255,0.07);color:${accentColor}">${typeLabel}</span>
                     </div>
                 </div>
-                <div class="flex gap-2">
+                <div class="flex gap-2 pointer-events-none pl-8">
                     <div class="w-12 h-12 bg-black border border-gray-700 rounded overflow-hidden shrink-0 flex items-center justify-center">
                         ${bolo.image ? `<img src="${bolo.image}" class="w-full h-full object-cover">` : `<i data-lucide="${isPerson ? 'user' : 'paw-print'}" class="w-4 h-4 text-gray-600"></i>`}
                     </div>
@@ -308,12 +312,16 @@ async function renderBoloLibrary() {
                         <div class="text-[9px] text-gray-300 truncate">${displaySub}</div>
                         <div class="text-[8px] text-gray-500 truncate mt-1">${dateStr}</div>
                     </div>
-                    <button class="text-gray-600 hover:text-red-500 p-1 bg-black rounded self-center" onclick="event.stopPropagation(); deleteBolo('${bolo.id}')" title="Delete">
+                    <button class="text-gray-600 hover:text-red-500 p-1 bg-black rounded self-center pointer-events-auto" onclick="event.stopPropagation(); deleteBolo('${bolo.id}')" title="Delete">
                         <i data-lucide="trash" class="w-3 h-3"></i>
                     </button>
                 </div>
             `;
-            card.onclick = () => selectBolo(bolo);
+            card.onclick = (e) => {
+                if (e.target.tagName.toLowerCase() !== 'input' && e.target.tagName.toLowerCase() !== 'button') {
+                    window.selectBolo(bolo.id);
+                }
+            };
             listEl.appendChild(card);
         });
         if(window.lucide) window.lucide.createIcons();
@@ -323,21 +331,31 @@ async function renderBoloLibrary() {
 window.deleteBolo = async function(id) {
     if(confirm('Delete this BOLO card?')) {
         await window.TRC_IDB.delete('boloLibrary', id);
-        if(activeBoloId === id) {
+        if (selectedBoloId === id) {
+            selectedBoloId = null;
+            if (reworkBoloBtn) reworkBoloBtn.classList.add('hidden');
+            if (boloToVaultBtnTop) boloToVaultBtnTop.classList.add('hidden');
+        }
+        if (activeBoloId === id) {
             activeBoloId = null;
-            if(reworkBoloBtn)    reworkBoloBtn.classList.add('hidden');
-            if(boloToVaultBtnTop) boloToVaultBtnTop.classList.add('hidden');
         }
         renderBoloLibrary();
     }
 };
 
-function selectBolo(bolo) {
-    activeBoloId = bolo.id;
+window.selectBolo = function(boloId) {
+    if (selectedBoloId === boloId) {
+        selectedBoloId = null;
+        renderBoloLibrary();
+        if(reworkBoloBtn)    reworkBoloBtn.classList.add('hidden');
+        if(boloToVaultBtnTop) boloToVaultBtnTop.classList.add('hidden');
+        return;
+    }
+    selectedBoloId = boloId;
     renderBoloLibrary();
     if(reworkBoloBtn)    reworkBoloBtn.classList.remove('hidden');
     if(boloToVaultBtnTop) boloToVaultBtnTop.classList.remove('hidden');
-}
+};
 
 // ============================================================
 // LOAD BACK TO EDITOR
@@ -418,11 +436,12 @@ window.loadBoloBackToEditor = function(bolo) {
 
 if(reworkBoloBtn) {
     reworkBoloBtn.addEventListener('click', async () => {
-        if(!activeBoloId) return;
-        const bolo = await window.TRC_IDB.get('boloLibrary', activeBoloId);
+        if(!selectedBoloId) return;
+        const bolo = await window.TRC_IDB.get('boloLibrary', selectedBoloId);
         if(!bolo) return;
         window.loadBoloBackToEditor(bolo);
         if(window.showToast) window.showToast('BOLO loaded for rework.');
+        selectedBoloId = null;
         activeBoloId = null;
         if(reworkBoloBtn)    reworkBoloBtn.classList.add('hidden');
         if(boloToVaultBtnTop) boloToVaultBtnTop.classList.add('hidden');
@@ -431,7 +450,7 @@ if(reworkBoloBtn) {
 }
 
 window.loadPhotoToBolo = function(imgSrc) {
-    clearBoloForm();
+    window.openBoloModal();
     currentBoloImage = imgSrc;
     if(boloRenderImg) { boloRenderImg.src = imgSrc; boloRenderImg.style.display = 'block'; }
     if(boloImagePlaceholder) boloImagePlaceholder.style.display = 'none';
@@ -441,7 +460,6 @@ window.loadPhotoToBolo = function(imgSrc) {
     if(previewIcon) previewIcon.style.opacity = '0.3';
     const lbl = document.getElementById('bolo-image-label');
     if(lbl) { lbl.innerText = 'CHANGE PHOTO'; lbl.classList.remove('text-gray-400'); lbl.classList.add('text-neon-green'); }
-    window.openBoloModal();
 };
 
 // ============================================================
@@ -449,13 +467,13 @@ window.loadPhotoToBolo = function(imgSrc) {
 // ============================================================
 if (boloToVaultBtnTop) {
     boloToVaultBtnTop.addEventListener('click', async () => {
-        if(!activeBoloId) return;
-        const bolo = await window.TRC_IDB.get('boloLibrary', activeBoloId);
+        if(!selectedBoloId) return;
+        const bolo = await window.TRC_IDB.get('boloLibrary', selectedBoloId);
         if(!bolo) return;
 
         const originalHtml = boloToVaultBtnTop.innerHTML;
         boloToVaultBtnTop.disabled = true;
-        boloToVaultBtnTop.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin inline-block mr-1"></i> PROCESSING...';
+        boloToVaultBtnTop.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin inline-block mr-1"></i> SAVING...';
         if(window.lucide) window.lucide.createIcons();
 
         const isPerson = (bolo.bolo_type || 'person') === 'person';
@@ -583,19 +601,27 @@ if (boloToVaultBtnTop) {
                                        : 'ANIMAL BOLO: ' + (bolo.species || 'UNKNOWN').toUpperCase();
                 await window.saveIntelSnapshot(label, dataUrl, { type: 'bolo-card', isAmmo: false, boloData: bolo });
                 if(window.showToast) window.showToast('✅ BOLO Saved to Intel Vault!');
+                
+                boloToVaultBtnTop.innerHTML = '<i data-lucide="check" class="w-4 h-4 inline-block mr-1"></i> SENT TO INTEL VAULT';
+                if(window.lucide) window.lucide.createIcons();
+                setTimeout(() => {
+                    boloToVaultBtnTop.disabled = false;
+                    boloToVaultBtnTop.innerHTML = originalHtml;
+                    if(window.lucide) window.lucide.createIcons();
+                }, 2000);
             }
         } catch(err) {
             console.error('BOLO Capture failed:', err);
             alert('Capture failed: ' + err.message);
+            boloToVaultBtnTop.disabled = false;
+            boloToVaultBtnTop.innerHTML = originalHtml;
+            if(window.lucide) window.lucide.createIcons();
         } finally {
             if(originalParent) originalParent.insertBefore(renderZone, originalNextSibling);
             renderZone.style.position = 'fixed';
             renderZone.style.top      = '-9999px';
             renderZone.style.left     = '-9999px';
             renderZone.style.zIndex   = '-9999';
-            boloToVaultBtnTop.disabled  = false;
-            boloToVaultBtnTop.innerHTML = originalHtml;
-            if(window.lucide) window.lucide.createIcons();
         }
     });
 }

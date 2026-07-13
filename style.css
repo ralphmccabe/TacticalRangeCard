@@ -395,7 +395,7 @@ body.is-capturing #card-scale-wrapper {
 .dash-bottombar::-webkit-scrollbar-track { background: transparent; }
 .dash-bottombar::-webkit-scrollbar-thumb { background: rgba(16, 185, 129, 0.2); border-radius: 4px; }
 
-#panel-comms {
+#dash-bottom-row {
     grid-column: span 9; 
     grid-row: span 1;
     display: flex;
@@ -510,12 +510,12 @@ body.is-capturing #card-scale-wrapper {
     .tactical-dashboard-active, .tactical-dashboard-active body { height: auto !important; max-height: none !important; overflow-y: auto !important; }
     #tacticalDashboard:not(.hidden) { height: auto !important; min-height: 100vh; overflow-y: auto !important; display: block !important; }
     .dashboard-grid { display: flex !important; flex-direction: column !important; height: auto !important; max-height: none !important; overflow: visible !important; gap: 1.5rem !important; padding: 0.75rem !important; }
-    .dash-sidebar, .dash-viewport, .dash-bottombar, #panel-comms { grid-column: span 12 !important; grid-row: auto !important; width: 100% !important; height: auto !important; }
+    .dash-sidebar, .dash-viewport, .dash-bottombar, #dash-bottom-row { grid-column: span 12 !important; grid-row: auto !important; width: 100% !important; height: auto !important; }
     .dash-viewport { order: 1; height: 350px !important; z-index: 50 !important; display: flex !important; flex-direction: column !important; position: sticky !important; top: 0 !important; background: #030712 !important; border-bottom: 1px solid rgba(16,185,129,0.2) !important; }
     .dash-sidebar { order: 2; height: auto !important; overflow-y: visible !important; max-height: none !important; }
     .dash-sidebar .dash-panel { height: auto !important; min-height: 250px !important; }
     .dash-bottombar { order: 3; display: flex !important; flex-direction: column !important; gap: 1rem !important; overflow-x: visible !important; height: auto !important; }
-    #panel-comms { order: 4; height: 250px !important; }
+    #dash-bottom-row { order: 4; height: auto !important; }
     .dash-panel { height: 280px !important; display: flex !important; flex-direction: column !important; }
     .dash-panel.is-maximized { position: fixed !important; top: 1rem !important; left: 0.5rem !important; right: 0.5rem !important; bottom: 2rem !important; width: auto !important; height: auto !important; z-index: 99999 !important; border-radius: 0.5rem !important; border: 2px solid #10b981 !important; }
 }

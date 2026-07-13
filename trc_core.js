@@ -4107,7 +4107,7 @@ function initializeTacticalDashboard2() {
                 const dataUri = canvas.toDataURL('image/jpeg', 0.85);
                 saveIntelSnapshot(label, dataUri, meta);
 
-                mapSnapBtn.innerHTML = `<i data-lucide="check" class="w-3 h-3"></i> SAVED`;
+                mapSnapBtn.innerHTML = `<i data-lucide="check" class="w-3 h-3 inline-block mr-1"></i> SENT TO INTEL VAULT`;
                 setTimeout(() => { mapSnapBtn.innerHTML = originalHtml; mapSnapBtn.disabled = false; if(window.lucide) lucide.createIcons(); }, 2000);
 
             } catch (err) {
@@ -4116,7 +4116,7 @@ function initializeTacticalDashboard2() {
                 try {
                     const dataUri = buildFallbackCanvas().toDataURL('image/jpeg', 0.85);
                     saveIntelSnapshot(label, dataUri, meta);
-                    mapSnapBtn.innerHTML = `<i data-lucide="check" class="w-3 h-3"></i> SAVED (GEO)`;
+                    mapSnapBtn.innerHTML = `<i data-lucide="check" class="w-3 h-3 inline-block mr-1"></i> SENT TO INTEL VAULT (GEO)`;
                 } catch(e2) {
                     mapSnapBtn.innerHTML = `❌ FAIL`;
                 }
@@ -4131,6 +4131,7 @@ function initializeTacticalDashboard2() {
     // WINDOW 4: INTEL VAULT SYSTEM (UPGRADED TO INDEXEDDB PERMANENCE)
     // ========================================================================
     let vaultCache = [];
+    Object.defineProperty(window, 'vaultCache', { get: () => vaultCache });
 
     // ASYNC INITIALIZATION
     async function initVaultFromDB() {
@@ -4613,6 +4614,66 @@ function initializeTacticalDashboard2() {
         let mediaHtml = '';
         if (isVideo) {
             mediaHtml = `<i data-lucide="video" class="w-20 h-20 text-purple-500 opacity-80"></i>`;
+        } else if (item.type === 'workstation') {
+            let formDataHtml = '';
+            const d = item.workstationData?.data || {};
+            if (item.workstationData?.type === 'medevac') {
+                formDataHtml = `
+                    <div class="text-[10px] text-gray-400 mb-1">LINE 1: <span class="text-white">${d.loc || 'N/A'}</span></div>
+                    <div class="text-[10px] text-gray-400 mb-1">LINE 2: <span class="text-white">${d.freq || 'N/A'}</span></div>
+                    <div class="text-[10px] text-gray-400 mb-1">LINE 3: <span class="text-white">${d.prec || 'N/A'}</span></div>
+                    <div class="text-[10px] text-gray-400 mb-1">LINE 4: <span class="text-white">${d.equip || 'N/A'}</span></div>
+                    <div class="text-[10px] text-gray-400 mt-2 font-bold">DETAILS:</div>
+                    <div class="text-[10px] text-gray-300 italic whitespace-pre-wrap">${d.details || 'None'}</div>
+                `;
+            } else if (item.workstationData?.type === 'scorecard') {
+                formDataHtml = `
+                    <div class="text-[10px] text-gray-400 mb-1">MATCH: <span class="text-white">${d.match || 'N/A'}</span></div>
+                    <div class="text-[10px] text-gray-400 mb-1">TIME: <span class="text-white">${d.time || 'N/A'}</span></div>
+                    <div class="text-[10px] text-gray-400 mb-1">HITS: <span class="text-white">${d.hits || 'N/A'}</span></div>
+                    <div class="text-[10px] text-gray-400 mb-1">PENALTIES: <span class="text-white">${d.penalties || 'N/A'}</span></div>
+                    <div class="text-[10px] text-gray-400 mt-2 font-bold">NOTES:</div>
+                    <div class="text-[10px] text-gray-300 italic whitespace-pre-wrap">${d.notes || 'None'}</div>
+                `;
+            } else if (item.workstationData?.type === 'logistics') {
+                formDataHtml = `
+                    <div class="text-[10px] text-gray-400 mb-1">AMMO EXPENDED: <span class="text-white">${d.ammo || 'N/A'}</span></div>
+                    <div class="text-[10px] text-gray-400 mb-1">GEAR DAMAGED: <span class="text-white">${d.gear || 'N/A'}</span></div>
+                    <div class="text-[10px] text-gray-400 mb-1">TOTAL COST: <span class="text-white">${d.cost || 'N/A'}</span></div>
+                    <div class="text-[10px] text-gray-400 mb-1">RESUPPLY NEEDED: <span class="text-white">${d.resupply || 'N/A'}</span></div>
+                `;
+            } else if (item.workstationData?.type === 'roster') {
+                formDataHtml = `
+                    <div class="text-[10px] text-gray-400 mb-1">SQUAD NAME: <span class="text-white">${d.squad || 'N/A'}</span></div>
+                    <div class="text-[10px] text-gray-400 mt-2 font-bold">PERSONNEL STATUS:</div>
+                    <div class="text-[10px] text-gray-300 italic whitespace-pre-wrap">${d.personnel || 'None'}</div>
+                `;
+            } else if (item.workstationData?.type === 'bragboard') {
+                formDataHtml = `
+                    <div class="text-[10px] text-gray-400 mb-1">EVENT: <span class="text-white">${d.event || 'N/A'}</span></div>
+                    <div class="text-[10px] text-gray-400 mt-2 font-bold">SUMMARY:</div>
+                    <div class="text-[10px] text-gray-300 italic whitespace-pre-wrap">${d.summary || 'None'}</div>
+                `;
+            }
+
+            let leftColHtml = item.image 
+                ? `<img src="${item.image}" class="w-full h-full object-contain">`
+                : `<div class="flex items-center justify-center w-full h-full"><i data-lucide="monitor" class="w-20 h-20 text-blue-500 opacity-50"></i></div>`;
+
+            mediaHtml = `
+                <div class="flex w-full h-full">
+                    <div class="w-1/2 h-full border-r border-gray-800 bg-black flex items-center justify-center relative">
+                        ${leftColHtml}
+                    </div>
+                    <div class="w-1/2 h-full bg-gray-900 overflow-y-auto p-4 custom-scrollbar flex flex-col justify-center text-left">
+                        <div class="flex items-center gap-2 mb-4 pb-2 border-b border-gray-700">
+                            <i data-lucide="monitor" class="w-4 h-4 text-emerald-500"></i>
+                            <h3 class="text-xs font-black text-white uppercase tracking-widest">${item.label || 'WORKSTATION DATA'}</h3>
+                        </div>
+                        ${formDataHtml}
+                    </div>
+                </div>
+            `;
         } else {
             mediaHtml = `<img src="${item.image}" class="w-full h-full object-contain">`;
         }
@@ -4651,6 +4712,11 @@ function initializeTacticalDashboard2() {
                     ${item.type === 'operational_calendar' ? `
                     <button class="bg-blue-600 text-white border border-blue-400 p-1.5 rounded hover:bg-blue-500 transition-all shadow-[0_0_10px_rgba(59,130,246,0.5)] flex items-center gap-1 font-black text-[7px]" onclick="event.stopPropagation(); window.loadCalendarBackToEditorById('${item.id}')" title="Load back to Form">
                         <i data-lucide="calendar" class="w-2.5 h-2.5"></i> REWORK CALENDAR
+                    </button>
+                    ` : ''}
+                    ${item.type === 'workstation' ? `
+                    <button class="bg-emerald-600 text-white border border-emerald-400 p-1.5 rounded hover:bg-emerald-500 transition-all shadow-[0_0_10px_rgba(16,185,129,0.5)] flex items-center gap-1 font-black text-[7px]" onclick="event.stopPropagation(); window.loadWorkstationBackToEditorById('${item.id}')" title="Load back to Workstation">
+                        <i data-lucide="monitor" class="w-2.5 h-2.5"></i> REWORK WORKSTATION
                     </button>
                     ` : ''}
                     <button class="bg-red-950/90 text-red-300 border border-red-600/50 p-1.5 rounded hover:bg-red-600 hover:text-white transition-all shadow-lg" onclick="event.stopPropagation(); window.unloadDashboardCard(4)" title="Unload Vault Item">
@@ -6019,58 +6085,26 @@ function initializeTacticalDashboard2() {
                 if (item && item.type === 'bolo-card' && item.boloData) {
                     if(window.openBoloModal && window.loadBoloBackToEditor) {
                         window.openBoloModal();
+                        if (!item.boloData.image) item.boloData.image = item.image;
                         window.loadBoloBackToEditor(item.boloData);
+                        const vaultModal = document.getElementById('vault-modal-overlay');
+                        if (vaultModal) vaultModal.classList.add('hidden');
+                        checkedBoxes.forEach(cb => cb.checked = false);
+                    }
+                } else if (item && (!item.type || item.type === 'photo')) {
+                    if (window.loadPhotoToBolo) {
+                        window.loadPhotoToBolo(item.image);
                     }
                 } else {
-                    alert("The selected snapshot is not a valid BOLO card.");
+                    alert("The selected snapshot is not a valid BOLO card or photo.");
                     return;
                 }
             } else if (checkedBoxes.length > 1) {
-                alert("Please select only ONE Most Wanted card to load into the editor.");
+                alert("Please select only ONE Most Wanted card or photo to load into the editor.");
                 return;
             } else {
                 if(window.openBoloModal) {
                     window.openBoloModal();
-                }
-            }
-            
-            // Uncheck boxes
-            checkedBoxes.forEach(cb => cb.checked = false);
-            
-            // Auto-close vault if full screen mode is active
-            if (typeof window.toggleFullscreen === 'function') {
-                const vaultPanel = document.getElementById('panel-vault');
-                if (vaultPanel && vaultPanel.classList.contains('is-maximized')) {
-                    window.toggleFullscreen('panel-vault');
-                }
-            }
-        });
-    }
-
-    const vaultToGametagBtn = document.getElementById('vault-to-gametag-btn');
-    if (vaultToGametagBtn) {
-        vaultToGametagBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            const checkedBoxes = document.querySelectorAll('.vault-export-checkbox:checked');
-            
-            if (checkedBoxes.length === 1) {
-                const id = checkedBoxes[0].dataset.vaultId;
-                const item = vaultCache.find(x => x.id.toString() === id);
-                if (item && item.type === 'gametag-card' && item.gametagData) {
-                    if(window.openGameTagModal && window.loadGametagBackToEditor) {
-                        window.openGameTagModal();
-                        window.loadGametagBackToEditor(item.gametagData);
-                    }
-                } else {
-                    alert("The selected snapshot is not a valid Field Tag card.");
-                    return;
-                }
-            } else if (checkedBoxes.length > 1) {
-                alert("Please select only ONE Field Tag to load into the editor.");
-                return;
-            } else {
-                if(window.openGameTagModal) {
-                    window.openGameTagModal();
                 }
             }
             
@@ -7489,14 +7523,14 @@ function initializeTacticalDashboard2() {
                                 if(window.TRC_IDB) window.TRC_IDB.set('intelVault', metadata.id.toString(), metadata);
                                 refreshVaultGrid();
                                 
-                                btn.innerHTML = `<i data-lucide="check" class="w-3 h-3 text-green-400"></i> SAVED TO VAULT`;
+                                btn.innerHTML = `<i data-lucide="check" class="w-3 h-3 text-green-400 inline-block mr-1"></i> SENT TO INTEL VAULT`;
                                 btn.classList.replace('bg-purple-700', 'bg-green-900/50');
                                 window.pushTacLog("TAPE DECRYPTED & SAVED TO VAULT", "SUCCESS");
                             };
                             tapeReader.onerror = () => { throw new Error('FileReader failed on decrypted tape'); };
                             tapeReader.readAsDataURL(decryptedBlob);
                             return; // FileReader is async — vault save happens in callback above
-                            btn.innerHTML = `<i data-lucide="check" class="w-3 h-3 text-green-400"></i> SAVED TO VAULT`;
+                            btn.innerHTML = `<i data-lucide="check" class="w-3 h-3 text-green-400 inline-block mr-1"></i> SENT TO INTEL VAULT`;
                             btn.classList.replace('bg-purple-700', 'bg-green-900/50');
                             window.pushTacLog("ENCRYPTED TAPE DECRYPTED AND SAVED", "SUCCESS");
                         } catch (err) {
@@ -8680,7 +8714,7 @@ function initializeTacticalDashboard2() {
                 if (tsDisplay) tsDisplay.textContent = new Date().toISOString().replace('T', ' ').slice(0, 19) + 'Z';
                 const targetEl = document.getElementById('briefing-snapshot-target');
                 const originalText = `<i data-lucide="save" class="w-4 h-4"></i> SAVE TO INVENTORY`;
-                saveInvBtn.innerHTML = `<i data-lucide="loader" class="w-4 h-4 animate-spin"></i> SAVING...`;
+                saveInvBtn.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 animate-spin inline-block mr-1"></i> SAVING...`;
                 
                 try {
                     // Temporarily restyle for snapshot
@@ -8764,7 +8798,7 @@ function initializeTacticalDashboard2() {
                     assignmentInput.value = '';
                     debriefInput.value = '';
                     
-                    saveInvBtn.innerHTML = `<i data-lucide="check" class="w-4 h-4"></i> SAVED TO INVENTORY!`;
+                    saveInvBtn.innerHTML = `<i data-lucide="check" class="w-4 h-4"></i> SENT TO INTEL VAULT`;
                     window.pushTacLog("MISSION BRIEFING SAVED TO INVENTORY", "SUCCESS");
                     
                     setTimeout(() => { saveInvBtn.innerHTML = originalText; if (window.lucide) window.lucide.createIcons(); }, 2000);
@@ -8903,7 +8937,7 @@ function initializeTacticalDashboard2() {
                 if (checkedBoxes.length === 0) return;
 
                 const originalText = btnElement.innerHTML;
-                btnElement.innerHTML = `<i data-lucide="loader" class="w-4 h-4 animate-spin"></i> SENDING...`;
+                btnElement.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 animate-spin inline-block mr-1"></i> SAVING...`;
                 if (window.lucide) window.lucide.createIcons();
 
                 const inv = getBriefingInventory();
@@ -8931,7 +8965,7 @@ function initializeTacticalDashboard2() {
                     if (window.pushTacLog) window.pushTacLog(`TRANSFERRED ${sentCount} BRIEFING(S) TO INTEL VAULT`, "SUCCESS");
                     
                     setTimeout(() => {
-                        btnElement.innerHTML = `<i data-lucide="check" class="w-4 h-4"></i> SENT`;
+                        btnElement.innerHTML = `<i data-lucide="check" class="w-4 h-4 inline-block mr-1"></i> SENT TO INTEL VAULT`;
                         if (window.lucide) window.lucide.createIcons();
                     }, 500);
 
@@ -9062,10 +9096,16 @@ function initializeTacticalDashboard2() {
                         const publicUrl = window.supabaseClient.storage.from('Tactical-media').getPublicUrl(fileName).data.publicUrl;
                         
                         // 5. Send message
-                        const metadataObj = Object.assign({}, item);
+                        const metadataObj = JSON.parse(JSON.stringify(item));
                         delete metadataObj.image; delete metadataObj.snapshot;
                         delete metadataObj.bgImage; delete metadataObj.id;
                         metadataObj.isPristineImage = true;
+                        
+                        // Prevent WebRTC overflow from nested massive base64 strings
+                        if (metadataObj.boloData && metadataObj.boloData.image) delete metadataObj.boloData.image;
+                        if (metadataObj.gametagData && metadataObj.gametagData.image) delete metadataObj.gametagData.image;
+                        if (metadataObj.licenseData && metadataObj.licenseData.image) delete metadataObj.licenseData.image;
+                        if (metadataObj.workstationData && metadataObj.workstationData.image) delete metadataObj.workstationData.image;
                         
                         const encryptedImage = TacticalCrypto.encrypt({
                             message: "INCOMING SECURE HIGH-RES INTEL",
@@ -9647,7 +9687,7 @@ document.getElementById('btn-matrix-to-vault').addEventListener('click', async (
     const targetEl = document.getElementById('matrix-snapshot-target');
     const btn = document.getElementById('btn-matrix-to-vault');
     const originalText = btn.innerHTML;
-    btn.innerHTML = `<i data-lucide="loader" class="w-4 h-4 animate-spin"></i> SAVING...`;
+    btn.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 animate-spin inline-block mr-1"></i> SAVING...`;
     
     try {
         const tbody = document.getElementById('matrix-tbody');
@@ -9731,7 +9771,7 @@ document.getElementById('btn-matrix-to-vault').addEventListener('click', async (
         
         window.saveIntelSnapshot(`MATRIX-${timeStr}`, imgData);
         
-        btn.innerHTML = `<i data-lucide="check" class="w-4 h-4"></i> SAVED!`;
+        btn.innerHTML = `<i data-lucide="check" class="w-4 h-4 inline-block mr-1"></i> SENT TO INTEL VAULT`;
         if (window.pushTacLog) window.pushTacLog("BALLISTIC MATRIX SAVED TO INTEL VAULT", "SUCCESS");
         
         setTimeout(() => { btn.innerHTML = originalText; if (window.lucide) window.lucide.createIcons(); }, 2000);
@@ -9750,7 +9790,7 @@ document.getElementById('btn-weather-to-vault').addEventListener('click', async 
     const targetEl = document.getElementById('weather-panel-content');
     const btn = document.getElementById('btn-weather-to-vault');
     const originalText = btn.innerHTML;
-    btn.innerHTML = `<i data-lucide="loader" class="w-3 h-3 animate-spin"></i> SAVING...`;
+    btn.innerHTML = `<i data-lucide="loader-2" class="w-3 h-3 animate-spin inline-block mr-1"></i> SAVING...`;
     
     try {
         const canvas = await window.html2canvas(targetEl, {
@@ -9784,7 +9824,7 @@ document.getElementById('btn-weather-to-vault').addEventListener('click', async 
         
         await window.saveIntelSnapshot(`WEATHER-${timeStr}`, imgData);
         
-        btn.innerHTML = `<i data-lucide="check" class="w-3 h-3"></i> SAVED!`;
+        btn.innerHTML = `<i data-lucide="check" class="w-3 h-3 inline-block mr-1"></i> SENT TO INTEL VAULT`;
         if (window.pushTacLog) window.pushTacLog("WEATHER SNAPSHOT SAVED TO INTEL VAULT", "SUCCESS");
         
         setTimeout(() => { btn.innerHTML = originalText; if (window.lucide) window.lucide.createIcons(); }, 2000);
@@ -9801,7 +9841,7 @@ if (btnBallisticToVault) {
         if(e) e.stopPropagation();
         const targetEl = document.getElementById('ballistic-panel-content');
         const originalText = btnBallisticToVault.innerHTML;
-        btnBallisticToVault.innerHTML = `<i data-lucide="loader" class="w-5 h-5 animate-spin"></i>`;
+        btnBallisticToVault.innerHTML = `<i data-lucide="loader-2" class="w-5 h-5 animate-spin inline-block mr-1"></i> SAVING...`;
         
         try {
             await new Promise(r => setTimeout(r, 50));
@@ -9874,7 +9914,7 @@ if (btnBallisticToVault) {
                 window.saveIntelSnapshot(`SOLVER-${timeStr}`, imgData);
             }
             
-            btnBallisticToVault.innerHTML = `<i data-lucide="check" class="w-5 h-5"></i>`;
+            btnBallisticToVault.innerHTML = `<i data-lucide="check" class="w-5 h-5 inline-block mr-1"></i> SENT TO INTEL VAULT`;
             if (window.pushTacLog) window.pushTacLog("SOLVER SNAPSHOT SAVED TO INTEL VAULT", "SUCCESS");
             
             setTimeout(() => { btnBallisticToVault.innerHTML = originalText; if (window.lucide) window.lucide.createIcons(); }, 2000);
@@ -9990,7 +10030,7 @@ setTimeout(() => {
                 isGeoTracking = false;
                 if (geoTrackWatchId !== null) navigator.geolocation.clearWatch(geoTrackWatchId);
                 
-                trackBtn.innerHTML = '<i data-lucide="loader" class="w-3 h-3 animate-spin"></i> SAVING...';
+                trackBtn.innerHTML = '<i data-lucide="loader-2" class="w-3 h-3 animate-spin inline-block mr-1"></i> SAVING...';
                 trackBtn.classList.remove('animate-pulse');
                 if (window.lucide) window.lucide.createIcons();
                 
@@ -10457,7 +10497,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (checkedBoxes.length === 0) return;
 
                 const originalText = vaultBtnTop.innerHTML;
-                vaultBtnTop.innerHTML = `<i data-lucide="loader" class="w-4 h-4 animate-spin"></i> SENDING...`;
+                vaultBtnTop.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 animate-spin inline-block mr-1"></i> SAVING...`;
                 if (window.lucide) window.lucide.createIcons();
 
                 const inv = getCalendarInventory();
@@ -10482,7 +10522,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
                 
                 setTimeout(() => {
-                    vaultBtnTop.innerHTML = `<i data-lucide="check" class="w-4 h-4"></i> SENT (${sentCount})`;
+                    vaultBtnTop.innerHTML = `<i data-lucide="check" class="w-4 h-4 inline-block mr-1"></i> SENT TO INTEL VAULT (${sentCount})`;
                     if (window.pushTacLog) window.pushTacLog(`SENT ${sentCount} CALENDARS TO VAULT`, "SUCCESS");
                     
                     checkedBoxes.forEach(box => box.checked = false);
@@ -10524,11 +10564,26 @@ document.addEventListener('DOMContentLoaded', () => {
                 const targetEl = document.getElementById('calendar-snapshot-target');
                 if(!targetEl) throw new Error("Snapshot target not found");
                 
-                const canvas = await html2canvas(targetEl, {
+                // FIX: html2canvas captures position: sticky elements at their scrolled offset.
+                // Scroll to 0 first so the header is naturally at the top.
+                const scrollParent = targetEl.parentElement;
+                const originalScrollTop = scrollParent ? scrollParent.scrollTop : 0;
+                if (scrollParent) scrollParent.scrollTop = 0;
+                
+                const canvas = await window.html2canvas(targetEl, {
                     backgroundColor: '#0f172a', // slate-900
-                    scale: 1.5,
+                    scale: Math.max(window.devicePixelRatio || 2, 2),
                     logging: false,
+                    windowWidth: targetEl.scrollWidth,
+                    windowHeight: targetEl.scrollHeight,
                     onclone: (clonedDoc) => {
+                        const clonedTarget = clonedDoc.getElementById('calendar-snapshot-target');
+                        if (clonedTarget) {
+                            clonedTarget.style.height = 'max-content';
+                            clonedTarget.style.width = targetEl.offsetWidth + 'px';
+                            clonedTarget.style.overflow = 'visible';
+                        }
+                        
                         Array.from(targetEl.querySelectorAll('textarea')).forEach(originalTa => {
                             if (!originalTa.id) return;
                             const cloneTa = clonedDoc.getElementById(originalTa.id);
@@ -10545,6 +10600,9 @@ document.addEventListener('DOMContentLoaded', () => {
                         });
                     }
                 });
+                
+                // Restore scroll
+                if (scrollParent) scrollParent.scrollTop = originalScrollTop;
                 
                 const imgData = canvas.toDataURL('image/jpeg', 0.85);
                 const timestamp = Date.now();

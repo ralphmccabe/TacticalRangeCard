@@ -10,6 +10,7 @@ const licenseToVaultBtnTop = document.getElementById('license-to-vault-btn-top')
 
 let currentLicenseImage = null;
 let activeLicenseId = null;
+let selectedLicenseId = null;
 let currentLicenseType = 'hunting'; // 'hunting' | 'fishing' | 'both' | 'id'
 
 // ============================================================
@@ -40,18 +41,34 @@ openLicenseBtns.forEach(btn => {
 window.setLicenseType = function(type) {
     currentLicenseType = type;
     const types = ['hunting', 'fishing', 'both', 'id'];
-    const activeStyles = {
-        hunting: 'bg-green-700 text-white border-green-500',
-        fishing: 'bg-blue-700 text-white border-blue-500',
-        both:    'bg-amber-600 text-white border-amber-400',
-        id:      'bg-gray-600 text-white border-gray-400'
+    const activeColors = {
+        hunting: { bg: '#15803d', text: 'white', border: '#22c55e' }, // green
+        fishing: { bg: '#1d4ed8', text: 'white', border: '#3b82f6' }, // blue
+        both:    { bg: '#d97706', text: 'white', border: '#fbbf24' }, // amber
+        id:      { bg: '#4b5563', text: 'white', border: '#9ca3af' }  // gray
     };
-    const inactiveStyle = 'text-gray-500 border-transparent hover:text-white';
 
     types.forEach(t => {
         const btn = document.getElementById(`license-type-${t}`);
         if (!btn) return;
-        btn.className = `flex-1 py-2 text-[10px] font-black uppercase tracking-widest rounded border transition-all ${t === type ? activeStyles[type] : inactiveStyle}`;
+        
+        btn.className = 'flex-1 py-2 text-[10px] font-black uppercase tracking-widest rounded border transition-all';
+        
+        if (t === type) {
+            btn.style.backgroundColor = activeColors[type].bg;
+            btn.style.color = activeColors[type].text;
+            btn.style.borderColor = activeColors[type].border;
+            btn.style.boxShadow = '0 0 10px rgba(255,255,255,0.1)';
+        } else {
+            btn.style.backgroundColor = 'transparent';
+            btn.style.color = '#6b7280'; // gray-500
+            btn.style.borderColor = 'transparent';
+            btn.style.boxShadow = 'none';
+        }
+        
+        // Add hover effect via mouse events
+        btn.onmouseenter = () => { if (currentLicenseType !== t) btn.style.color = 'white'; };
+        btn.onmouseleave = () => { if (currentLicenseType !== t) btn.style.color = '#6b7280'; };
     });
 
     // Update the hidden render zone type label
@@ -66,6 +83,7 @@ window.setLicenseType = function(type) {
 function clearLicenseForm() {
     currentLicenseImage = null;
     activeLicenseId = null;
+    selectedLicenseId = null;
     if (licenseImageUpload) licenseImageUpload.value = '';
 
     const previewImg   = document.getElementById('license-form-preview-img');
@@ -180,7 +198,7 @@ async function renderLicenseLibrary() {
         const typeBorder = { hunting: 'border-green-700', fishing: 'border-blue-700', both: 'border-amber-700', id: 'border-gray-700' };
 
         all.forEach(lic => {
-            const isActive   = activeLicenseId === lic.id;
+            const isActive   = selectedLicenseId === lic.id;
             const tColor  = typeColor[lic.type]  || 'text-green-400';
             const tBorder = typeBorder[lic.type] || 'border-green-700';
 
@@ -191,9 +209,8 @@ async function renderLicenseLibrary() {
 
             card.innerHTML = `
                 <div class="absolute top-2 left-2 z-30 bg-black/60 p-1 rounded pointer-events-auto">
-                    <input type="checkbox" class="w-4 h-4 cursor-pointer accent-green-500"
-                        ${isActive ? 'checked' : ''}
-                        onclick="event.stopPropagation(); window.selectLicense('${lic.id}')">
+                    <input type="checkbox" aria-label="Select License" class="w-4 h-4 cursor-pointer accent-green-500"
+                           ${isActive ? 'checked' : ''} onclick="event.stopPropagation(); window.selectLicense('${lic.id}')">
                 </div>
                 <div class="pl-8 flex items-center justify-between mb-2 pointer-events-none">
                     <div class="font-black ${tColor} text-[10px] uppercase tracking-widest truncate max-w-[130px]">${lic.name || 'NO NAME'}</div>
@@ -236,8 +253,8 @@ async function renderLicenseLibrary() {
 // ============================================================
 window.selectLicense = async function(licId) {
     licId = String(licId);
-    if (activeLicenseId === licId) {
-        activeLicenseId = null;
+    if (selectedLicenseId === licId) {
+        selectedLicenseId = null;
         renderLicenseLibrary();
         if (reworkLicenseBtn)    reworkLicenseBtn.classList.add('hidden');
         if (licenseToVaultBtnTop) licenseToVaultBtnTop.classList.add('hidden');
@@ -245,7 +262,7 @@ window.selectLicense = async function(licId) {
     }
     const lic = await window.TRC_IDB.get('licenseLibrary', licId);
     if (!lic) return;
-    activeLicenseId = lic.id;
+    selectedLicenseId = lic.id;
     renderLicenseLibrary();
     if (reworkLicenseBtn)    reworkLicenseBtn.classList.remove('hidden');
     if (licenseToVaultBtnTop) licenseToVaultBtnTop.classList.remove('hidden');
@@ -254,10 +271,13 @@ window.selectLicense = async function(licId) {
 window.deleteLicense = async function(id) {
     if (confirm('Delete this license/ID permanently?')) {
         await window.TRC_IDB.delete('licenseLibrary', id);
-        if (activeLicenseId === id) {
-            activeLicenseId = null;
+        if (selectedLicenseId === id) {
+            selectedLicenseId = null;
             if (reworkLicenseBtn)    reworkLicenseBtn.classList.add('hidden');
             if (licenseToVaultBtnTop) licenseToVaultBtnTop.classList.add('hidden');
+        }
+        if (activeLicenseId === id) {
+            activeLicenseId = null;
         }
         renderLicenseLibrary();
     }
@@ -310,10 +330,11 @@ window.loadLicenseBackToEditor = function(lic) {
 // ============================================================
 if (reworkLicenseBtn) {
     reworkLicenseBtn.addEventListener('click', async () => {
-        if (!activeLicenseId) return;
-        const lic = await window.TRC_IDB.get('licenseLibrary', activeLicenseId);
+        if (!selectedLicenseId) return;
+        const lic = await window.TRC_IDB.get('licenseLibrary', selectedLicenseId);
         if (!lic) return;
         window.loadLicenseBackToEditor(lic);
+        selectedLicenseId = null;
         activeLicenseId = null;
         renderLicenseLibrary();
         if (window.showToast) window.showToast('License loaded for rework.');
@@ -325,13 +346,13 @@ if (reworkLicenseBtn) {
 // ============================================================
 if (licenseToVaultBtnTop) {
     licenseToVaultBtnTop.addEventListener('click', async () => {
-        if (!activeLicenseId) return;
-        const lic = await window.TRC_IDB.get('licenseLibrary', activeLicenseId);
+        if (!selectedLicenseId) return;
+        const lic = await window.TRC_IDB.get('licenseLibrary', selectedLicenseId);
         if (!lic) return;
 
         const originalHtml = licenseToVaultBtnTop.innerHTML;
         licenseToVaultBtnTop.disabled = true;
-        licenseToVaultBtnTop.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin inline-block mr-1"></i> ENCRYPTING...';
+        licenseToVaultBtnTop.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin inline-block mr-1"></i> SAVING...';
         if (window.lucide) window.lucide.createIcons();
 
         // Populate render zone
@@ -387,8 +408,14 @@ if (licenseToVaultBtnTop) {
                     { type: 'license-card', isAmmo: false, licenseData: lic }
                 );
                 
-                licenseToVaultBtnTop.innerHTML = '<i data-lucide="check" class="w-4 h-4 inline-block mr-1"></i> SAVED!';
+                licenseToVaultBtnTop.innerHTML = '<i data-lucide="check" class="w-4 h-4 inline-block mr-1"></i> SENT TO INTEL VAULT';
                 if (window.lucide) window.lucide.createIcons();
+                
+                setTimeout(() => {
+                    licenseToVaultBtnTop.disabled = false;
+                    licenseToVaultBtnTop.innerHTML = originalHtml;
+                    if (window.lucide) window.lucide.createIcons();
+                }, 2000);
                 
                 if (window.showToast) window.showToast('✅ License Saved to Intel Vault!');
                 else if (window.pushTacLog) window.pushTacLog('LICENSE SENT TO INTEL VAULT', 'SUCCESS');
@@ -398,14 +425,14 @@ if (licenseToVaultBtnTop) {
         } catch(err) {
             console.error('License capture failed:', err);
             alert('Capture failed: ' + err.message);
+            licenseToVaultBtnTop.disabled  = false;
+            licenseToVaultBtnTop.innerHTML = originalHtml;
+            if (window.lucide) window.lucide.createIcons();
         } finally {
             if (originalParent) originalParent.insertBefore(renderZone, originalNextSibling);
             renderZone.style.position = 'fixed';
             renderZone.style.top      = '-9999px';
             renderZone.style.zIndex   = '-9999';
-            licenseToVaultBtnTop.disabled  = false;
-            licenseToVaultBtnTop.innerHTML = originalHtml;
-            if (window.lucide) window.lucide.createIcons();
         }
     });
 }
@@ -435,13 +462,14 @@ if (vaultToLicenseBtn) {
 
         // If this is a saved license card, load it back fully
         if (item.type === 'license-card' && item.licenseData) {
+            if (!item.licenseData.image) item.licenseData.image = item.image;
             window.loadLicenseBackToEditor(item.licenseData);
             return;
         }
 
         // If it's a plain photo, pre-load the image and open fresh
         if (!item.type || item.type === 'photo') {
-            clearLicenseForm();
+            window.openLicenseModal();
             currentLicenseImage = item.image;
             const previewImg   = document.getElementById('license-form-preview-img');
             const previewIcon  = document.getElementById('license-form-preview-icon');
@@ -449,7 +477,6 @@ if (vaultToLicenseBtn) {
             if (previewImg)   { previewImg.src = item.image; previewImg.classList.remove('hidden'); }
             if (previewIcon)  previewIcon.style.opacity = '0.3';
             if (previewLabel) previewLabel.innerText = 'CHANGE PHOTO';
-            window.openLicenseModal();
             return;
         }
 

@@ -5,14 +5,15 @@
  */
 
 const DB_NAME = 'TRC_PRO_UPGRADE_DB';
-const DB_VERSION = 8; // v8: Added licenseLibrary store for Hunting/Fishing License cards
+const DB_VERSION = 9; // v9: Added workstationLibrary store
 const STORES = {
     PROFILES: 'rangeCardProfiles',
     VAULT: 'intelVault',
     DRAFTS: 'drafts',
     BOLO: 'boloLibrary',
     GAMETAG: 'gameTagLibrary',
-    LICENSE: 'licenseLibrary' // Hunting/Fishing License & ID cards
+    LICENSE: 'licenseLibrary', // Hunting/Fishing License & ID cards
+    WORKSTATION: 'workstationLibrary'
 };
 
 const idb = {
@@ -42,6 +43,9 @@ const idb = {
                 }
                 if (!db.objectStoreNames.contains(STORES.LICENSE)) {
                     db.createObjectStore(STORES.LICENSE);
+                }
+                if (!db.objectStoreNames.contains(STORES.WORKSTATION)) {
+                    db.createObjectStore(STORES.WORKSTATION);
                 }
             };
 

@@ -12,6 +12,7 @@ const gametagToVaultBtnTop = document.getElementById('gametag-to-vault-btn-top')
 
 let currentGametagImage = null;
 let activeGametagId = null;
+let selectedGametagId = null;
 let currentGametagType = 'game'; // 'game' or 'fish'
 
 window.closeGameTagModal = function() {
@@ -52,14 +53,24 @@ window.setGameTagType = function(type) {
     const fieldsFish = document.getElementById('gametag-fields-fish');
     
     if (type === 'game') {
-        btnGame.className = 'flex-1 py-2 text-xs font-black uppercase tracking-widest bg-amber-600 text-white rounded transition-all';
+        btnGame.className = 'flex-1 py-2 text-xs font-black uppercase tracking-widest rounded transition-all';
+        btnGame.style.backgroundColor = '#f59e0b'; // amber-500
+        btnGame.style.color = '#451a03'; // amber-950
+        
         btnFish.className = 'flex-1 py-2 text-xs font-black uppercase tracking-widest text-gray-500 hover:text-white rounded transition-all';
+        btnFish.style.backgroundColor = 'transparent';
+        
         fieldsGame.classList.remove('hidden');
         fieldsFish.classList.add('hidden');
         document.getElementById('gametag-render-type-label').innerText = 'FIELD HARVEST TAG';
     } else {
-        btnFish.className = 'flex-1 py-2 text-xs font-black uppercase tracking-widest bg-blue-600 text-white rounded transition-all';
+        btnFish.className = 'flex-1 py-2 text-xs font-black uppercase tracking-widest rounded transition-all';
+        btnFish.style.backgroundColor = '#3b82f6'; // blue-500
+        btnFish.style.color = 'white';
+        
         btnGame.className = 'flex-1 py-2 text-xs font-black uppercase tracking-widest text-gray-500 hover:text-white rounded transition-all';
+        btnGame.style.backgroundColor = 'transparent';
+        
         fieldsFish.classList.remove('hidden');
         fieldsGame.classList.add('hidden');
         document.getElementById('gametag-render-type-label').innerText = 'FISHING RECORD TAG';
@@ -92,6 +103,7 @@ if (gametagImageUpload) {
 function clearGametagForm() {
     currentGametagImage = null;
     activeGametagId = null;
+    selectedGametagId = null;
     gametagImageUpload.value = '';
     
     const previewImg = document.getElementById('gametag-form-preview-img');
@@ -193,14 +205,14 @@ async function renderGametagLibrary() {
         allTags.forEach(tag => {
             const dateStr = tag.date || new Date(tag.timestamp).toLocaleString();
             const displayName = tag.type === 'game' ? (tag.game_species || 'UNKNOWN GAME') : (tag.fish_species || 'UNKNOWN FISH');
-            const isActive = activeGametagId === tag.id;
+            const isActive = selectedGametagId === tag.id;
             
             const card = document.createElement('div');
             card.className = `relative p-3 rounded-lg border-2 cursor-pointer transition-all ${isActive ? 'bg-amber-900/30 border-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.2)]' : 'bg-gray-900/50 border-gray-800 hover:border-gray-600'}`;
             
             card.innerHTML = `
                 <div class="absolute top-2 left-2 z-30 bg-black/60 p-1 rounded pointer-events-auto">
-                    <input type="checkbox" class="w-4 h-4 cursor-pointer bg-black/50 border border-gray-500 rounded text-amber-500 focus:ring-amber-500/50" ${isActive ? 'checked' : ''} onclick="event.stopPropagation(); window.selectGametag('${tag.id}')">
+                    <input type="checkbox" aria-label="Select Game Tag" class="w-4 h-4 cursor-pointer bg-black/50 border border-gray-500 rounded text-amber-500 focus:ring-amber-500/50" ${isActive ? 'checked' : ''} onclick="event.stopPropagation(); window.selectGametag('${tag.id}')">
                 </div>
                 <div class="flex items-start justify-between mb-2 pointer-events-none">
                     <div style="padding-left: 32px;" class="font-black ${tag.type === 'game' ? 'text-amber-500' : 'text-blue-500'} text-[10px] uppercase tracking-widest truncate max-w-[150px]">${displayName}</div>
@@ -242,10 +254,13 @@ async function renderGametagLibrary() {
 window.deleteGametag = async function(id) {
     if(confirm("Delete this tag permanently?")) {
         await window.TRC_IDB.delete('gameTagLibrary', id);
-        if(activeGametagId === id) {
-            activeGametagId = null;
+        if(selectedGametagId === id) {
+            selectedGametagId = null;
             if(reworkGametagBtn) reworkGametagBtn.classList.add('hidden');
             if(gametagToVaultBtnTop) gametagToVaultBtnTop.classList.add('hidden');
+        }
+        if(activeGametagId === id) {
+            activeGametagId = null;
         }
         renderGametagLibrary();
     }
@@ -254,9 +269,9 @@ window.deleteGametag = async function(id) {
 window.selectGametag = async function(tagId) {
     tagId = String(tagId);
     
-    if (activeGametagId === tagId) {
+    if (selectedGametagId === tagId) {
         // Toggle off
-        activeGametagId = null;
+        selectedGametagId = null;
         renderGametagLibrary();
         if(reworkGametagBtn) reworkGametagBtn.classList.add('hidden');
         if(gametagToVaultBtnTop) gametagToVaultBtnTop.classList.add('hidden');
@@ -266,7 +281,7 @@ window.selectGametag = async function(tagId) {
     const tag = await window.TRC_IDB.get('gameTagLibrary', tagId);
     if (!tag) return;
     
-    activeGametagId = tag.id;
+    selectedGametagId = tag.id;
     renderGametagLibrary();
     
     if(reworkGametagBtn) reworkGametagBtn.classList.remove('hidden');
@@ -323,31 +338,30 @@ window.loadGametagBackToEditor = function(tag) {
             previewLabel.classList.add('text-gray-400');
         }
     }
-    
-    if (typeof openGameTagModal === 'function') openGameTagModal();
 };
 
 if(reworkGametagBtn) {
     reworkGametagBtn.addEventListener('click', async () => {
-        if(!activeGametagId) return;
-        const tag = await window.TRC_IDB.get('gameTagLibrary', activeGametagId);
+        if(!selectedGametagId) return;
+        const tag = await window.TRC_IDB.get('gameTagLibrary', selectedGametagId);
         if(!tag) return;
         
         window.loadGametagBackToEditor(tag);
         
+        selectedGametagId = null;
         activeGametagId = null;
     });
 }
 
 if (gametagToVaultBtnTop) {
     gametagToVaultBtnTop.addEventListener('click', async () => {
-        if(!activeGametagId) return;
-        const tag = await window.TRC_IDB.get('gameTagLibrary', activeGametagId);
+        if(!selectedGametagId) return;
+        const tag = await window.TRC_IDB.get('gameTagLibrary', selectedGametagId);
         if(!tag) return;
         
         const originalBtnHtml = gametagToVaultBtnTop.innerHTML;
         gametagToVaultBtnTop.disabled = true;
-        gametagToVaultBtnTop.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> ENCRYPTING...';
+        gametagToVaultBtnTop.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin inline-block mr-1"></i> SAVING...';
         if (window.lucide) window.lucide.createIcons();
         
         document.getElementById('gametag-render-date').innerText = tag.date || 'YYYY-MM-DD';
@@ -381,7 +395,7 @@ if (gametagToVaultBtnTop) {
             if (zone)        { zone.style.background = '#2d3b24'; zone.style.borderColor = '#1a2314'; }
             if (headerStrip) { headerStrip.style.background = '#1a2314'; headerStrip.style.borderBottomColor = '#4a6030'; }
             if (titleBar)    { titleBar.style.background = '#1e2d18'; titleBar.style.borderBottomColor = '#3a4a2a'; }
-            if (subtitle)    { subtitle.style.color = '#8ab040'; subtitle.innerText = 'FIELD TAG \u2014 WILDLIFE DOCUMENTATION'; }
+            if (subtitle)    { subtitle.color = '#8ab040'; subtitle.innerText = 'FIELD TAG \u2014 WILDLIFE DOCUMENTATION'; }
             if (dot)         { dot.style.background = '#8ab040'; dot.style.boxShadow = '0 0 6px rgba(138,176,64,0.6)'; }
             if (typeLbl)     typeLbl.innerText = 'FIELD HARVEST TAG';
             if (titleLbl)    titleLbl.innerText = 'OFFICIAL HARVEST RECORD';
@@ -405,7 +419,7 @@ if (gametagToVaultBtnTop) {
             if (zone)        { zone.style.background = '#0c1f2e'; zone.style.borderColor = '#071521'; }
             if (headerStrip) { headerStrip.style.background = '#071521'; headerStrip.style.borderBottomColor = '#0e4d6b'; }
             if (titleBar)    { titleBar.style.background = '#0a1c2a'; titleBar.style.borderBottomColor = '#0e4d6b'; }
-            if (subtitle)    { subtitle.style.color = '#38bdf8'; subtitle.innerText = 'CATCH RECORD \u2014 AQUATIC DOCUMENTATION'; }
+            if (subtitle)    { subtitle.color = '#38bdf8'; subtitle.innerText = 'CATCH RECORD \u2014 AQUATIC DOCUMENTATION'; }
             if (dot)         { dot.style.background = '#38bdf8'; dot.style.boxShadow = '0 0 6px rgba(56,189,248,0.7)'; }
             if (typeLbl)     typeLbl.innerText = 'FISHING RECORD TAG';
             if (titleLbl)    titleLbl.innerText = 'OFFICIAL CATCH RECORD';
@@ -421,65 +435,43 @@ if (gametagToVaultBtnTop) {
             licenseVal.innerText = tag.fish_bait || 'N/A';
         }
 
-        // ── Dynamic QR Code: encode real card data ──
         const qrImg = document.getElementById('gametag-render-qr');
         if (qrImg) {
             const isGame = tag.type === 'game';
             const tagDate = tag.date
                 ? new Date(tag.date).toLocaleDateString('en-US', { year:'numeric', month:'short', day:'numeric' })
                 : new Date().toLocaleDateString('en-US', { year:'numeric', month:'short', day:'numeric' });
-
-            let qrText;
-            if (isGame) {
-                qrText = [
-                    '=== TRC FIELD HARVEST TAG ===',
-                    'SPECIES : ' + (tag.game_species  || 'N/A').toUpperCase(),
-                    'SEX/CLASS: ' + (tag.game_sex      || 'N/A').toUpperCase(),
-                    'LICENSE # : ' + (tag.game_license  || 'N/A').toUpperCase(),
-                    'ANTLER PTS: ' + (tag.game_points   || 'N/A'),
-                    'SPREAD    : ' + (tag.game_spread   || 'N/A'),
-                    'GPS       : ' + (tag.gps           || 'N/A'),
-                    'DATE      : ' + tagDate,
-                    tag.notes ? 'NOTES: ' + tag.notes : '',
-                    '===========================',
-                    'UNOFFICIAL — FOR TRC LOGGING'
-                ].filter(Boolean).join('\n');
-            } else {
-                qrText = [
-                    '=== TRC FISHING RECORD TAG ===',
-                    'SPECIES   : ' + (tag.fish_species || 'N/A').toUpperCase(),
-                    'WATER BODY: ' + (tag.fish_water   || 'N/A').toUpperCase(),
-                    'LURE/BAIT : ' + (tag.fish_bait    || 'N/A').toUpperCase(),
-                    'LENGTH    : ' + (tag.fish_length   || 'N/A') + ' IN',
-                    'WEIGHT    : ' + (tag.fish_weight   || 'N/A') + ' LBS',
-                    'GPS       : ' + (tag.gps           || 'N/A'),
-                    'DATE      : ' + tagDate,
-                    tag.notes ? 'NOTES: ' + tag.notes : '',
-                    '==============================',
-                    'UNOFFICIAL — FOR TRC LOGGING'
-                ].filter(Boolean).join('\n');
+            
+            const qrData = isGame
+                ? `TRC FIELD TAG\nDate: ${tagDate}\nSpecies: ${tag.game_species || 'UNKNOWN'}\nSex: ${tag.game_sex || 'N/A'}\nLic/Tag: ${tag.game_license || 'N/A'}`
+                : `TRC CATCH REC\nDate: ${tagDate}\nSpecies: ${tag.fish_species || 'UNKNOWN'}\nWater: ${tag.fish_water || 'N/A'}\nLure: ${tag.fish_bait || 'N/A'}`;
+            
+            try {
+                if (window.qrcodegen) {
+                    const qr = window.qrcodegen.QrCode.encodeText(qrData, window.qrcodegen.QrCode.Ecc.MEDIUM);
+                    qrImg.src = qrToDataURL(qr, 4, '#ffffff', '#000000');
+                }
+            } catch (err) {
+                console.warn("Could not generate Gametag QR", err);
             }
-
-            qrImg.src = 'https://api.qrserver.com/v1/create-qr-code/?size=120x120&margin=2&data='
-                        + encodeURIComponent(qrText);
         }
 
-        if(tag.image) {
-            if(gametagRenderImg) {
-                gametagRenderImg.src = tag.image;
-                gametagRenderImg.style.display = 'block';
-                gametagRenderImg.classList.remove('hidden');
+        const renderImg = document.getElementById('gametag-render-img');
+        const imgIcon = document.getElementById('gametag-render-img-icon');
+        if (tag.image) {
+            if (renderImg) {
+                renderImg.src = tag.image;
+                renderImg.classList.remove('hidden');
             }
-            if(gametagImagePlaceholder) gametagImagePlaceholder.style.display = 'none';
+            if (imgIcon) imgIcon.classList.add('hidden');
         } else {
-            if(gametagRenderImg) {
-                gametagRenderImg.style.display = 'none';
-                gametagRenderImg.classList.add('hidden');
-            }
-            if(gametagImagePlaceholder) gametagImagePlaceholder.style.display = 'block';
+            if (renderImg) renderImg.classList.add('hidden');
+            if (imgIcon) imgIcon.classList.remove('hidden');
         }
-
+        
         const renderZone = document.getElementById('gametag-poster-render-zone');
+        if (!renderZone) return;
+        
         const originalParent = renderZone.parentNode;
         const originalNextSibling = renderZone.nextSibling;
         const originalPosition = renderZone.style.position;
@@ -487,40 +479,55 @@ if (gametagToVaultBtnTop) {
         const originalTop = renderZone.style.top;
         const originalZIndex = renderZone.style.zIndex;
         
-        document.body.appendChild(renderZone);
-        renderZone.style.position = 'fixed';
-        renderZone.style.left = '0';
-        renderZone.style.top = '0';
-        renderZone.style.zIndex = '-9999';
-
         try {
-            await new Promise(r => setTimeout(r, 600)); // Increase wait time for image paint
+            renderZone.style.position = 'fixed';
+            renderZone.style.left = '0';
+            renderZone.style.top = '0';
+            renderZone.style.zIndex = '999999';
+            document.body.appendChild(renderZone);
             
-            const canvas = await html2canvas(renderZone, {
-                backgroundColor: '#3E4A35',
-                scale: 2, 
-                logging: false,
-                useCORS: true,
-                allowTaint: false
-            });
+            await new Promise(r => setTimeout(r, 600));
             
-            const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
+            if (!window.html2canvas && window.loadScript) {
+                await window.loadScript('html2canvas.min.js');
+            }
             
-            if (window.saveIntelSnapshot) {
-                await window.saveIntelSnapshot('HARVEST: ' + speciesVal.innerText, dataUrl, {
-                    type: 'gametag-card',
-                    isAmmo: false,
-                    gametagData: tag
+            if (window.html2canvas) {
+                const canvas = await window.html2canvas(renderZone, {
+                    backgroundColor: '#3E4A35',
+                    scale: 2, 
+                    logging: false,
+                    useCORS: true,
+                    allowTaint: false
                 });
                 
-                if (window.showToast) window.showToast("✅ Field Tag Saved to Intel Vault!");
-                else alert("Field Tag Sent to Intel Vault!");
-                // Stay in the form — user can create another tag immediately
-
+                const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
+                
+                if (window.saveIntelSnapshot) {
+                    await window.saveIntelSnapshot('HARVEST: ' + speciesVal.innerText, dataUrl, {
+                        type: 'gametag-card',
+                        isAmmo: false,
+                        gametagData: tag
+                    });
+                    
+                    if (window.showToast) window.showToast("✅ Field Tag Saved to Intel Vault!");
+                    
+                    gametagToVaultBtnTop.innerHTML = '<i data-lucide="check" class="w-4 h-4 inline-block mr-1"></i> SENT TO INTEL VAULT';
+                    if (window.lucide) window.lucide.createIcons();
+                    
+                    setTimeout(() => {
+                        gametagToVaultBtnTop.disabled = false;
+                        gametagToVaultBtnTop.innerHTML = originalBtnHtml;
+                        if (window.lucide) window.lucide.createIcons();
+                    }, 2000);
+                }
             }
         } catch (error) {
             console.error("Tag Capture failed: ", error);
             alert("Capture failed.");
+            gametagToVaultBtnTop.disabled = false;
+            gametagToVaultBtnTop.innerHTML = originalBtnHtml;
+            if (window.lucide) window.lucide.createIcons();
         } finally {
             if (originalParent) {
                 originalParent.insertBefore(renderZone, originalNextSibling);
@@ -529,29 +536,12 @@ if (gametagToVaultBtnTop) {
             renderZone.style.left = originalLeft;
             renderZone.style.top = originalTop;
             renderZone.style.zIndex = originalZIndex;
-            
-            gametagToVaultBtnTop.disabled = false;
-            gametagToVaultBtnTop.innerHTML = originalBtnHtml;
-            if (window.lucide) window.lucide.createIcons();
         }
     });
 }
 
 window.loadPhotoToGametag = function(imageUri) {
-    document.getElementById('gametag-input-date').value = '';
-    document.getElementById('gametag-input-gps').value = '';
-    document.getElementById('gametag-input-notes').value = '';
-    document.getElementById('gametag-input-game-species').value = '';
-    document.getElementById('gametag-input-game-sex').value = '';
-    document.getElementById('gametag-input-game-weapon').value = '';
-    document.getElementById('gametag-input-game-license').value = '';
-    document.getElementById('gametag-input-game-points').value = '';
-    document.getElementById('gametag-input-game-spread').value = '';
-    document.getElementById('gametag-input-fish-species').value = '';
-    document.getElementById('gametag-input-fish-water').value = '';
-    document.getElementById('gametag-input-fish-length').value = '';
-    document.getElementById('gametag-input-fish-weight').value = '';
-    document.getElementById('gametag-input-fish-bait').value = '';
+    if (typeof openGameTagModal === 'function') openGameTagModal();
     currentGametagImage = imageUri;
     const previewImg = document.getElementById('gametag-form-preview-img');
     const previewIcon = document.getElementById('gametag-form-preview-icon');
@@ -564,7 +554,6 @@ window.loadPhotoToGametag = function(imageUri) {
     if(previewLabel) previewLabel.innerText = 'CHANGE PHOTO';
     activeGametagId = null;
     renderGametagLibrary();
-    if (typeof openGameTagModal === 'function') openGameTagModal();
 };
 const vaultToGametagBtn = document.getElementById('vault-to-gametag-btn');
 if (vaultToGametagBtn) {
@@ -584,14 +573,18 @@ if (vaultToGametagBtn) {
         if (!item) return;
         
         if (item.type === 'gametag-card' && item.gametagData) {
+            if (gameTagModal) {
+                gameTagModal.classList.remove('hidden');
+                gameTagModal.classList.add('flex');
+            }
             if (window.loadGametagBackToEditor) {
+                if (!item.gametagData.image) item.gametagData.image = item.image;
                 window.loadGametagBackToEditor(item.gametagData);
             }
-            const panel = document.getElementById('panel-vault');
-            if (panel && panel.classList.contains('is-maximized')) {
-                window.toggleFullscreen('panel-vault');
-            }
-            if (panel) panel.classList.add('hidden');
+            const vaultModal = document.getElementById('vault-modal-overlay');
+            if (vaultModal) vaultModal.classList.add('hidden');
+            const checkedBoxes = document.querySelectorAll('.vault-export-checkbox:checked');
+            checkedBoxes.forEach(cb => cb.checked = false);
             return;
         }
         
