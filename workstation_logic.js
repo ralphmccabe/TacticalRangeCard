@@ -16,19 +16,47 @@ document.addEventListener('DOMContentLoaded', () => {
     if (vaultToWorkstationBtn) {
         vaultToWorkstationBtn.addEventListener('click', (e) => {
             e.stopPropagation();
-            if (typeof toggleFullscreen === 'function') {
-                toggleFullscreen('panel-workstation');
+            
+            const checkedBoxes = document.querySelectorAll('.vault-export-checkbox:checked');
+            if (checkedBoxes.length !== 1) {
+                if (typeof toggleFullscreen === 'function') toggleFullscreen('panel-workstation');
+                return;
+            }
+            
+            const vaultId = checkedBoxes[0].dataset.vaultId;
+            let item = null;
+            if (typeof vaultCache !== 'undefined') {
+                item = vaultCache.find(v => v.id.toString() === vaultId.toString());
+            }
+            
+            if (item) {
+                if (item.type === 'workstation' && item.workstationData) {
+                    // Directly rework existing workstation card
+                    if (typeof toggleFullscreen === 'function') toggleFullscreen('panel-workstation');
+                    // Sync it to local library just in case
+                    if (window.TRC_IDB) {
+                        window.TRC_IDB.set('workstationLibrary', item.workstationData.id, item.workstationData).then(() => {
+                            window.loadWorkstationCard(item.workstationData.id);
+                        });
+                    } else {
+                        window.loadWorkstationCard(item.workstationData.id);
+                    }
+                } else if (item.image) {
+                    // Send raw image to Workstation for a new card
+                    window.pendingWorkstationVaultImage = item.image;
+                    if (typeof toggleFullscreen === 'function') toggleFullscreen('panel-workstation');
+                    window.renderWorkstationMenu(); // Go to menu to choose form type
+                    if (typeof pushTacLog === 'function') pushTacLog('IMAGE ROUTING ACTIVE. SELECT A FORM.', 'SUCCESS');
+                }
+                
+                // Uncheck the box in the vault
+                checkedBoxes[0].checked = false;
             }
         });
     }
 });
 
-// Main menu renderer
-window.renderWorkstationMenu = async function() {
-    const container = document.getElementById('workstation-container');
-    if (!container) return;
-
-    // Fetch existing workstation intel to show in the library at the bottom
+window.generateWorkstationLibraryHtml = async function() {
     let savedCardsHtml = '';
     if (window.TRC_IDB) {
         try {
@@ -40,9 +68,14 @@ window.renderWorkstationMenu = async function() {
                     <div class="mt-8 w-full border-t border-gray-800 pt-6 relative">
                         <div class="flex items-center justify-between mb-4">
                             <h3 class="text-xs font-black text-gray-500 uppercase tracking-widest"><i data-lucide="archive" class="w-4 h-4 inline-block mr-1"></i> Saved Operations Intel</h3>
-                            <button id="ws-brag-btn" onclick="openBragBoardStudio()" class="hidden bg-purple-600 text-white text-[10px] font-black px-3 py-1.5 rounded hover:bg-purple-500 transition-all shadow-[0_0_10px_rgba(147,51,234,0.5)] items-center gap-1">
-                                <i data-lucide="camera" class="w-3 h-3"></i> GENERATE BRAG BOARD (<span id="ws-brag-count">0</span>)
-                            </button>
+                            <div class="flex items-center gap-2">
+                                <button id="ws-rework-btn" onclick="reworkSelectedWsCard()" class="hidden bg-emerald-600 text-white text-[10px] font-black px-3 py-1.5 rounded hover:bg-emerald-500 transition-all shadow-[0_0_10px_rgba(16,185,129,0.5)] items-center gap-1">
+                                    <i data-lucide="monitor" class="w-3 h-3"></i> REWORK
+                                </button>
+                                <button id="ws-brag-btn" onclick="openBragBoardStudio()" class="hidden bg-purple-600 text-white text-[10px] font-black px-3 py-1.5 rounded hover:bg-purple-500 transition-all shadow-[0_0_10px_rgba(147,51,234,0.5)] items-center gap-1">
+                                    <i data-lucide="camera" class="w-3 h-3"></i> GENERATE BRAG BOARD (<span id="ws-brag-count">0</span>)
+                                </button>
+                            </div>
                         </div>
                         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">`;
                 
@@ -55,8 +88,9 @@ window.renderWorkstationMenu = async function() {
                     else if (card.type === 'roster') { icon = 'users'; color = 'text-blue-500'; }
                     else if (card.type === 'bragboard') { icon = 'camera'; color = 'text-purple-500'; }
 
-                    const thumbHtml = card.image 
-                        ? `<img src="${card.image}" class="w-10 h-10 object-cover rounded border border-gray-700 shrink-0">`
+                    const thumbImg = card.compositeImage || card.image;
+                    const thumbHtml = thumbImg 
+                        ? `<img src="${thumbImg}" class="w-10 h-10 object-cover rounded border border-gray-700 shrink-0">`
                         : `<div class="w-10 h-10 rounded border border-gray-700 bg-gray-900 shrink-0 flex items-center justify-center"><i data-lucide="${icon}" class="w-4 h-4 ${color} opacity-50"></i></div>`;
 
                     savedCardsHtml += `
@@ -90,10 +124,45 @@ window.renderWorkstationMenu = async function() {
             console.error("Failed to load workstation library", e);
         }
     }
+    return savedCardsHtml;
+};
+
+window.refreshWorkstationLibrary = async function() {
+    const libContainer = document.getElementById('ws-form-library');
+    if (libContainer) {
+        libContainer.innerHTML = await window.generateWorkstationLibraryHtml();
+        if (window.lucide) lucide.createIcons();
+    } else {
+        window.renderWorkstationMenu();
+    }
+};
+
+// Main menu renderer
+window.renderWorkstationMenu = async function() {
+    const container = document.getElementById('workstation-container');
+    if (!container) return;
+
+    const savedCardsHtml = await window.generateWorkstationLibraryHtml();
+    
+    let pendingBannerHtml = '';
+    if (window.pendingWorkstationVaultImage) {
+        pendingBannerHtml = `
+            <div class="w-full bg-purple-900/40 border border-purple-500 rounded p-3 mb-2 flex items-center justify-between animate-[pulse_2s_ease-in-out_infinite] shadow-[0_0_15px_rgba(168,85,247,0.4)]">
+                <div class="flex items-center gap-3">
+                    <img src="${window.pendingWorkstationVaultImage}" class="w-12 h-12 object-cover rounded border border-purple-400">
+                    <div>
+                        <div class="text-purple-300 text-[10px] md:text-xs font-black uppercase tracking-widest">Image Routing Active</div>
+                        <div class="text-purple-400/80 text-[8px] md:text-[10px] uppercase">Select any form below to attach this photo</div>
+                    </div>
+                </div>
+                <button onclick="window.pendingWorkstationVaultImage = null; window.renderWorkstationMenu();" class="text-purple-400 hover:text-white px-2 py-1 bg-black/50 rounded border border-purple-500/50 hover:bg-red-900 hover:border-red-500 transition-all text-[8px] font-bold uppercase"><i data-lucide="x" class="w-3 h-3 inline"></i> CANCEL</button>
+            </div>
+        `;
+    }
 
     container.innerHTML = `
         <div class="h-full flex flex-col items-center justify-start space-y-4 max-w-4xl mx-auto w-full">
-            
+            ${pendingBannerHtml}
             <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2 w-full mt-2">
                 <!-- 1. MEDEVAC / INCIDENT -->
                 <button onclick="openWorkstationForm('medevac')" class="bg-gray-900 border border-red-500/50 rounded-lg p-3 flex flex-col items-center justify-center gap-2 hover:bg-gray-800 hover:border-red-500 transition-all group">
@@ -146,7 +215,7 @@ window.renderWorkstationMenu = async function() {
     if (window.lucide) lucide.createIcons();
 };
 
-window.openWorkstationForm = function(type, cardData = null) {
+window.openWorkstationForm = async function(type, cardData = null) {
     const container = document.getElementById('workstation-container');
     if (!container) return;
 
@@ -154,7 +223,13 @@ window.openWorkstationForm = function(type, cardData = null) {
     let formFields = '';
 
     const id = cardData ? cardData.id : Date.now();
-    const existingImage = cardData ? cardData.image : '';
+    let existingImage = cardData ? (cardData.image || '') : '';
+    
+    // Auto-load pending vault image if it's a new card
+    if (!cardData && window.pendingWorkstationVaultImage) {
+        existingImage = window.pendingWorkstationVaultImage;
+        window.pendingWorkstationVaultImage = null; // Clear it after consuming
+    }
 
     if (type === 'medevac') {
         headerIcon = 'activity'; headerColor = 'text-red-500'; headerTitle = '9-LINE MEDEVAC / INCIDENT REPORT';
@@ -240,12 +315,18 @@ window.openWorkstationForm = function(type, cardData = null) {
                 <button onclick="window.clearWorkstationForm()" class="bg-red-950 hover:bg-red-900 text-red-500 font-black text-xs uppercase tracking-widest px-4 py-2.5 rounded transition-all border border-red-900 flex items-center gap-2">
                     <i data-lucide="trash" class="w-4 h-4"></i> CLEAR FORM
                 </button>
-                <button onclick="saveWorkstationCard('${type}', ${id})" class="bg-blue-600 hover:bg-blue-500 text-white font-black text-xs uppercase tracking-widest px-6 py-2.5 rounded shadow-[0_0_10px_rgba(37,99,235,0.5)] transition-all flex items-center gap-2">
+                <button onclick="saveWorkstationCard('${type}', ${id}, this)" class="bg-blue-600 hover:bg-blue-500 text-white font-black text-xs uppercase tracking-widest px-6 py-2.5 rounded shadow-[0_0_10px_rgba(37,99,235,0.5)] transition-all flex items-center gap-2">
                     <i data-lucide="save" class="w-4 h-4"></i> SAVE TO VAULT
                 </button>
             </div>
+            
+            <div id="ws-form-library"></div>
         </div>
     `;
+
+    const libHtml = await window.generateWorkstationLibraryHtml();
+    const libContainer = document.getElementById('ws-form-library');
+    if (libContainer) libContainer.innerHTML = libHtml;
 
     if (window.lucide) lucide.createIcons();
 
@@ -274,7 +355,72 @@ window.clearWsImage = function() {
     document.getElementById('ws-image-upload').value = '';
 };
 
-window.saveWorkstationCard = async function(type, id) {
+window.generateWorkstationCompositeImage = async function(cardData) {
+    if (typeof html2canvas === 'undefined') return cardData.image || '';
+    
+    // Create container
+    const renderZone = document.createElement('div');
+    renderZone.style.position = 'fixed';
+    renderZone.style.left = '-9999px';
+    renderZone.style.top = '0';
+    renderZone.style.zIndex = '-9999';
+    
+    // Build the HTML
+    let fieldsHtml = '';
+    for (const [key, val] of Object.entries(cardData.data)) {
+        const spanTwo = (val && val.length > 50) ? 'grid-column: span 2;' : '';
+        fieldsHtml += `
+            <div style="${spanTwo} margin-bottom: 8px;">
+                <div style="font-size: 10px; color: #9CA3AF; text-transform: uppercase; font-weight: bold; margin-bottom: 2px;">${key.toUpperCase()}</div>
+                <div style="font-size: 14px; color: #E5E7EB; background: #1F2937; padding: 6px; border-radius: 4px; border: 1px solid #374151; word-wrap: break-word; min-height: 20px;">${val || 'N/A'}</div>
+            </div>
+        `;
+    }
+
+    renderZone.innerHTML = `
+        <div style="width: 800px; height: 400px; background-color: #111827; display: flex; color: white; font-family: sans-serif; padding: 20px; box-sizing: border-box; border: 2px solid #374151; border-radius: 12px;">
+            <!-- LEFT: Image -->
+            <div style="width: 360px; height: 100%; border-radius: 8px; overflow: hidden; background-color: #000; display: flex; align-items: center; justify-content: center; border: 1px solid #4B5563; flex-shrink: 0;">
+                ${cardData.image ? `<img src="${cardData.image}" style="width: 100%; height: 100%; object-fit: cover;">` : `<span style="color: #6B7280; font-weight: bold;">NO IMAGE</span>`}
+            </div>
+            
+            <!-- RIGHT: Info -->
+            <div style="flex: 1; padding-left: 20px; display: flex; flex-direction: column;">
+                <div style="border-bottom: 2px solid #374151; padding-bottom: 10px; margin-bottom: 15px;">
+                    <div style="font-size: 14px; font-weight: 900; color: #9CA3AF; letter-spacing: 2px; text-transform: uppercase;">WORKSTATION INTEL: ${cardData.type.toUpperCase()}</div>
+                    <div style="font-size: 24px; font-weight: 900; color: #FFF; text-transform: uppercase; margin-top: 5px;">${cardData.title.split(': ')[1] || cardData.title}</div>
+                    <div style="font-size: 12px; color: #6B7280; margin-top: 5px;">${new Date(cardData.timestamp).toLocaleString()}</div>
+                </div>
+                
+                <div style="flex: 1; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; align-content: start;">
+                    ${fieldsHtml}
+                </div>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(renderZone);
+    
+    try {
+        await new Promise(r => setTimeout(r, 100)); // wait for image load
+        const canvas = await html2canvas(renderZone.children[0], {
+            backgroundColor: '#111827',
+            scale: 2,
+            logging: false,
+            useCORS: true,
+            allowTaint: false
+        });
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
+        document.body.removeChild(renderZone);
+        return dataUrl;
+    } catch(e) {
+        console.error("html2canvas failed", e);
+        document.body.removeChild(renderZone);
+        return cardData.image || '';
+    }
+};
+
+window.saveWorkstationCard = async function(type, id, btn) {
     let data = {};
     let title = '';
 
@@ -327,13 +473,24 @@ window.saveWorkstationCard = async function(type, id) {
         image: document.getElementById('ws-image-data').value || ''
     };
 
+    let originalHtml = '';
+    if (btn) {
+        originalHtml = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<i data-lucide="loader" class="w-4 h-4 animate-spin"></i> GENERATING GRAPHIC...';
+        if (window.lucide) lucide.createIcons();
+    }
+
     try {
+        const compositeImage = await window.generateWorkstationCompositeImage(cardData);
+        cardData.compositeImage = compositeImage;
+
         await window.TRC_IDB.set('workstationLibrary', cardData.id, cardData);
         
         let vaultMetadata = {
             id: cardData.id,
             timestamp: cardData.timestamp,
-            image: cardData.image || '',
+            image: compositeImage || cardData.image || '',
             label: `WORKSTATION: ${cardData.title}`,
             type: 'workstation',
             workstationData: cardData
@@ -346,7 +503,21 @@ window.saveWorkstationCard = async function(type, id) {
         }
 
         window.pushTacLog("WORKSTATION INTEL SAVED TO VAULT", "SUCCESS");
-        renderWorkstationMenu();
+        
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = `<i data-lucide="check" class="w-4 h-4"></i> SAVED TO VAULT!`;
+            btn.classList.remove('bg-blue-600', 'hover:bg-blue-500');
+            btn.classList.add('bg-green-600', 'hover:bg-green-500');
+            setTimeout(() => {
+                btn.innerHTML = originalHtml;
+                btn.classList.add('bg-blue-600', 'hover:bg-blue-500');
+                btn.classList.remove('bg-green-600', 'hover:bg-green-500');
+                if (window.lucide) lucide.createIcons();
+            }, 2000);
+        }
+        
+        window.refreshWorkstationLibrary();
         if (typeof refreshVaultGrid === 'function') refreshVaultGrid();
     } catch (e) {
         console.error("Failed to save workstation card:", e);
@@ -406,7 +577,7 @@ window.deleteWorkstationCard = async function(id) {
             }
         }
         
-        window.renderWorkstationMenu();
+        window.refreshWorkstationLibrary();
     }
 };
 
@@ -414,6 +585,7 @@ window.checkWsCheckboxes = function() {
     const checked = document.querySelectorAll('.ws-library-checkbox:checked');
     const btn = document.getElementById('ws-brag-btn');
     const countSpan = document.getElementById('ws-brag-count');
+    const reworkBtn = document.getElementById('ws-rework-btn');
     
     if (checked.length > 0) {
         if(btn) {
@@ -426,6 +598,33 @@ window.checkWsCheckboxes = function() {
             btn.classList.add('hidden');
             btn.classList.remove('flex');
         }
+    }
+    
+    if (checked.length === 1) {
+        if (reworkBtn) {
+            reworkBtn.classList.remove('hidden');
+            reworkBtn.classList.add('flex');
+        }
+    } else {
+        if (reworkBtn) {
+            reworkBtn.classList.add('hidden');
+            reworkBtn.classList.remove('flex');
+        }
+    }
+};
+
+window.reworkSelectedWsCard = async function() {
+    const checked = document.querySelectorAll('.ws-library-checkbox:checked');
+    if (checked.length === 1) {
+        const id = checked[0].value;
+        if (window.TRC_IDB) {
+            const card = await window.TRC_IDB.get('workstationLibrary', parseInt(id));
+            if (card && card.type === 'bragboard') {
+                alert("Brag Boards are compiled, flattened snapshots and cannot be reworked. To change the layout or text, please select your original cards and generate a new Brag Board.");
+                return;
+            }
+        }
+        window.loadWorkstationCard(id);
     }
 };
 

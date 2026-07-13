@@ -4284,7 +4284,25 @@ function initializeTacticalDashboard2() {
         vaultCache.unshift(entry);
         
         if (window.TRC_IDB) {
-            await TRC_IDB.set('intelVault', entry.id.toString(), entry);
+            await window.TRC_IDB.set('intelVault', entry.id.toString(), entry);
+            
+            // Auto-sync incoming intel to specific libraries so they can be Reworked
+            if (entry.workstationData) {
+                if (!entry.workstationData.image) entry.workstationData.image = dataUri;
+                await window.TRC_IDB.set('workstationLibrary', entry.workstationData.id, entry.workstationData);
+            }
+            if (entry.boloData) {
+                if (!entry.boloData.image) entry.boloData.image = dataUri;
+                await window.TRC_IDB.set('boloLibrary', entry.boloData.id, entry.boloData);
+            }
+            if (entry.licenseData) {
+                if (!entry.licenseData.image) entry.licenseData.image = dataUri;
+                await window.TRC_IDB.set('licenseLibrary', entry.licenseData.id, entry.licenseData);
+            }
+            if (entry.gametagData) {
+                if (!entry.gametagData.image) entry.gametagData.image = dataUri;
+                await window.TRC_IDB.set('gametagLibrary', entry.gametagData.id, entry.gametagData);
+            }
         }
         
         refreshVaultGrid();
@@ -9105,7 +9123,10 @@ function initializeTacticalDashboard2() {
                         if (metadataObj.boloData && metadataObj.boloData.image) delete metadataObj.boloData.image;
                         if (metadataObj.gametagData && metadataObj.gametagData.image) delete metadataObj.gametagData.image;
                         if (metadataObj.licenseData && metadataObj.licenseData.image) delete metadataObj.licenseData.image;
-                        if (metadataObj.workstationData && metadataObj.workstationData.image) delete metadataObj.workstationData.image;
+                        if (metadataObj.workstationData) {
+                            if (metadataObj.workstationData.image) delete metadataObj.workstationData.image;
+                            if (metadataObj.workstationData.compositeImage) delete metadataObj.workstationData.compositeImage;
+                        }
                         
                         const encryptedImage = TacticalCrypto.encrypt({
                             message: "INCOMING SECURE HIGH-RES INTEL",
