@@ -488,43 +488,55 @@ if (gametagToVaultBtnTop) {
             
             await new Promise(r => setTimeout(r, 600));
             
-            if (!window.html2canvas && window.loadScript) {
-                await window.loadScript('html2canvas.min.js');
+            if (!window.html2canvas) {
+                if (typeof window.ensureHtml2Canvas === 'function') {
+                    await window.ensureHtml2Canvas();
+                } else if (window.loadScript) {
+                    await window.loadScript('html2canvas.min.js');
+                }
             }
             
-            if (window.html2canvas) {
-                const canvas = await window.html2canvas(renderZone, {
-                    backgroundColor: '#3E4A35',
-                    scale: 2, 
-                    logging: false,
-                    useCORS: true,
-                    allowTaint: false
+            if (!window.html2canvas) {
+                throw new Error('html2canvas library not loaded');
+            }
+
+            const html2canvasPromise = window.html2canvas(renderZone, {
+                backgroundColor: '#3E4A35',
+                scale: 2, 
+                logging: false,
+                useCORS: true,
+                allowTaint: true
+            });
+            const timeoutPromise = new Promise((_, reject) => 
+                setTimeout(() => reject(new Error('html2canvas render timed out')), 4000)
+            );
+            
+            const canvas = await Promise.race([html2canvasPromise, timeoutPromise]);
+            
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
+            
+            if (window.saveIntelSnapshot) {
+                await window.saveIntelSnapshot('HARVEST: ' + speciesVal.innerText, dataUrl, {
+                    type: 'gametag-card',
+                    isAmmo: false,
+                    gametagData: tag
                 });
                 
-                const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
+                if (window.showToast) window.showToast("✅ Field Tag Saved to Intel Vault!");
                 
-                if (window.saveIntelSnapshot) {
-                    await window.saveIntelSnapshot('HARVEST: ' + speciesVal.innerText, dataUrl, {
-                        type: 'gametag-card',
-                        isAmmo: false,
-                        gametagData: tag
-                    });
-                    
-                    if (window.showToast) window.showToast("✅ Field Tag Saved to Intel Vault!");
-                    
-                    gametagToVaultBtnTop.innerHTML = '<i data-lucide="check" class="w-4 h-4 inline-block mr-1"></i> SENT TO INTEL VAULT';
+                gametagToVaultBtnTop.innerHTML = '<i data-lucide="check" class="w-4 h-4 inline-block mr-1"></i> SENT TO INTEL VAULT';
+                if (window.lucide) window.lucide.createIcons();
+                
+                setTimeout(() => {
+                    gametagToVaultBtnTop.disabled = false;
+                    gametagToVaultBtnTop.innerHTML = originalBtnHtml;
                     if (window.lucide) window.lucide.createIcons();
-                    
-                    setTimeout(() => {
-                        gametagToVaultBtnTop.disabled = false;
-                        gametagToVaultBtnTop.innerHTML = originalBtnHtml;
-                        if (window.lucide) window.lucide.createIcons();
-                    }, 2000);
-                }
+                }, 2000);
             }
         } catch (error) {
             console.error("Tag Capture failed: ", error);
-            alert("Capture failed.");
+            if (window.showToast) window.showToast('⚠️ Capture failed: ' + error.message);
+            else alert("Capture failed: " + error.message);
             gametagToVaultBtnTop.disabled = false;
             gametagToVaultBtnTop.innerHTML = originalBtnHtml;
             if (window.lucide) window.lucide.createIcons();

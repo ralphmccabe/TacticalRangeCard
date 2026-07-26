@@ -1,15 +1,17 @@
-/* TRC-VERSION - v7.27.34 */
-const CACHE_NAME = 'trc-v7.27.34';
+/* TRC-VERSION - v7.27.35 */
+const CACHE_NAME = 'trc-v7.27.35';
 const ASSETS = [
     './',
-    './index.html?v=7.27.7',
+    './index.html?v=7.27.35',
     './style.css?v=1.7',
-    './trc_core.js?v=8.0.11',
+    './trc_core.js?v=7.27.35',
+    './blog_logic.js',
     './manifest.json',
     './icon-512.png',
     './icon-192.png',
     './splash-page.jpg',
-    './workstation_logic.js?v=1.0',
+    './workstation_logic.js?v=7.27.35',
+    './officer_card_logic.js?v=7.27.35',
     './gametag_logic.js?v=1.4',
     './bolo_logic.js?v=1.3',
     './license_logic.js?v=1.5',

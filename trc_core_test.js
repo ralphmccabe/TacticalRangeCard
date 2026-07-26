@@ -709,7 +709,7 @@ function initializeTacticalDashboard1() {
                 libraryList.appendChild(item);
             }
         });
-        if (window.lucide) window.lucide.createIcons();
+        if (window.lucide) lucide.createIcons();
     }
 
     window.previewProfile = function(name) {
@@ -1474,8 +1474,8 @@ function initializeTacticalDashboard1() {
                 scrollY: 0
             })*/setTimeout(() => {
             // FIX: Force Lucide icons to draw before the "camera" clicks
-            if (window.lucide) {
-                window.lucide.createIcons();
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
             }
 
             // NEW CODE STARTS HERE
@@ -1563,7 +1563,7 @@ function initializeTacticalDashboard1() {
                 mobileViewToggle.classList.replace('bg-neon-green', 'bg-gray-800');
                 mobileViewToggle.classList.replace('text-black', 'text-neon-green');
             }
-            if (window.lucide) window.lucide.createIcons();
+            if (window.lucide) lucide.createIcons();
             handleResponsiveScaling();
         };
     }
@@ -1628,7 +1628,7 @@ function initializeTacticalDashboard1() {
                 colorCycleBtn.style.boxShadow = isLightAccent ? 'none' : `0 0 12px rgba(${flavor.rgb}, 0.25), inset 0 0 8px rgba(${flavor.rgb}, 0.05)`;
             };
             
-            if (window.lucide) window.lucide.createIcons();
+            if (window.lucide) lucide.createIcons();
         }
 
         localStorage.setItem('tacticalFlavorIndex', index);
@@ -1853,7 +1853,7 @@ function initializeTacticalDashboard2() {
         const nextName = profileNames[nextIndex];
         if (nextName && window.previewProfile) {
             window.previewProfile(nextName);
-            if (window.lucide) window.lucide.createIcons();
+            if (window.lucide) lucide.createIcons();
         }
     }
 
@@ -1919,7 +1919,7 @@ function initializeTacticalDashboard2() {
                     No saved ammo batches found.
                 </div>
             `;
-            if (window.lucide) window.lucide.createIcons();
+            if (window.lucide) lucide.createIcons();
             return;
         }
 
@@ -2049,7 +2049,7 @@ function initializeTacticalDashboard2() {
             };
         });
 
-        if (window.lucide) window.lucide.createIcons();
+        if (window.lucide) lucide.createIcons();
     }
 
     if (openAmmoLibraryBtn && ammoLibraryModal) {
@@ -3008,7 +3008,7 @@ function initializeTacticalDashboard2() {
                 updateClock();
                 window.dashClockInterval = setInterval(updateClock, 1000);
             }
-            if (window.lucide) window.lucide.createIcons();
+            if (window.lucide) lucide.createIcons();
         });
     }
 
@@ -3025,7 +3025,7 @@ function initializeTacticalDashboard2() {
                 const btn = el.querySelector('.maximize-btn i');
                 if(btn) btn.setAttribute('data-lucide', 'maximize-2');
             });
-            if (window.lucide) window.lucide.createIcons();
+            if(window.lucide) lucide.createIcons();
         });
     }
 
@@ -3116,7 +3116,7 @@ function initializeTacticalDashboard2() {
             }
         }
         
-        if (window.lucide) window.lucide.createIcons();
+        if(window.lucide) lucide.createIcons();
     };
 
     // ------------------------------------------------------------------------
@@ -3185,7 +3185,7 @@ function initializeTacticalDashboard2() {
                                 <p class="text-[8px] font-mono text-gray-500 uppercase tracking-[0.2em]">SECURE INTEL VAULT</p>
                             </div>`;
         }
-        if (window.lucide) window.lucide.createIcons();
+        if(window.lucide) lucide.createIcons();
     }
 
     function refreshDopeCacheGrid() {
@@ -3202,7 +3202,7 @@ function initializeTacticalDashboard2() {
                 <i data-lucide="database" class="w-8 h-8 mx-auto mb-2 opacity-50"></i>
                 Library Empty.<br>Please create & save a Dope Card in main forms first.
             </div>`;
-            if (window.lucide) window.lucide.createIcons();
+            if(window.lucide) lucide.createIcons();
             return;
         }
 
@@ -3260,7 +3260,7 @@ function initializeTacticalDashboard2() {
             
             container.appendChild(card);
         });
-        if (window.lucide) window.lucide.createIcons();
+        if(window.lucide) lucide.createIcons();
         
         // Ensure button starts hidden
         const btn = document.getElementById('dope-to-vault-btn');
@@ -3294,7 +3294,7 @@ function initializeTacticalDashboard2() {
             </div>
         `;
         
-        if (window.lucide) window.lucide.createIcons();
+        if(window.lucide) lucide.createIcons();
         
         // Auto-Minimize back to grid!
         window.toggleFullscreen('panel-dope-select');
@@ -3317,7 +3317,7 @@ function initializeTacticalDashboard2() {
                 <i data-lucide="satellite" class="w-8 h-8 mx-auto mb-2 opacity-50"></i>
                 No Maps Detected.<br>Please construct & save a Recon Map first.
             </div>`;
-            if (window.lucide) window.lucide.createIcons();
+            if(window.lucide) lucide.createIcons();
             return;
         }
 
@@ -3378,7 +3378,7 @@ function initializeTacticalDashboard2() {
 
             container.appendChild(card);
         });
-        if (window.lucide) window.lucide.createIcons();
+        if (window.lucide) lucide.createIcons();
         
         // Ensure button starts hidden
         const btn = document.getElementById('sat-to-vault-btn');
@@ -3412,7 +3412,7 @@ function initializeTacticalDashboard2() {
             </div>
         `;
         
-        if (window.lucide) window.lucide.createIcons();
+        if(window.lucide) lucide.createIcons();
         
         // Auto-Minimize back to grid!
         window.toggleFullscreen('panel-sat-select');
@@ -3524,13 +3524,13 @@ function initializeTacticalDashboard2() {
                         btn.disabled = false;
 
                         // Refresh Lucide for checkmark
-                        if (window.lucide) window.lucide.createIcons();
+                        if(window.lucide) lucide.createIcons();
 
                         // Reset button style back after 5 seconds
                         setTimeout(() => {
                             btn.innerHTML = originalText;
                             btn.className = "mt-3 w-full bg-blue-950/40 hover:bg-blue-900/60 border border-blue-900/60 py-1.5 rounded text-[8px] font-black uppercase text-blue-300 flex items-center justify-center gap-1.5 tracking-[0.15em] transition-all active:scale-95";
-                            if (window.lucide) window.lucide.createIcons();
+                            if(window.lucide) lucide.createIcons();
                         }, 5000);
                     })
                     .catch(err => {
@@ -3539,7 +3539,7 @@ function initializeTacticalDashboard2() {
                         statusEl.className = "text-[7px] font-bold text-red-500 uppercase";
                         btn.innerHTML = `<i data-lucide="alert-triangle" class="w-3 h-3"></i> RETRY SYNC`;
                         btn.disabled = false;
-                        if (window.lucide) window.lucide.createIcons();
+                        if(window.lucide) lucide.createIcons();
                     });
             },
             (error) => {
@@ -3549,7 +3549,7 @@ function initializeTacticalDashboard2() {
                 statusEl.className = "text-[7px] font-bold text-red-500 uppercase";
                 btn.innerHTML = originalText;
                 btn.disabled = false;
-                if (window.lucide) window.lucide.createIcons();
+                if(window.lucide) lucide.createIcons();
             },
             { enableHighAccuracy: true, timeout: 10000 }
         );
@@ -3680,57 +3680,6 @@ function initializeTacticalDashboard2() {
         }
     }
 
-    // ----------------------------------------------------------------
-    // GEO COORDINATE JUMP — parses lat,long from toolbar input
-    // ----------------------------------------------------------------
-    window.geoJumpToCoords = function() {
-        const input = document.getElementById('geo-coord-jump-input') || document.getElementById('geo-jump-input');
-        if (!input) return;
-        const raw = input.value.trim();
-        if (!raw) return;
-
-        // Accept formats: "34.0069, -101.98" or "34.0069 -101.98" or "34.0069,-101.98"
-        const parts = raw.split(/[\s,]+/).filter(Boolean);
-        if (parts.length < 2) {
-            if (window.showToast) window.showToast('⚠ Enter coordinates as: lat, long', 'WARNING');
-            return;
-        }
-        const lat = parseFloat(parts[0]);
-        const lon = parseFloat(parts[1]);
-        if (isNaN(lat) || isNaN(lon) || lat < -90 || lat > 90 || lon < -180 || lon > 180) {
-            if (window.showToast) window.showToast('⚠ Invalid coordinates. Lat: -90–90  Long: -180–180', 'WARNING');
-            return;
-        }
-
-        const targetMap = window.geoMap || window.orbitalMap || (typeof orbitalMap !== 'undefined' ? orbitalMap : null);
-
-        if (!targetMap) {
-            if (window.showToast) window.showToast('⚠ Map not active — open Geo Matrix first', 'WARNING');
-            return;
-        }
-
-        // Fly to location
-        targetMap.invalidateSize();
-        targetMap.flyTo([lat, lon], 14, { animate: true, duration: 1.2 });
-
-        // Drop a persistent green pulse marker at the destination
-        if (window.L) {
-            const jumpIcon = window.L.divIcon({
-                className: '',
-                html: `<div style="width:18px;height:18px;background:rgba(16,185,129,0.9);border:3px solid #00ff88;border-radius:50%;box-shadow:0 0 20px rgba(16,185,129,0.8);animation:pulse 1s infinite;"></div>`,
-                iconSize: [18, 18], iconAnchor: [9, 9]
-            });
-            const marker = window.L.marker([lat, lon], { icon: jumpIcon }).addTo(targetMap);
-            marker.bindPopup(`<b style="font-family:monospace;font-size:10px;">📍 JUMP TARGET</b><br><span style="font-family:monospace;font-size:9px;">${lat.toFixed(5)}, ${lon.toFixed(5)}</span>`).openPopup();
-            
-            if (!window.wireIntelMarkers) window.wireIntelMarkers = [];
-            window.wireIntelMarkers.push(marker);
-        }
-
-        if (window.showToast) window.showToast(`📍 JUMPED → ${lat.toFixed(5)}, ${lon.toFixed(5)}`);
-        input.value = '';
-    };
-
     function syncMapToGps() {
         if (!navigator.geolocation) return;
         if (window.isGhostMode) {
@@ -3750,13 +3699,13 @@ function initializeTacticalDashboard2() {
                     orbitalMap.setView([lat, lon], 17); // High Zoom
                 }
                 btn.innerHTML = `<i data-lucide="check" class="w-3 h-3"></i> GPS LOCKED`;
-                if (window.lucide) window.lucide.createIcons();
-                setTimeout(() => { btn.innerHTML = origHtml; if (window.lucide) window.lucide.createIcons(); }, 2000);
+                if(window.lucide) lucide.createIcons();
+                setTimeout(() => { btn.innerHTML = origHtml; if(window.lucide) lucide.createIcons(); }, 2000);
             },
             (err) => {
                 console.error(err);
                 btn.innerHTML = `❌ GPS FAIL`;
-                setTimeout(() => { btn.innerHTML = origHtml; if (window.lucide) window.lucide.createIcons(); }, 2000);
+                setTimeout(() => { btn.innerHTML = origHtml; if(window.lucide) lucide.createIcons(); }, 2000);
             },
             { enableHighAccuracy: true }
         );
@@ -3919,7 +3868,7 @@ function initializeTacticalDashboard2() {
                     <p class="text-[8px] font-mono text-gray-500 uppercase tracking-[0.2em]">ENGAGE GEO MATRIX</p>
                 </div>
             `;
-            if (window.lucide) window.lucide.createIcons();
+            if(window.lucide) lucide.createIcons();
         }
     }
 
@@ -4040,32 +3989,30 @@ function initializeTacticalDashboard2() {
             if (parts.length >= 2) {
                 const lat = parseFloat(parts[0]);
                 const lon = parseFloat(parts[1]);
-                const targetMap = window.geoMap || window.orbitalMap || (typeof orbitalMap !== 'undefined' ? orbitalMap : null);
-
-                if (!isNaN(lat) && !isNaN(lon) && targetMap) {
-                    targetMap.invalidateSize();
-                    targetMap.setView([lat, lon], 16, { animate: false });
+                if (!isNaN(lat) && !isNaN(lon) && orbitalMap) {
+                    // Instantly view coordinates without animation (prevents canvas crash)
+                    orbitalMap.invalidateSize();
+                    orbitalMap.setView([lat, lon], 16, { animate: false });
                     
-                    if (window.L) {
-                        const m = window.L.circleMarker([lat, lon], {
-                            radius: 8, color: '#3b82f6', fillColor: '#3b82f6', fillOpacity: 0.5, weight: 2
-                        }).bindTooltip("TARGET: " + lat.toFixed(5) + ", " + lon.toFixed(5)).addTo(targetMap);
-                        
-                        if (!window.wireIntelMarkers) window.wireIntelMarkers = [];
-                        window.wireIntelMarkers.push(m);
-                        
-                        m.on('click', function() {
-                            if (confirm("Remove this target marker?")) {
-                                targetMap.removeLayer(m);
-                                window.wireIntelMarkers = window.wireIntelMarkers.filter(marker => marker !== m);
-                            }
-                        });
-                    }
+                    // Plot a permanent marker
+                    const m = L.circleMarker([lat, lon], {
+                        radius: 8, color: '#3b82f6', fillColor: '#3b82f6', fillOpacity: 0.5, weight: 2
+                    }).bindTooltip("TARGET: " + lat.toFixed(5) + ", " + lon.toFixed(5)).addTo(orbitalMap);
+                    
+                    // Add to the intel array so Reset Map clears it
+                    if (!window.wireIntelMarkers) window.wireIntelMarkers = [];
+                    window.wireIntelMarkers.push(m);
+                    
+                    m.on('click', function() {
+                        if (confirm("Remove this target marker?")) {
+                            orbitalMap.removeLayer(m);
+                            window.wireIntelMarkers = window.wireIntelMarkers.filter(marker => marker !== m);
+                        }
+                    });
                     
                     geoJumpInput.value = '';
-                    if (window.showToast) window.showToast(`📍 JUMPED TO ${lat.toFixed(5)}, ${lon.toFixed(5)}`);
                 } else {
-                    alert("Invalid coordinates or Map not active. Use LAT, LON format.");
+                    alert("Invalid coordinates. Use LAT, LON format.");
                 }
             }
         });
@@ -4102,7 +4049,6 @@ function initializeTacticalDashboard2() {
     }
 
     // Master Snapshot Bridge Button (Window 3 to Window 4)
-    // Master Snapshot Bridge Button (Window 3 to Window 4)
     const mapSnapBtn = document.getElementById('geo-snapshot-btn');
     if (mapSnapBtn) {
         mapSnapBtn.addEventListener('click', async (e) => {
@@ -4116,41 +4062,8 @@ function initializeTacticalDashboard2() {
             mapSnapBtn.innerHTML = `<span class="animate-pulse">📸 SAVING...</span>`;
             mapSnapBtn.disabled = true;
 
-            const label = customName.trim().toUpperCase();
-
-            // Capture geo metadata first
-            let meta = {
-                type: 'geo-snapshot',
-                label: label,
-                timestamp: new Date().toISOString(),
-                myCoords: window.myLatestCoords ? Object.assign({}, window.myLatestCoords) : null
-            };
-
-            const tmInput = document.getElementById('geo-coord-jump-input') || document.getElementById('geo-jump-coords');
-            const tmText = tmInput ? tmInput.value.trim() : '';
-
-            let tmLat = null, tmLng = null;
-            if (window.teammateLocatorMarker) {
-                const pos = window.teammateLocatorMarker.getLatLng();
-                tmLat = pos.lat;
-                tmLng = pos.lng;
-            } else if (tmText) {
-                const parts = tmText.split(/[\s,]+/).filter(Boolean);
-                if (parts.length >= 2) {
-                    tmLat = parseFloat(parts[0]);
-                    tmLng = parseFloat(parts[1]);
-                }
-            }
-
-            if (tmLat !== null && tmLng !== null) {
-                meta.teammateCoords = {
-                    lat: tmLat,
-                    lng: tmLng,
-                    text: tmText,
-                    tooltip: window.teammateLocatorMarker?.getTooltip()?.getContent() || ''
-                };
-            }
-
+            // Always capture geo metadata first — works even if screenshot fails
+            let meta = {};
             if (typeof mapMarkers !== 'undefined' && mapMarkers.length >= 2) {
                 meta.markers = mapMarkers.map(m => m.getLatLng());
             }
@@ -4163,159 +4076,110 @@ function initializeTacticalDashboard2() {
                 meta.centerLng = center.lng;
                 meta.zoom = window.orbitalMap.getZoom();
             }
-            if (typeof distVal !== 'undefined' && distVal) meta.distance = distVal + ' ' + (typeof geoDistanceUnit !== 'undefined' ? geoDistanceUnit : 'YDS');
+            if (distVal) meta.distance = distVal + ' ' + geoDistanceUnit;
 
-            // Rich Tactical Card Generator (Generous Padding & Readable Formatting)
-            function buildTacticalGeoCanvas() {
+            const label = customName;
+
+            // Build a fallback canvas in case html2canvas hangs (common on mobile due to tile CORS)
+            function buildFallbackCanvas() {
                 const fb = document.createElement('canvas');
-                fb.width = 1000;
-                fb.height = 650;
+                fb.width = 800; fb.height = 500;
                 const ctx = fb.getContext('2d');
-
-                // Dark Stealth Background
                 ctx.fillStyle = '#030712';
                 ctx.fillRect(0, 0, fb.width, fb.height);
-
-                // Tactical Grid
+                // Draw a green grid
                 ctx.strokeStyle = 'rgba(16,185,129,0.15)';
                 ctx.lineWidth = 1;
-                for (let x = 0; x < fb.width; x += 50) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,fb.height); ctx.stroke(); }
-                for (let y = 0; y < fb.height; y += 50) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(fb.width,y); ctx.stroke(); }
-
-                // Outer Emerald Border
-                ctx.strokeStyle = '#10b981';
-                ctx.lineWidth = 4;
-                ctx.strokeRect(20, 20, fb.width - 40, fb.height - 40);
-
-                const leftX = 90; // Generous 90px left margin ensures zero clipping in thumbnails!
-
-                // Header Banner
+                for (let x = 0; x < fb.width; x += 40) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,fb.height); ctx.stroke(); }
+                for (let y = 0; y < fb.height; y += 40) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(fb.width,y); ctx.stroke(); }
+                // Distance readout
                 ctx.fillStyle = '#10b981';
-                ctx.font = 'bold 24px monospace';
-                ctx.textAlign = 'left';
-                ctx.fillText(`🛰️ TACTICAL GEO MATRIX INTEL REPORT`, leftX, 65);
-
-                ctx.fillStyle = '#6b7280';
-                ctx.font = '13px monospace';
-                ctx.fillText(`TIMESTAMP: ${new Date().toISOString()} | CARD: ${label}`, leftX, 92);
-
-                ctx.strokeStyle = 'rgba(16,185,129,0.4)';
-                ctx.beginPath(); ctx.moveTo(leftX, 108); ctx.lineTo(910, 108); ctx.stroke();
-
-                // Section 1: My GPS
-                ctx.fillStyle = '#34d399';
-                ctx.font = 'bold 18px monospace';
-                ctx.fillText(`[ OPERATOR POSITION (MY GPS) ]`, leftX, 150);
-
-                ctx.fillStyle = '#ffffff';
-                ctx.font = 'bold 22px monospace';
-                const myPosText = meta.myCoords
-                    ? `LAT: ${meta.myCoords.lat.toFixed(6)} | LON: ${meta.myCoords.lng.toFixed(6)}`
-                    : (document.getElementById('geo-my-coords-display')?.textContent || 'ACQUIRING...');
-                ctx.fillText(myPosText, leftX + 20, 188);
-
-                // Section 2: Teammate Locator Data
-                if (meta.teammateCoords) {
-                    ctx.fillStyle = '#22d3ee'; // cyan-400
-                    ctx.font = 'bold 18px monospace';
-                    ctx.fillText(`[ TEAMMATE LOCATOR DATA ]`, leftX, 245);
-
-                    ctx.fillStyle = '#ffffff';
-                    ctx.font = 'bold 19px monospace';
-                    const tmTooltip = meta.teammateCoords.tooltip || `COORDINATES: ${meta.teammateCoords.lat.toFixed(6)}, ${meta.teammateCoords.lng.toFixed(6)}`;
-                    
-                    // Split long tooltips if necessary
-                    if (tmTooltip.length > 55) {
-                        const mid = tmTooltip.indexOf('|');
-                        if (mid !== -1) {
-                            ctx.fillText(tmTooltip.substring(0, mid).trim(), leftX + 20, 280);
-                            ctx.fillText(tmTooltip.substring(mid + 1).trim(), leftX + 20, 312);
-                        } else {
-                            ctx.fillText(tmTooltip, leftX + 20, 280);
-                        }
-                    } else {
-                        ctx.fillText(tmTooltip, leftX + 20, 280);
-                    }
-                }
-
-                // Section 3: Measurements / Distance
-                const distEl = document.getElementById('live-map-dist');
-                const distValStr = (distEl && distEl.textContent !== '--.--') ? distEl.textContent : (meta.distance || null);
-                if (distValStr) {
-                    ctx.fillStyle = '#f59e0b';
-                    ctx.font = 'bold 18px monospace';
-                    ctx.fillText(`[ MEASURED TARGET DISTANCE ]`, leftX, 375);
-
-                    ctx.fillStyle = '#ffffff';
-                    ctx.font = 'bold 26px monospace';
-                    ctx.fillText(`${distValStr} YDS`, leftX + 20, 415);
-                }
-
-                // Footer Watermark
-                ctx.fillStyle = '#10b981';
-                ctx.font = 'bold 15px monospace';
+                ctx.font = '900 52px monospace';
                 ctx.textAlign = 'center';
-                ctx.fillText(`TRC TACTICAL GEO MATRIX - SECURE INTEL REPORT`, fb.width / 2, fb.height - 40);
-
+                ctx.textBaseline = 'middle';
+                ctx.fillText(distVal ? `DISTANCE: ${distVal} ${geoDistanceUnit}` : 'GEO INTEL CAPTURED', fb.width/2, fb.height/2 - 30);
+                // Markers count
+                ctx.font = '600 28px monospace';
+                ctx.fillStyle = '#ff1493';
+                ctx.fillText(`MARKERS: ${meta.markers ? meta.markers.length : 0}   DRAWINGS: ${meta.drawings ? meta.drawings.length : 0}`, fb.width/2, fb.height/2 + 40);
+                // Label
+                ctx.font = '400 18px monospace';
+                ctx.fillStyle = '#6b7280';
+                ctx.fillText(label + ' | TACTICAL GEO MATRIX', fb.width/2, fb.height - 30);
                 return fb;
             }
 
             try {
-                let dataUri = null;
+                const target = document.getElementById('geo-measure-stage');
+                target.style.background = '#030712';
 
-                if (window.html2canvas) {
-                    try {
-                        const target = document.getElementById('geo-measure-stage');
-                        if (target) target.style.background = '#030712';
-
-                        const html2canvasPromise = window.html2canvas(target, {
-                            useCORS: false,
-                            scale: 1,
-                            backgroundColor: '#030712',
-                            logging: false,
-                            allowTaint: true,
-                            ignoreElements: (el) => el.classList && (el.classList.contains('leaflet-control-container') || el.id === 'geo-coord-jump-input')
-                        });
-
-                        const timeoutPromise = new Promise((_, reject) =>
-                            setTimeout(() => reject(new Error('RENDER_TIMEOUT')), 1800)
-                        );
-
-                        const canvas = await Promise.race([html2canvasPromise, timeoutPromise]);
-                        dataUri = canvas.toDataURL('image/jpeg', 0.85);
-                    } catch(renderErr) {
-                        console.warn("DOM Capture timed out or blocked — using high-res Tactical Geo Canvas", renderErr);
+                // Race html2canvas against a 4-second timeout — mobile tiles block CORS rendering
+                const html2canvasPromise = html2canvas(target, {
+                    useCORS: true,
+                    scale: Math.min(window.devicePixelRatio || 1, 2), // cap scale on mobile
+                    backgroundColor: '#030712',
+                    logging: false,
+                    allowTaint: true, // allow cross-origin tiles to render without throwing
+                    onclone: (clonedDoc) => {
+                        const distSpan = clonedDoc.getElementById('live-map-dist');
+                        if(distSpan) { distSpan.style.color="#ffffff"; distSpan.style.fontSize="28px"; distSpan.style.fontWeight="bold"; }
+                        const footer = clonedDoc.getElementById('geo-ruler-footer');
+                        if(footer) {
+                            if (allDrawings.length > 0) {
+                                footer.className = footer.className.replace('bg-emerald-950/90','bg-blue-950/90').replace('border-emerald-500/50','border-blue-500/50').replace('text-emerald-300','text-blue-300');
+                                footer.innerHTML = '📝 TACTICAL MARKUP / TEAM REVIEW REQUIRED';
+                            }
+                            footer.style.fontSize="22px"; footer.style.height="50px";
+                        }
+                        const unitSpan = clonedDoc.getElementById('live-map-unit');
+                        if(unitSpan) unitSpan.style.fontSize="22px";
                     }
+                });
+
+                const timeoutPromise = new Promise((_, reject) =>
+                    setTimeout(() => reject(new Error('RENDER_TIMEOUT')), 4000)
+                );
+
+                let canvas;
+                try {
+                    canvas = await Promise.race([html2canvasPromise, timeoutPromise]);
+                    // Inject distance watermark banner
+                    const ctx = canvas.getContext('2d');
+                    const bannerH = window.innerWidth < 768 ? 120 : 160;
+                    ctx.fillStyle = 'rgba(0,0,0,0.8)';
+                    ctx.fillRect(0, 0, canvas.width, bannerH);
+                    ctx.fillStyle = '#10b981';
+                    ctx.font = '900 ' + (bannerH * 0.5) + 'px monospace';
+                    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                    ctx.shadowColor = 'black'; ctx.shadowBlur = 10; ctx.lineWidth = 4;
+                    ctx.strokeText(`DISTANCE: ${distVal} ${geoDistanceUnit}`, canvas.width/2, bannerH/2);
+                    ctx.shadowBlur = 0;
+                    ctx.fillText(`DISTANCE: ${distVal} ${geoDistanceUnit}`, canvas.width/2, bannerH/2);
+                } catch (renderErr) {
+                    // Timeout or CORS failure — use fallback canvas, geo data still intact
+                    window.pushTacLog('MAP SCREENSHOT TIMED OUT — SAVING GEO DATA ONLY', 'SYS');
+                    canvas = buildFallbackCanvas();
                 }
 
-                if (!dataUri) {
-                    const fallbackCanvas = buildTacticalGeoCanvas();
-                    dataUri = fallbackCanvas.toDataURL('image/jpeg', 0.85);
-                }
-
-                await window.saveIntelSnapshot(label, dataUri, meta);
+                const dataUri = canvas.toDataURL('image/jpeg', 0.85);
+                saveIntelSnapshot(label, dataUri, meta);
 
                 mapSnapBtn.innerHTML = `<i data-lucide="check" class="w-3 h-3 inline-block mr-1"></i> SENT TO INTEL VAULT`;
-                if (window.pushTacLog) window.pushTacLog(`GEO INTEL [${label}] SAVED TO VAULT`, "SUCCESS");
+                setTimeout(() => { mapSnapBtn.innerHTML = originalHtml; mapSnapBtn.disabled = false; if(window.lucide) lucide.createIcons(); }, 2000);
+
             } catch (err) {
-                console.error("Geo Matrix Save Error:", err);
+                console.error(err);
+                // Last resort — save with fallback canvas so geo data is never lost
                 try {
-                    const fb = buildTacticalGeoCanvas();
-                    const dataUri = fb.toDataURL('image/jpeg', 0.85);
-                    await window.saveIntelSnapshot(label, dataUri, meta);
-                    mapSnapBtn.innerHTML = `<i data-lucide="check" class="w-3 h-3 inline-block mr-1"></i> SENT TO VAULT`;
-                    if (window.pushTacLog) window.pushTacLog(`GEO INTEL [${label}] SAVED TO VAULT (FALLBACK)`, "SUCCESS");
-                } catch(err2) {
-                    console.error("Critical Save Error:", err2);
-                    alert("Error saving Geo Matrix capture. Please try again.");
+                    const dataUri = buildFallbackCanvas().toDataURL('image/jpeg', 0.85);
+                    saveIntelSnapshot(label, dataUri, meta);
+                    mapSnapBtn.innerHTML = `<i data-lucide="check" class="w-3 h-3 inline-block mr-1"></i> SENT TO INTEL VAULT (GEO)`;
+                } catch(e2) {
+                    mapSnapBtn.innerHTML = `❌ FAIL`;
                 }
-            } finally {
-                setTimeout(() => {
-                    mapSnapBtn.innerHTML = originalHtml;
-                    mapSnapBtn.disabled = false;
-                    if (window.lucide) window.lucide.createIcons();
-                }, 2000);
+                setTimeout(() => { mapSnapBtn.innerHTML = originalHtml; mapSnapBtn.disabled = false; if(window.lucide) lucide.createIcons(); }, 2500);
             }
+            if(window.lucide) lucide.createIcons();
         });
     }
 
@@ -4432,65 +4296,25 @@ function initializeTacticalDashboard2() {
             }
         }
 
-        // 3.8. Restore My Position (GPS)
-        if (item.myCoords && item.myCoords.lat && item.myCoords.lng) {
-            window.myLatestCoords = { lat: item.myCoords.lat, lng: item.myCoords.lng };
-            const displayEl = document.getElementById('geo-my-coords-display');
-            const badgeEl = document.getElementById('geo-my-coords-badge');
-            const latStr = item.myCoords.lat.toFixed(6);
-            const lngStr = item.myCoords.lng.toFixed(6);
-            if (displayEl) displayEl.textContent = `${latStr}, ${lngStr}`;
-            if (badgeEl) badgeEl.classList.remove('hidden');
-
-            if (window.orbitalMap) {
-                const icon = L.divIcon({
-                    className: 'custom-div-icon',
-                    html: `<div class="relative w-4 h-4 flex items-center justify-center"><div class="absolute w-full h-full rounded-full bg-emerald-500 animate-ping opacity-75"></div><div class="relative w-3.5 h-3.5 bg-emerald-500 border-2 border-white rounded-full flex items-center justify-center text-[5px] text-white font-black">★</div></div>`,
-                    iconSize: [16, 16]
-                });
-                if (window.mySelfPositionMarker) window.orbitalMap.removeLayer(window.mySelfPositionMarker);
-                window.mySelfPositionMarker = L.marker([item.myCoords.lat, item.myCoords.lng], { icon }).addTo(window.orbitalMap);
-                window.mySelfPositionMarker.bindTooltip(`MY POSITION: ${latStr}, ${lngStr}`, { permanent: true, direction: 'top', className: 'tactical-tooltip' });
-            }
-        }
-
-        // 3.9. Restore Teammate Locator Position
-        if (item.teammateCoords && item.teammateCoords.lat && item.teammateCoords.lng) {
-            const tmInput = document.getElementById('geo-coord-jump-input') || document.getElementById('geo-jump-coords');
-            if (tmInput) tmInput.value = item.teammateCoords.text || `${item.teammateCoords.lat.toFixed(6)}, ${item.teammateCoords.lng.toFixed(6)}`;
-
-            if (window.orbitalMap) {
-                const icon = L.divIcon({
-                    className: 'custom-div-icon',
-                    html: `<div class="relative w-5 h-5 flex items-center justify-center"><div class="absolute w-full h-full rounded-full bg-cyan-400 animate-ping opacity-90"></div><div class="relative w-4 h-4 bg-cyan-500 border-2 border-white rounded-full flex items-center justify-center text-[7px] text-black font-black">🎯</div></div>`,
-                    iconSize: [20, 20]
-                });
-                if (window.teammateLocatorMarker) window.orbitalMap.removeLayer(window.teammateLocatorMarker);
-
-                let labelText = item.teammateCoords.tooltip;
-                if (!labelText) {
-                    labelText = `TEAMMATE LOCATOR: ${item.teammateCoords.lat.toFixed(6)}, ${item.teammateCoords.lng.toFixed(6)}`;
-                }
-                window.teammateLocatorMarker = L.marker([item.teammateCoords.lat, item.teammateCoords.lng], { icon }).addTo(window.orbitalMap);
-                window.teammateLocatorMarker.bindTooltip(labelText, { permanent: true, direction: 'top', className: 'tactical-tooltip' }).openTooltip();
-            }
-        }
-
         // 4. Draw Line
         if (typeof drawMapLine === 'function') drawMapLine();
 
         // 5. Pan and Zoom to bounds or exact center
         if (window.orbitalMap) {
-            const activeMarkers = [];
-            if (window.mySelfPositionMarker) activeMarkers.push(window.mySelfPositionMarker);
-            if (window.teammateLocatorMarker) activeMarkers.push(window.teammateLocatorMarker);
-            if (mapMarkers && mapMarkers.length > 0) activeMarkers.push(...mapMarkers);
-
-            if (activeMarkers.length > 0) {
-                const group = L.featureGroup(activeMarkers);
-                window.orbitalMap.fitBounds(group.getBounds(), { padding: [60, 60], maxZoom: 17 });
-            } else if (item.centerLat !== undefined && item.centerLng !== undefined && item.zoom !== undefined) {
+            if (item.centerLat !== undefined && item.centerLng !== undefined && item.zoom !== undefined) {
+                // Restore exact map view from snapshot
                 window.orbitalMap.setView([item.centerLat, item.centerLng], item.zoom);
+            } else {
+                // Fallback for older snapshots without center coordinates
+                let boundsToFit = null;
+                if (mapMarkers.length > 0) boundsToFit = L.featureGroup(mapMarkers).getBounds();
+                if (allDrawings.length > 0) {
+                    const drawBounds = L.featureGroup(allDrawings).getBounds();
+                    boundsToFit = boundsToFit ? boundsToFit.extend(drawBounds) : drawBounds;
+                }
+                if (boundsToFit && boundsToFit.isValid()) {
+                    window.orbitalMap.fitBounds(boundsToFit, { padding: [50, 50], maxZoom: 18 });
+                }
             }
         }
     };
@@ -4528,31 +4352,20 @@ function initializeTacticalDashboard2() {
     }
 
     window.refreshVaultGrid = refreshVaultGrid;
-    function refreshVaultGrid(customList = null) {
+    function refreshVaultGrid() {
         const container = document.getElementById('vault-list-injection');
         if (!container) return;
         container.innerHTML = '';
 
-        const listToRender = customList || vaultCache;
-
-        if (listToRender.length === 0) {
-            container.innerHTML = `<div class="col-span-full p-10 text-center border border-dashed border-gray-800 text-gray-400 font-mono text-xs uppercase flex flex-col items-center gap-2">
-                <div>No Matching Intel in Vault.</div>
-                <button onclick="if(window.refreshVaultGrid) window.refreshVaultGrid(); else refreshVaultGrid();" class="bg-emerald-600 text-white px-3 py-1 rounded text-[10px] font-bold uppercase hover:bg-emerald-500 cursor-pointer">SHOW ALL VAULT INTEL</button>
+        if (vaultCache.length === 0) {
+            container.innerHTML = `<div class="col-span-full p-10 text-center border border-dashed border-gray-800 text-gray-600 font-mono text-xs uppercase">
+                Vault Encrypted & Empty.<br>Capture snap from map or feeds first.
             </div>`;
             return;
         }
-        listToRender.forEach((item, index) => {
-            let itemColor = 'emerald-500'; // Default snapshot
-            if (item.type === 'bolo-card') itemColor = 'orange-500';
-            else if (item.type === 'gametag-card') itemColor = 'amber-500';
-            else if (item.type === 'license-card') itemColor = 'green-400';
-            else if (item.label && (item.label.startsWith('GEO_') || item.label.startsWith('ROUTE'))) itemColor = 'blue-500';
-            else if (item.type === 'video') itemColor = 'purple-500';
-            else if (item.type === 'workstation-card') itemColor = 'fbbf24'; // Yellow-ish
-
+        vaultCache.forEach((item, index) => {
             const el = document.createElement('div');
-            el.className = `bg-gray-900 rounded hover:bg-${itemColor}/20 transition-all p-1 cursor-pointer group relative overflow-hidden border-2 vault-accent-card border-gray-800 hover:border-${itemColor}`;
+            el.className = "bg-gray-900 rounded hover:bg-emerald-950/20 transition-all p-1 cursor-pointer group relative overflow-hidden border-2 vault-accent-card";
             
             // Critical CSS for Mobile Chrome Native Drag
             el.style.webkitTouchCallout = 'none';
@@ -4568,9 +4381,17 @@ function initializeTacticalDashboard2() {
             // Add Native HTML5 Drag as an indestructible fallback for Desktop
             el.setAttribute('draggable', 'true');
             el.dataset.vaultIndex = index;
+        vaultCache.forEach((item, index) => {
+            let itemColor = 'emerald-500'; // Default snapshot
+            if (item.type === 'bolo-card') itemColor = 'orange-500';
+            else if (item.type === 'gametag-card') itemColor = 'amber-500';
+            else if (item.type === 'license-card') itemColor = 'green-400';
+            else if (item.label && (item.label.startsWith('GEO_') || item.label.startsWith('ROUTE'))) itemColor = 'blue-500';
+            else if (item.type === 'video') itemColor = 'purple-500';
+            else if (item.type === 'workstation-card') itemColor = 'fbbf24'; // Yellow-ish
 
-            el.addEventListener('dragstart', (e) => {
-                e.dataTransfer.setData('text/plain', index);
+            const el = document.createElement('div');
+            el.className = `bg-gray-900 rounded hover:bg-${itemColor}/20 transition-all p-1 cursor-pointer group relative overflow-hidden border-2 vault-accent-card border-gray-800 hover:border-${itemColor}`;
                 el.classList.add('opacity-50');
                 if (typeof cleanupClones === 'function') cleanupClones(); // Nuke touch clone if native drag overrides
             });
@@ -4730,42 +4551,7 @@ function initializeTacticalDashboard2() {
             el.addEventListener('touchcancel', cleanupClones);
 
             const isVideo = item.type === 'video';
-            const isContact = item.contact || item.type === 'intel_report' || item.type === 'contact';
-            const attachedPhoto = item.image || item.data || item.contact?.cardImageUrl || null;
-            
-            let imgContent = '';
-            if (isVideo) {
-                imgContent = `<i data-lucide="video" class="w-12 h-12 text-purple-500 opacity-80 pointer-events-none"></i>`;
-            } else if (attachedPhoto) {
-                imgContent = `
-                    <div style="background-image: url('${attachedPhoto}'); background-size: contain; background-repeat: no-repeat; background-position: center; background-color: #030712; width: 100%; height: 100%;" class="opacity-95 group-hover:opacity-100 transition-all pointer-events-none relative">
-                        ${isContact ? `
-                        <div class="absolute top-1 left-1 bg-purple-950/90 text-purple-300 border border-purple-500/60 px-1 py-0.5 rounded text-[6px] font-black uppercase tracking-wider shadow z-10">
-                            TRC OPERATOR
-                        </div>` : ''}
-                    </div>`;
-            } else if (isContact) {
-                const c = item.contact || {};
-                imgContent = `
-                    <div class="w-full h-full bg-slate-950 p-2 pt-2.5 text-white flex flex-col justify-between overflow-hidden border-2 border-purple-500/80 pointer-events-none relative shadow-inner text-left leading-tight bg-[radial-gradient(#a855f7_0.8px,transparent_0.8px)] [background-size:6px_6px]">
-                        <div class="text-[6.5px] font-black tracking-widest text-purple-400 uppercase border-b border-purple-500/50 pb-1 shrink-0 flex justify-between items-center pl-6">
-                            <span>TRC OPERATOR</span>
-                            <span class="text-emerald-400 font-mono text-[5.5px] bg-emerald-950 px-1 border border-emerald-500/40 rounded">VERIFIED</span>
-                        </div>
-                        <div class="my-auto py-1 shrink-0">
-                            ${c.bizname ? `<div class="text-[9px] font-black text-purple-300 uppercase leading-tight truncate">${c.bizname}</div>` : ''}
-                            <div class="text-[8.5px] font-black text-white uppercase truncate mt-0.5">${item.author || c.author || 'OPERATOR'}</div>
-                            ${c.unit ? `<div class="text-[7px] font-semibold text-slate-400 uppercase truncate">${c.unit}</div>` : ''}
-                        </div>
-                        <div class="text-[6.5px] font-mono border-t border-slate-800 pt-1 shrink-0 flex justify-between gap-1">
-                            <span class="text-emerald-400 truncate">PH: ${c.phone || '--'}</span>
-                            <span class="text-blue-400 truncate">WEB: ${c.web || '--'}</span>
-                        </div>
-                    </div>
-                `;
-            } else {
-                imgContent = `<i data-lucide="file-text" class="w-10 h-10 text-emerald-400 opacity-60 pointer-events-none"></i>`;
-            }
+            const imgContent = isVideo ? `<i data-lucide="video" class="w-12 h-12 text-purple-500 opacity-80 pointer-events-none"></i>` : `<div style="background-image: url('${item.image}'); background-size: contain; background-repeat: no-repeat; background-position: center; width: 100%; height: 100%;" class="opacity-90 group-hover:opacity-100 transition-all pointer-events-none"></div>`;
 
             el.innerHTML = `
                 <div class="aspect-square bg-black overflow-hidden relative border border-gray-800 mb-1 flex items-center justify-center">
@@ -4802,21 +4588,19 @@ function initializeTacticalDashboard2() {
 
                 ${(item.label && (item.label.startsWith('GEO_') || item.label.startsWith('ROUTE'))) ? `
                 <button class="load-map-btn absolute bottom-7 left-1.5 bg-blue-600 text-white p-1.5 rounded border border-blue-400 shadow-lg hover:bg-blue-400 transition-all z-30" title="Load to Geo Matrix">
-                    <i data-lucide="map" class="w-3 h-3"></i>
-                </button>
-                ` : ''}
+                <!-- Export Checkbox Overlay: LOCKED VISIBLE ON MOBILE -->
+                <div class="absolute top-1.5 left-1.5 z-40 bg-black/60 p-1 rounded">
+                    <label class="sr-only">Mark Vault Item for Export</label><input name="${item.id}" autocomplete="off" type="checkbox" class="vault-export-checkbox w-4 h-4 cursor-pointer bg-black/50 border border-gray-500 rounded text-${itemColor} focus:ring-${itemColor}/50 shadow-lg" data-vault-id="${item.id}" title="Mark for Export" aria-label="Mark Vault Item for Export">
+                </div>
 
-                ${(item.label && item.label.startsWith('VIDEO_')) ? `
                 <button class="load-video-btn absolute bottom-7 left-1.5 bg-purple-600 text-white p-1.5 rounded border border-purple-400 shadow-lg hover:bg-purple-400 transition-all z-30" title="Play Video">
                     <i data-lucide="play" class="w-3 h-3"></i>
                 </button>
-                ` : ''}
-
-                ${(!item.remarksText && !(item.label && (item.label.startsWith('GEO_') || item.label.startsWith('ROUTE') || item.label.startsWith('VIDEO_')))) ? `
+                ` : (!item.remarksText && !(item.label && (item.label.startsWith('GEO_') || item.label.startsWith('ROUTE'))) ? `
                 <button class="load-snapshot-btn absolute bottom-7 left-1.5 bg-emerald-600 text-white p-1.5 rounded border border-emerald-400 shadow-lg hover:bg-emerald-400 transition-all z-30" title="Load Snapshot to Viewer">
                     <i data-lucide="camera" class="w-3 h-3"></i>
                 </button>
-                ` : ''}
+                ` : '')}
             `;
             
             el.addEventListener('click', (e) => {
@@ -4852,7 +4636,7 @@ function initializeTacticalDashboard2() {
             if(loadSnapBtn) {
                 loadSnapBtn.addEventListener('click', (e) => {
                     e.stopPropagation();
-                    if (window.loadSnapshotToViewer) window.loadSnapshotToViewer(item);
+                    if(window.loadSnapshotToViewer) window.loadSnapshotToViewer(item);
                 });
             }
 
@@ -4868,7 +4652,7 @@ function initializeTacticalDashboard2() {
             container.appendChild(el);
         });
 
-        if (window.lucide) window.lucide.createIcons();
+        if(window.lucide) lucide.createIcons();
     }
 
     async function deleteVaultEntry(id) {
@@ -4895,54 +4679,9 @@ function initializeTacticalDashboard2() {
         if (!target) return;
 
         const isVideo = item.type === 'video';
-        const isContactCard = item.contact || item.type === 'intel_report' || item.type === 'contact';
         let mediaHtml = '';
-
         if (isVideo) {
             mediaHtml = `<i data-lucide="video" class="w-20 h-20 text-purple-500 opacity-80"></i>`;
-        } else if (isContactCard) {
-            const c = item.contact || {};
-            const imgColHtml = item.image ? `
-                <div class="w-full md:w-1/2 h-48 md:h-full bg-black border-b md:border-b-0 md:border-r border-slate-800 flex items-center justify-center relative overflow-hidden shrink-0">
-                    <img src="${item.image}" class="w-full h-full object-contain">
-                </div>
-            ` : '';
-            
-            mediaHtml = `
-                <div class="flex flex-col md:flex-row w-full h-full bg-slate-950 text-white overflow-y-auto custom-scrollbar">
-                    ${imgColHtml}
-                    <div class="flex-1 p-4 flex flex-col justify-between overflow-y-auto custom-scrollbar">
-                        <div class="border-2 border-purple-500/80 rounded-xl bg-slate-900 p-4 shadow-[0_0_25px_rgba(168,85,247,0.35)] relative overflow-hidden text-left">
-                            <div class="text-[9px] font-black tracking-widest text-purple-400 uppercase border-b border-purple-500/40 pb-1.5 mb-2.5 flex justify-between items-center">
-                                <span class="flex items-center gap-1.5"><i data-lucide="contact" class="w-4 h-4 text-purple-400"></i> TACTICAL RANGE CARD OPERATOR</span>
-                                <span class="text-emerald-400 font-mono text-[8px] bg-emerald-950 px-1.5 py-0.5 border border-emerald-500/40 rounded uppercase font-bold">VERIFIED CONTACT</span>
-                            </div>
-                            ${c.bizname ? `<div class="text-base font-black text-purple-300 uppercase tracking-wider mb-0.5">${c.bizname}</div>` : ''}
-                            <div class="text-sm font-bold text-white uppercase tracking-wider">${item.author || c.author || 'OPERATOR'}</div>
-                            ${c.unit ? `<div class="text-[10px] font-semibold text-slate-400 uppercase">${c.unit}</div>` : ''}
-                            
-                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs font-mono border-t border-slate-800 pt-2.5 mt-2.5 text-slate-300">
-                                <div><span class="text-slate-500 font-bold">PHONE:</span> <span class="font-bold text-white">${c.phone || '--'}</span></div>
-                                <div><span class="text-slate-500 font-bold">COMMS:</span> <span class="font-bold text-emerald-400">${c.comms || '--'}</span></div>
-                                <div><span class="text-slate-500 font-bold">WEB:</span> <span class="font-bold text-blue-400">${c.web || '--'}</span></div>
-                            </div>
-                            ${c.details ? `<div class="mt-2 text-xs italic text-purple-300 border-t border-slate-800/80 pt-2">Specialties: "${c.details}"</div>` : ''}
-                            ${c.cardImageUrl ? `
-                            <div class="mt-3 w-full max-h-36 bg-black rounded-lg overflow-hidden flex justify-center border border-gray-700">
-                                <img src="${c.cardImageUrl}" class="max-h-36 object-contain">
-                            </div>
-                            ` : ''}
-                        </div>
-                        ${item.content ? `<div class="mt-2.5 p-2 bg-slate-900 border border-slate-800 rounded text-xs font-mono text-slate-200 text-left whitespace-pre-wrap">${item.content}</div>` : ''}
-                    </div>
-                </div>
-            `;
-        } else if (item.type === 'officer_sitrep' || item.workstationData?.type === 'officer') {
-            if (typeof window.generateOfficerCardHTML === 'function') {
-                mediaHtml = window.generateOfficerCardHTML(item.workstationData || item);
-            } else {
-                mediaHtml = `<img src="${item.image}" class="w-full h-full object-contain">`;
-            }
         } else if (item.type === 'workstation') {
             let formDataHtml = '';
             const d = item.workstationData?.data || {};
@@ -5048,11 +4787,6 @@ function initializeTacticalDashboard2() {
                         <i data-lucide="monitor" class="w-2.5 h-2.5"></i> REWORK WORKSTATION
                     </button>
                     ` : ''}
-                    ${(item.contact || item.type === 'intel_report' || item.type === 'contact') ? `
-                    <button class="bg-purple-600 text-white border border-purple-400 p-1.5 rounded hover:bg-purple-500 transition-all shadow-[0_0_10px_rgba(168,85,247,0.5)] flex items-center gap-1 font-black text-[7px]" onclick="event.stopPropagation(); window.reworkBusinessCard(window.vaultCache.find(x => x.id.toString() === '${item.id}'))" title="Rework Business Card">
-                        <i data-lucide="wrench" class="w-2.5 h-2.5"></i> REWORK CARD
-                    </button>
-                    ` : ''}
                     <button class="bg-red-950/90 text-red-300 border border-red-600/50 p-1.5 rounded hover:bg-red-600 hover:text-white transition-all shadow-lg" onclick="event.stopPropagation(); window.unloadDashboardCard(4)" title="Unload Vault Item">
                         <i data-lucide="trash-2" class="w-2.5 h-2.5"></i>
                     </button>
@@ -5060,7 +4794,7 @@ function initializeTacticalDashboard2() {
             </div>
         `;
         
-        if (window.lucide) window.lucide.createIcons();
+        if(window.lucide) lucide.createIcons();
 
         // 2. DYNAMIC WINDOW 3 POPULATION (GEO MATRIX SYNC)
         const geoMinView = document.getElementById('geo-minimized-view');
@@ -5469,12 +5203,6 @@ function initializeTacticalDashboard2() {
             imgViewer.classList.add('hidden');
         }
         
-        const cardViewer = document.getElementById('surveillance-card-viewer');
-        if (cardViewer) {
-            cardViewer.innerHTML = "";
-            cardViewer.classList.add('hidden');
-        }
-        
         placeholder.classList.remove('hidden');
         hud.classList.add('hidden');
         if(killBtn) killBtn.classList.add('hidden'); // Hide shutdown button again
@@ -5497,8 +5225,6 @@ function initializeTacticalDashboard2() {
 
         label.textContent = "OFFLINE";
     }
-
-    window.closeSurveillanceReview = stopFeed;
 
     
     function requestOrientationPermissionAndStartFeed(isVid) {
@@ -7197,8 +6923,8 @@ function initializeTacticalDashboard2() {
 
         // Mission-Specific Channel Hashing
         const missionId = btoa(`trc_prod_${teamName}_${passcode}`).replace(/=/g, '');
-        const supabaseUrl = window.SUPABASE_URL || 'https://nvnwqcfgpwzheekninle.supabase.co';
-        const supabaseKey = window.SUPABASE_KEY || 'sb_publishable_si9fg-bURw3K5yprgAgifw_Eez79zU0';
+        const supabaseUrl = 'https://nvnwqcfgpwzheekninle.supabase.co'; // NEEDS USER INPUT
+        const supabaseKey = 'sb_publishable_si9fg-bURw3K5yprgAgifw_Eez79zU0'; // NEEDS USER INPUT
         
         const diagSub = document.getElementById('diag-sub');
         const diagCrypto = document.getElementById('diag-crypto');
@@ -7214,8 +6940,8 @@ function initializeTacticalDashboard2() {
         if (supabaseUrl.includes('your-project-url')) {
             window.pushTacLog("SUPABASE KEYS NOT CONFIGURED. LOCAL SYNC ONLY.", "SYS");
             if (onConnectedCallback) onConnectedCallback();
-            return;
-        }
+        const supabaseUrl = window.SUPABASE_URL || 'https://nvnwqcfgpwzheekninle.supabase.co'; 
+        const supabaseKey = window.SUPABASE_KEY || 'sb_publishable_si9fg-bURw3K5yprgAgifw_Eez79zU0'; 
 
         try {
             // Use existing client or create new
@@ -7823,36 +7549,8 @@ function initializeTacticalDashboard2() {
                     if (statusEl) { statusEl.className = "text-[8px] text-red-400 mt-1"; statusEl.innerText = "DECRYPTION FAILED"; }
                 }
             }, 100);
-        } else if (tapeMetadata && (tapeMetadata.type === 'officer_sitrep' || tapeMetadata.type === 'officer' || tapeMetadata.workstationData?.type === 'officer')) {
-            const cardObj = tapeMetadata.workstationData || tapeMetadata;
-            const cardJsonEscaped = JSON.stringify(cardObj).replace(/"/g, '&quot;');
-            contentHtml += `
-                <div class="mt-2 p-2 bg-slate-900 border border-cyan-500/60 rounded-lg text-left text-xs text-white max-w-full space-y-1.5 shadow-lg">
-                    <div class="font-black text-cyan-300 text-[10px] uppercase tracking-wider flex items-center justify-between border-b border-slate-800 pb-1">
-                        <span>🚓 OFFICER SITREP DOSSIER</span>
-                        <span class="text-[8px] bg-red-950 text-red-400 px-1.5 py-0.5 rounded border border-red-600/50 font-mono">ENCRYPTED INTEL</span>
-                    </div>
-                    ${imageBase64 ? `<img src="${imageBase64}" class="w-full h-36 object-contain rounded border border-slate-700 bg-black cursor-pointer shadow" onclick="if(window.loadSnapshotToViewer) window.loadSnapshotToViewer(${cardJsonEscaped});">` : ''}
-                    <div class="flex items-center gap-1.5 pt-1 flex-wrap">
-                        <button type="button" onclick="event.stopPropagation(); if(window.saveIntelSnapshot) window.saveIntelSnapshot('SITREP: ${cardObj.data?.unitCallsign || 'OFFICER'}', '${imageBase64 || ''}', ${cardJsonEscaped}); if(window.pushTacLog) window.pushTacLog('SITREP CARD SAVED TO VAULT', 'SUCCESS'); alert('Officer SITREP Saved to Intel Vault!');" class="bg-purple-900 hover:bg-purple-800 text-purple-200 text-[9px] font-black px-2 py-1 rounded border border-purple-500/60 uppercase flex items-center gap-1 cursor-pointer shadow">
-                            <i data-lucide="folder-plus" class="w-3 h-3 text-purple-300"></i> SAVE TO VAULT
-                        </button>
-                        <button type="button" onclick="event.stopPropagation(); if(window.openWorkstationForm) window.openWorkstationForm('officer', ${cardJsonEscaped});" class="bg-cyan-900 hover:bg-cyan-800 text-cyan-200 text-[9px] font-black px-2 py-1 rounded border border-cyan-500/60 uppercase flex items-center gap-1 cursor-pointer shadow">
-                            <i data-lucide="refresh-cw" class="w-3 h-3 text-cyan-300"></i> REWORK SITREP
-                        </button>
-                    </div>
-                </div>
-            `;
         } else if (imageBase64) {
-            contentHtml += `
-                <div class="mt-2 p-1.5 bg-slate-950 border border-cyan-500/60 rounded-lg text-left shadow-lg">
-                    <div class="flex items-center justify-between text-[9px] font-black text-cyan-300 uppercase tracking-widest px-1 pb-1">
-                        <span>INTEL CARD PREVIEW</span>
-                        <span class="text-[8px] text-slate-400 font-mono">🔍 TAP TO ZOOM</span>
-                    </div>
-                    <img src="${imageBase64}" class="w-full max-w-[320px] h-auto object-contain rounded border border-slate-700 bg-slate-900 cursor-pointer shadow" onclick="if(window.loadSnapshotToViewer) { window.loadSnapshotToViewer({ image: this.src, label: '${(tapeMetadata?.label || 'INTEL CARD').replace(/'/g, "\\'")}' }); } else { window.open(this.src); }">
-                </div>
-            `;
+            contentHtml += `<img src="${imageBase64}" class="mt-1 rounded border border-gray-600 w-32 h-auto cursor-pointer" onclick="window.open(this.src)">`;
         }
 
         if (tapeUrl && !(tapeMetadata && tapeMetadata.isPristineImage)) {
@@ -7912,76 +7610,29 @@ function initializeTacticalDashboard2() {
             }, 100);
         }
 
-        const isBizCard = msg && (msg.includes('[TRC BIZ CARD]') || msg.includes('TRC BIZ CARD'));
-        let bubbleStyle = isMe 
-            ? 'background-color: #1e3a8a !important; color: #ffffff !important; border: 1px solid #3b82f6 !important;' 
-            : 'background-color: #1f2937 !important; color: #ffffff !important; border: 1px solid #4b5563 !important;';
-
-        if (isBizCard) {
-            bubbleStyle = 'background: linear-gradient(135deg, #2e1065 0%, #4c1d95 50%, #0f172a 100%) !important; border: 2px solid #e879f9 !important; box-shadow: 0 0 15px rgba(232,121,249,0.5) !important; color: #ffffff !important; font-family: monospace;';
-        }
-
         entry.innerHTML = `
-            <span style="font-size: 8px; font-weight: 900; color: ${isBizCard ? '#f0abfc' : '#9ca3af'}; font-family: monospace; text-transform: uppercase;">${userObj.callsign} [${userObj.role}]</span>
-            <div style="${bubbleStyle}" class="px-3 py-2 rounded-lg max-w-[88%] mt-0.5 shadow-md">
+            <span class="text-[6px] text-gray-600 uppercase font-black">${userObj.callsign} [${userObj.role}]</span>
+            <div class="${isMe ? 'bg-blue-900/60 border-blue-700' : 'bg-gray-800/60 border-gray-700'} border px-2 py-1 rounded-sm max-w-[80%] text-white">
                 ${contentHtml}
             </div>
         `;
         feed.appendChild(entry);
         feed.scrollTop = feed.scrollHeight;
 
-        // ── AUTO-SAVE INCOMING IMAGES & CARDS TO INTEL VAULT & WORKSTATION ──────────────
-        if (!isMe && !(tapeMetadata && tapeMetadata.isPristineImage)) {
-            if (imageBase64 || isBizCard || tapeMetadata) {
-                const wsCardData = tapeMetadata?.workstationData || (tapeMetadata && ['medevac', 'scorecard', 'logistics', 'roster', 'bragboard', 'officer', 'workstation'].includes(tapeMetadata.type) ? tapeMetadata : null);
-
-                const cardId = tapeMetadata?.id || wsCardData?.id || Date.now();
-                const label = (tapeMetadata && (tapeMetadata.label || tapeMetadata.title))
-                    ? (tapeMetadata.label || tapeMetadata.title)
-                    : (wsCardData ? `WORKSTATION: ${wsCardData.title || wsCardData.type}` : `WIRE_${userObj.callsign || 'CARD'}_${Date.now().toString().slice(-4)}`);
-
-                const cardImage = imageBase64 || (wsCardData ? wsCardData.image : null) || (tapeMetadata ? tapeMetadata.image : null) || '';
-
-                const vaultMeta = Object.assign(
-                    {
-                        id: cardId,
-                        label: label,
-                        image: cardImage,
-                        timestamp: new Date().toISOString(),
-                        source: 'comms_chat',
-                        senderCallsign: userObj.callsign,
-                        senderRole: userObj.role,
-                        type: isBizCard ? 'intel_report' : (wsCardData ? 'workstation' : (tapeMetadata?.type || 'snapshot'))
-                    },
-                    tapeMetadata || {}
-                );
-                if (wsCardData && !vaultMeta.workstationData) {
-                    vaultMeta.workstationData = wsCardData;
-                }
-
-                // 1. Save to intelVault IDB
-                if (window.TRC_IDB) {
-                    window.TRC_IDB.set('intelVault', cardId.toString(), vaultMeta).then(() => {
-                        if (typeof window.refreshVaultGrid === 'function') window.refreshVaultGrid();
-                    }).catch(e => console.error("Error auto-saving incoming card to intelVault IDB:", e));
-                }
-
-                // 2. Save to vaultCache memory
-                if (window.vaultCache) {
-                    window.vaultCache = window.vaultCache.filter(v => v && v.id && v.id.toString() !== cardId.toString());
-                    window.vaultCache.unshift(vaultMeta);
-                    if (typeof window.refreshVaultGrid === 'function') window.refreshVaultGrid();
-                }
-
-                // 3. Save to workstationLibrary IDB if it's a workstation card
-                if (wsCardData && window.TRC_IDB) {
-                    window.TRC_IDB.set('workstationLibrary', cardId.toString(), wsCardData).then(() => {
-                        if (typeof window.renderWorkstationMenu === 'function') window.renderWorkstationMenu();
-                    }).catch(e => console.error("Error auto-saving incoming workstation card to library:", e));
-                }
-
-                if (window.pushTacLog) window.pushTacLog(`INCOMING WIRE INTEL FROM ${userObj.callsign} → SAVED TO INTEL VAULT & WORKSTATION`, "SUCCESS");
-            }
+        // ── AUTO-SAVE INCOMING IMAGES TO INTEL VAULT ──────────────────────
+        // Only save images received FROM others (not our own outgoing images)
+        // Preserve original card metadata (label, type, etc.) if sent with the card.
+        if (imageBase64 && !isMe && window.saveIntelSnapshot && !(tapeMetadata && tapeMetadata.isPristineImage)) {
+            const label = (tapeMetadata && tapeMetadata.label)
+                ? tapeMetadata.label
+                : `COMMS_${userObj.callsign}`;
+            // tapeMetadata carries the original geo markers, drawings, type, etc.
+            const vaultMeta = Object.assign(
+                { source: 'comms_chat', senderCallsign: userObj.callsign, senderRole: userObj.role },
+                tapeMetadata || {}
+            );
+            window.saveIntelSnapshot(label, imageBase64, vaultMeta);
+            window.pushTacLog(`INTEL CARD FROM ${userObj.callsign} → VAULT: ${label}`, "SUCCESS");
         }
     }
 
@@ -9005,184 +8656,33 @@ function initializeTacticalDashboard2() {
             if(label) label.textContent = `VIEWING INTEL: ${item.label || 'SNAPSHOT'}`;
         };
 
-    function generateTRCCardSVGDataUrl(item) {
-        const c = item.contact || {};
-        const biz = (c.bizname || 'TACTICAL RANGE CARD').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-        const author = (item.author || c.author || 'OPERATOR').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-        const unit = (c.unit || 'FIELD UNIT').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-        const phone = (c.phone || '--').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-        const comms = (c.comms || '--').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-        const web = (c.web || '--').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-        const details = (c.details || 'OPERATIONAL CONTACT').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-        
-        const photoUrl = item.image || c.cardImageUrl || '';
-        const cardImgUrl = c.cardImageUrl || '';
-
-        const photoEmbed = photoUrl ? `<image href="${photoUrl}" x="50" y="100" width="380" height="240" preserveAspectRatio="xMidYMid slice" clip-path="url(#photoClip)"/>` : '';
-        const cardImgEmbed = (cardImgUrl && cardImgUrl !== photoUrl) ? `<image href="${cardImgUrl}" x="470" y="100" width="380" height="240" preserveAspectRatio="xMidYMid slice" clip-path="url(#photoClip)"/>` : '';
-
-        const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="900" height="650" viewBox="0 0 900 650">
-          <rect width="900" height="650" fill="#090d16"/>
-          <defs>
-            <pattern id="grid" width="16" height="16" patternUnits="userSpaceOnUse">
-              <circle cx="2" cy="2" r="1" fill="#a855f7" opacity="0.3"/>
-            </pattern>
-            <clipPath id="photoClip">
-              <rect rx="8" width="380" height="240"/>
-            </clipPath>
-          </defs>
-          <rect width="900" height="650" fill="url(#grid)"/>
-          <rect x="20" y="20" width="860" height="610" rx="16" fill="#0b0f19" stroke="#a855f7" stroke-width="3" filter="drop-shadow(0 0 15px rgba(168,85,247,0.5))"/>
-          
-          <line x1="40" y1="80" x2="860" y2="80" stroke="#a855f7" stroke-width="1.5" opacity="0.5"/>
-          <text x="50" y="60" fill="#c084fc" font-family="monospace" font-size="20" font-weight="900" letter-spacing="3">🛡️ TACTICAL RANGE CARD OPERATOR INTEL</text>
-          <rect x="710" y="42" width="130" height="26" rx="4" fill="#064e3b" stroke="#10b981" stroke-width="1"/>
-          <text x="775" y="60" fill="#34d399" font-family="monospace" font-size="11" font-weight="700" text-anchor="middle">VERIFIED CONTACT</text>
-          
-          <g transform="translate(0, 0)">
-            ${photoEmbed}
-            ${cardImgEmbed}
-          </g>
-
-          <g transform="translate(0, ${photoUrl ? '350' : '80'})">
-            <text x="50" y="40" fill="#e9d5ff" font-family="sans-serif" font-size="26" font-weight="900" letter-spacing="1">${biz}</text>
-            <text x="50" y="70" fill="#ffffff" font-family="sans-serif" font-size="20" font-weight="700">${author}</text>
-            <text x="50" y="95" fill="#9ca3af" font-family="sans-serif" font-size="14">${unit}</text>
+        window.loadSnapshotToViewer = function(item) {
+            window.pushTacLog(`RESTORING CAPTURE: ${item.label || 'INTEL'} TO SURVEILLANCE FEED`, "SYS");
             
-            <line x1="40" y1="115" x2="860" y2="115" stroke="#374151" stroke-width="1"/>
-            <text x="50" y="145" fill="#9ca3af" font-family="monospace" font-size="14" font-weight="700">PHONE: <tspan fill="#ffffff">${phone}</tspan></text>
-            <text x="340" y="145" fill="#9ca3af" font-family="monospace" font-size="14" font-weight="700">COMMS: <tspan fill="#34d399">${comms}</tspan></text>
-            <text x="600" y="145" fill="#9ca3af" font-family="monospace" font-size="14" font-weight="700">WEB: <tspan fill="#60a5fa">${web}</tspan></text>
+            const panel = document.getElementById('panel-vault');
+            if (panel && panel.classList.contains('is-maximized')) {
+                window.toggleFullscreen('panel-vault');
+            }
             
-            <line x1="40" y1="165" x2="860" y2="165" stroke="#374151" stroke-width="1"/>
-            <text x="50" y="195" fill="#d8b4fe" font-family="monospace" font-size="15" font-style="italic">Specialties: "${details}"</text>
-          </g>
-
-          <text x="450" y="615" fill="#4b5563" font-family="monospace" font-size="12" text-anchor="middle" letter-spacing="4">TACTICAL RANGE CARD SURVEILLANCE REVIEW • ALL RIGHTS RESERVED</text>
-        </svg>`;
-
-        return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
-    }
-
-    window.loadSnapshotToViewer = function(item) {
-        window.pushTacLog(`RESTORING CAPTURE: ${item.label || 'INTEL'} TO SURVEILLANCE FEED`, "SYS");
-        
-        const panel = document.getElementById('panel-vault');
-        if (panel && panel.classList.contains('is-maximized')) {
-            window.toggleFullscreen('panel-vault');
-        }
-        
-        const videoEl = document.getElementById('surveillance-stream');
-        const imgViewer = document.getElementById('surveillance-snapshot-viewer');
-        const placeholder = document.getElementById('surveillance-placeholder');
-        const label = document.getElementById('feed-label-source');
-        const hud = document.getElementById('surveillance-hud');
-        const captureBtn = document.getElementById('surveillance-capture-btn');
-        
-        if (videoEl) videoEl.classList.add('hidden');
-        if (placeholder) placeholder.classList.add('hidden');
-        if (hud) hud.classList.add('hidden');
-        if (captureBtn) captureBtn.classList.add('hidden');
-        
-        const cardViewer = document.getElementById('surveillance-card-viewer');
-        const isContactCard = item.contact || item.type === 'intel_report' || item.type === 'contact';
-        const isOfficerCard = item.type === 'officer_sitrep' || item.workstationData?.type === 'officer';
-        const isWsCard = item.type === 'workstation' || Boolean(item.workstationData) || ['medevac', 'scorecard', 'logistics', 'roster', 'bragboard', 'officer'].includes(item.type);
-
-        if (isOfficerCard && cardViewer && typeof window.generateOfficerCardHTML === 'function') {
-            cardViewer.innerHTML = window.generateOfficerCardHTML(item.workstationData || item);
-            cardViewer.className = "w-full h-full max-h-full overflow-y-auto custom-scrollbar p-2 relative";
-            if (window.lucide) window.lucide.createIcons();
-            cardViewer.classList.remove('hidden');
-            if (imgViewer) imgViewer.classList.add('hidden');
-        } else if (isWsCard && cardViewer) {
-            const wsData = item.workstationData || item;
-            cardViewer.innerHTML = `
-                <div class="w-full h-full bg-slate-950 border-2 border-cyan-500 rounded-xl p-3 flex flex-col justify-between overflow-y-auto custom-scrollbar relative text-left">
-                    <div class="pb-2 border-b border-slate-800 flex justify-between items-center gap-2 shrink-0 flex-wrap">
-                        <span class="font-black text-xs sm:text-sm text-cyan-300 uppercase tracking-widest flex items-center gap-1.5">
-                            <i data-lucide="monitor" class="w-4 h-4 text-cyan-400"></i> WORKSTATION INTEL CARD (${(wsData.title || wsData.type || 'WORKSTATION').toUpperCase()})
-                        </span>
-                        <div class="flex items-center gap-2">
-                            <button onclick="event.stopPropagation(); window.loadWorkstationBackToEditorById('${item.id}');" class="bg-cyan-600 hover:bg-cyan-500 text-white font-black text-[10px] sm:text-xs px-3 py-1 rounded.full uppercase tracking-wider transition-all flex items-center gap-1 cursor-pointer shadow-lg z-30">
-                                <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> 🔄 REWORK IN WORKSTATION #6
-                            </button>
-                            <button onclick="event.stopPropagation(); if(window.closeSurveillanceReview) window.closeSurveillanceReview();" class="bg-red-800 hover:bg-red-700 text-white font-black text-[10px] sm:text-xs px-3 py-1 rounded-full uppercase tracking-wider transition-all flex items-center gap-1 cursor-pointer z-30">
-                                <i data-lucide="x" class="w-3.5 h-3.5"></i> CLOSE
-                            </button>
-                        </div>
-                    </div>
-                    <div class="flex-1 my-2 bg-black rounded-lg border border-slate-800 overflow-hidden flex items-center justify-center p-1">
-                        <img src="${item.image || wsData.image || ''}" class="max-h-full max-w-full object-contain rounded shadow">
-                    </div>
-                </div>`;
-            if (window.lucide) window.lucide.createIcons();
-            cardViewer.classList.remove('hidden');
-            if (imgViewer) imgViewer.classList.add('hidden');
-        } else if (isContactCard && cardViewer) {
-            const c = item.contact || {};
-            const trophyPhoto = item.image || item.imageUrl || item.post_image || null;
-            const cardPhoto = c.cardImageUrl || item.cardImageUrl || (item.contact && item.contact.cardImageUrl) || null;
-
-            const showTrophy = trophyPhoto;
-            const showCard = (cardPhoto && cardPhoto !== trophyPhoto) ? cardPhoto : null;
-
-            cardViewer.innerHTML = `
-                <div style="background-color: #0b0f19 !important; border: 2px solid #a855f7 !important; box-shadow: 0 0 25px rgba(168,85,247,0.4) !important;" class="w-full h-full rounded-2xl p-3 sm:p-5 flex flex-col justify-between overflow-y-auto custom-scrollbar relative bg-[radial-gradient(#a855f7_0.8px,transparent_0.8px)] [background-size:8px_8px] text-left">
-                    <div style="border-bottom: 1px solid rgba(168,85,247,0.4);" class="pb-2 mb-2 flex flex-wrap justify-between items-center gap-2 shrink-0">
-                        <span style="color: #c084fc;" class="font-black text-xs sm:text-sm tracking-widest uppercase flex items-center gap-1.5">
-                            <i data-lucide="shield-check" class="w-4 h-4 text-purple-400"></i> TACTICAL RANGE CARD OPERATOR INTEL
-                        </span>
-                        <div class="flex items-center gap-2">
-                            <span style="background-color: #064e3b !important; color: #34d399 !important; border: 1px solid #10b981 !important;" class="font-mono text-[9px] sm:text-xs px-2 py-0.5 rounded uppercase font-bold">
-                                VERIFIED CONTACT
-                            </span>
-                            <button onclick="event.stopPropagation(); if(window.toggleFullscreen) window.toggleFullscreen('panel-mainview');" style="background-color: #3b0764 !important; color: #d8b4fe !important; border: 1px solid #a855f7 !important;" class="font-black text-[9px] sm:text-xs px-3 py-1 rounded-full uppercase tracking-wider hover:brightness-125 transition-all flex items-center gap-1 cursor-pointer shadow-md z-30 relative" title="Toggle Maximize / Minimize">
-                                <i data-lucide="maximize-2" class="w-3.5 h-3.5 text-purple-300"></i> MAX/MIN
-                            </button>
-                            <button onclick="event.stopPropagation(); if(window.closeSurveillanceReview) window.closeSurveillanceReview();" style="background-color: #991b1b !important; color: #ffffff !important; border: 1px solid #ef4444 !important;" class="font-black text-[9px] sm:text-xs px-3 py-1 rounded-full uppercase tracking-wider hover:brightness-125 transition-all flex items-center gap-1 cursor-pointer shadow-md z-30 relative">
-                                <i data-lucide="x" class="w-3.5 h-3.5 text-white"></i> CLOSE REVIEW
-                            </button>
-                        </div>
-                    </div>
-
-                    ${(showTrophy || showCard) ? `
-                    <div class="grid ${(showTrophy && showCard) ? 'grid-cols-2' : 'grid-cols-1'} gap-2 my-1.5 shrink-0">
-                        ${showTrophy ? `
-                        <div class="w-full h-24 sm:h-44 md:h-56 bg-black rounded-xl overflow-hidden border border-gray-700 flex justify-center shadow-lg">
-                            <img src="${showTrophy}" class="w-full h-full object-contain">
-                        </div>` : ''}
-                        ${showCard ? `
-                        <div class="w-full h-24 sm:h-44 md:h-56 bg-black rounded-xl overflow-hidden border border-gray-700 flex justify-center shadow-lg">
-                            <img src="${showCard}" class="w-full h-full object-contain">
-                        </div>` : ''}
-                    </div>` : ''}
-
-                    <div class="space-y-1 my-1 shrink-0">
-                        ${c.bizname ? `<div style="color: #e9d5ff;" class="text-base sm:text-xl font-black uppercase tracking-wider">${c.bizname}</div>` : ''}
-                        <div style="color: #ffffff;" class="text-sm sm:text-lg font-black uppercase tracking-wider">${item.author || c.author || 'OPERATOR'}</div>
-                        ${c.unit ? `<div style="color: #9ca3af;" class="text-xs font-semibold uppercase">${c.unit}</div>` : ''}
-                    </div>
-
-                    <div style="border-top: 1px solid rgba(255,255,255,0.15);" class="grid grid-cols-1 sm:grid-cols-3 gap-1.5 text-xs sm:text-sm font-mono pt-2 text-gray-200 shrink-0">
-                        <div><span style="color: #9ca3af;" class="font-bold">PHONE:</span> <span style="color: #ffffff;" class="font-bold">${c.phone || '--'}</span></div>
-                        <div><span style="color: #9ca3af;" class="font-bold">COMMS:</span> <span style="color: #34d399;" class="font-bold">${c.comms || '--'}</span></div>
-                        <div><span style="color: #9ca3af;" class="font-bold">WEB:</span> <a href="${c.web && c.web.startsWith('http') ? c.web : 'https://' + (c.web || '#')}" target="_blank" style="color: #60a5fa;" class="font-bold underline">${c.web || '--'}</a></div>
-                    </div>
-                    ${c.details ? `<div style="color: #d8b4fe; border-top: 1px solid rgba(255,255,255,0.15);" class="mt-1.5 text-xs sm:text-sm italic pt-1.5 shrink-0">Specialties: "${c.details}"</div>` : ''}
-                </div>
-            `;
-            if (window.lucide) window.lucide.createIcons();
-            cardViewer.classList.remove('hidden');
-            if (imgViewer) imgViewer.classList.add('hidden');
-        } else if (imgViewer) {
-            if (cardViewer) cardViewer.classList.add('hidden');
-            imgViewer.src = item.image || item.data;
-            imgViewer.classList.remove('hidden');
-        }
-        
-        const survFooter = document.getElementById('surveillance-footer');
-        if (survFooter) survFooter.classList.remove('hidden');
+            const videoEl = document.getElementById('surveillance-stream');
+            const imgViewer = document.getElementById('surveillance-snapshot-viewer');
+            const placeholder = document.getElementById('surveillance-placeholder');
+            const label = document.getElementById('feed-label-source');
+            const hud = document.getElementById('surveillance-hud');
+            const captureBtn = document.getElementById('surveillance-capture-btn');
+            
+            if (videoEl) videoEl.classList.add('hidden');
+            if (placeholder) placeholder.classList.add('hidden');
+            if (hud) hud.classList.add('hidden'); // HIDE THE LIVE COMPASS!
+            if (captureBtn) captureBtn.classList.add('hidden'); // Disable capturing a capture
+            
+            if (imgViewer) {
+                imgViewer.src = item.image;
+                imgViewer.classList.remove('hidden');
+            }
+            
+            const survFooter = document.getElementById('surveillance-footer');
+            if (survFooter) survFooter.classList.remove('hidden');
 
             // IMAGE REVIEW MODE: Hide all live-feed controls — image is static, they don't apply
             const _flipSnap = document.getElementById('feed-switch-cam-btn');
@@ -9545,98 +9045,32 @@ function initializeTacticalDashboard2() {
                         if (window.lucide) window.lucide.createIcons();
                     }, 1500);
                 } else {
+                    btnElement.innerHTML = originalText;
+                    if (window.lucide) window.lucide.createIcons();
                 }
             } catch (err) {
                 console.error('Failed to send to vault:', err);
                 btnElement.innerHTML = originalText;
+                if (window.lucide) window.lucide.createIcons();
             }
         };
 
+        if (toVaultBtnTop) {
+            toVaultBtnTop.addEventListener('click', (e) => handleVaultClick(e, toVaultBtnTop));
+        }
+        if (toVaultBtnBottom) {
+            toVaultBtnBottom.addEventListener('click', (e) => handleVaultClick(e, toVaultBtnBottom));
+        }
         // -----------------------------------------------------------------------
         // SEND VAULT ITEM TO CHAT (called from viewer SEND button & CHATS button)
         // -----------------------------------------------------------------------
-        window.sendVaultItemToChat = async function(itemId) {
-            let item = (window.vaultCache || []).find(i => i.id == itemId || (i.id && i.id.toString() === itemId.toString()));
-            if (!item && window.TRC_IDB) {
-                try {
-                    item = await window.TRC_IDB.get('intelVault', itemId.toString());
-                    if (!item) item = await window.TRC_IDB.get('intelVault', parseInt(itemId));
-                    if (!item) item = await window.TRC_IDB.get('workstationLibrary', itemId.toString());
-                    if (!item) item = await window.TRC_IDB.get('workstationLibrary', parseInt(itemId));
-                } catch(e) {}
-            }
-            if (!item) {
-                if (window.pushTacLog) window.pushTacLog('VAULT ITEM NOT FOUND IN IDB', 'ERROR');
+        window.sendVaultItemToChat = function(itemId) {
+            if (!commsChannel) {
+                alert('Connect to Tactical Comms first to send intel!');
                 return;
             }
-
-            const isOfficerCard = item.type === 'officer_sitrep' || item.workstationData?.type === 'officer';
-            if (isOfficerCard) {
-                const cardObj = JSON.parse(JSON.stringify(item.workstationData || item));
-                const userObj = (typeof commsUser !== 'undefined' && commsUser && commsUser.callsign)
-                    ? commsUser
-                    : { callsign: 'OPERATOR', role: 'FIRST RESPONDER', team: 'ALPHA' };
-
-                // Compress sketch & photos so total payload stays under 15KB for network broadcast
-                const compressFn = window.compressBase64Image || (async (img, maxDim, q) => img);
-                if (cardObj.data) {
-                    if (cardObj.data.sketchImage) {
-                        cardObj.data.sketchImage = await compressFn(cardObj.data.sketchImage, 260, 0.4);
-                    }
-                    if (cardObj.data.scenePhotos && cardObj.data.scenePhotos.length > 0) {
-                        cardObj.data.scenePhotos = await Promise.all(
-                            cardObj.data.scenePhotos.map(p => compressFn(p, 180, 0.3))
-                        );
-                    }
-                }
-
-                const lightImage = cardObj.data?.sketchImage || (cardObj.data?.scenePhotos && cardObj.data.scenePhotos[0]) || '';
-
-                const payload = {
-                    type: 'officer_sitrep',
-                    label: item.label || `SITREP: ${cardObj.data?.unitCallsign || 'OFFICER'}`,
-                    workstationData: cardObj,
-                    image: lightImage
-                };
-
-                const messageText = `[ 🚓 ${item.label || 'OFFICER SITREP'} ] CAD: ${cardObj.data?.cadNumber || 'N/A'}`;
-
-                if (typeof TacticalCrypto !== 'undefined') {
-                    const encrypted = TacticalCrypto.encrypt({
-                        message: messageText,
-                        user: userObj,
-                        timestamp: Date.now(),
-                        image: lightImage,
-                        metadata: payload
-                    });
-                    const msgId = Math.random().toString(36).substring(2, 9);
-                    if (window.receivedMsgIds) window.receivedMsgIds.add(msgId);
-
-                    // Render locally in sender chat
-                    if (typeof renderChatMessage === 'function') {
-                        renderChatMessage(userObj, messageText, true, lightImage, null, payload);
-                    }
-
-                    // Send via WebRTC P2P DataChannels
-                    if (window.dataChannels) {
-                        Object.values(window.dataChannels).forEach(dc => {
-                            if (dc && dc.readyState === 'open') {
-                                try { dc.send(JSON.stringify({ event: 'chat', data: encrypted, msgId })); } catch(e){}
-                            }
-                        });
-                    }
-
-                    // Send via Supabase Broadcast Channel if connected
-                    if (typeof commsChannel !== 'undefined' && commsChannel) {
-                        try {
-                            commsChannel.send({ type: 'broadcast', event: 'chat', payload: { data: encrypted, msgId } });
-                        } catch(e) {}
-                    }
-
-                    if (window.pushTacLog) window.pushTacLog(`OFFICER SITREP CARD TRANSMITTED TO COMMS CHAT (${Math.round(encrypted.length / 1024)} KB)`, 'SUCCESS');
-                }
-                return;
-            }
+            const item = vaultCache.find(i => i.id == itemId);
+            if (!item) { window.pushTacLog('VAULT ITEM NOT FOUND', 'ERROR'); return; }
 
             const isVideo = item.image && item.image.startsWith('data:video');
 
@@ -9694,178 +9128,102 @@ function initializeTacticalDashboard2() {
                     window.sendVaultItemToChat(item.id);
                     return;
                 }
-                if (item.contact || item.type === 'contact' || (item.type === 'intel_report' && item.contact)) {
-                    const c = item.contact || {};
-                    const trophyPhoto = (item.image && item.image !== c.cardImageUrl) ? item.image : null;
-                    const cardPhoto = c.cardImageUrl || (item.image === c.cardImageUrl ? item.image : null);
-
-                    const cardImgHtml = cardPhoto ? `
-<div style="margin-top: 8px; max-height: 140px; background-color: #000000; border-radius: 6px; overflow: hidden; border: 1px solid #4b5563; text-align: center;">
-    <img src="${cardPhoto}" style="max-height: 140px; width: auto; max-width: 100%; display: inline-block; object-fit: contain;">
-</div>` : '';
-
-                    const cardMsg = `<div style="font-family: monospace; font-size: 11px; line-height: 1.5;">
-<div style="color: #e879f9; font-weight: 900; letter-spacing: 1px; margin-bottom: 4px; border-bottom: 1px solid rgba(232,121,249,0.4); padding-bottom: 2px;">🎴 [TRC BIZ CARD]</div>
-<div><span style="color: #f0abfc; font-weight: 800;">Author:</span> <span style="color: #ffffff; font-weight: 700;">${item.author || c.author || 'OPERATOR'}</span></div>
-<div><span style="color: #f0abfc; font-weight: 800;">Company:</span> <span style="color: #67e8f9; font-weight: 800;">${c.bizname || 'N/A'}</span></div>
-<div><span style="color: #f0abfc; font-weight: 800;">Unit:</span> <span style="color: #9ca3af; font-weight: 700;">${c.unit || 'N/A'}</span></div>
-<div><span style="color: #f0abfc; font-weight: 800;">Phone:</span> <span style="color: #ffffff; font-weight: 700;">${c.phone || '--'}</span></div>
-<div><span style="color: #f0abfc; font-weight: 800;">Comms:</span> <span style="color: #34d399; font-weight: 700;">${c.comms || '--'}</span></div>
-<div><span style="color: #f0abfc; font-weight: 800;">Web:</span> <span style="color: #60a5fa; font-weight: 700;">${c.web || '--'}</span></div>
-<div><span style="color: #f0abfc; font-weight: 800;">Specialties:</span> <span style="color: #f472b6; font-style: italic;">"${c.details || 'None'}"</span></div>
-${cardImgHtml}
-</div>`;
-
+                if (!item.image) {
+                    window.pushTacLog('VAULT ITEM HAS NO IMAGE DATA TO SEND', 'ERROR');
+                    return;
+                }
+                // Image: Bypass WebRTC limits by securely uploading pristine image to Storage
+                // and sending a tiny thumbnail over the Data Channel
+                window.pushTacLog("SECURING HIGH-RES IMAGE FOR TRANSMISSION...", "SYS");
+                const img = new Image();
+                img.onload = async () => {
+                    // 1. Generate tiny thumbnail for chat feed
+                    let w = img.width, h = img.height;
+                    const MAX_DIM = 400; // Tiny thumbnail bypasses all WebRTC payload limits safely
+                    if (w > MAX_DIM || h > MAX_DIM) {
+                        if (w > h) { h = Math.floor(h * (MAX_DIM / w)); w = MAX_DIM; }
+                        else { w = Math.floor(w * (MAX_DIM / h)); h = MAX_DIM; }
+                    }
+                    const canvas = document.createElement('canvas');
+                    canvas.width = w; canvas.height = h;
+                    canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+                    const thumbnailBase64 = canvas.toDataURL('image/jpeg', 0.5);
+                    
+                    // 2. Encrypt pristine image using HTTP-safe TacticalCrypto (no subtle crypto)
                     try {
-                        const encrypted = TacticalCrypto.encrypt({ message: cardMsg, user: commsUser, image: trophyPhoto, timestamp: Date.now() });
+                        const encryptedStr = TacticalCrypto.encrypt({ image: item.image });
+                        const encryptedBlob = new Blob([encryptedStr], { type: 'text/plain' });
+                        const fileName = `secure_img_${Date.now()}_${Math.random().toString(36).substring(2,7)}.txt`;
+                        
+                        // 4. Upload to Storage
+                        const { data, error } = await window.supabaseClient.storage.from('Tactical-media').upload(fileName, encryptedBlob, {
+                            cacheControl: '3600', upsert: false
+                        });
+                        if (error) { window.pushTacLog("IMAGE SECURE UPLOAD FAILED: " + error.message, "ERROR"); return; }
+                        
+                        const publicUrl = window.supabaseClient.storage.from('Tactical-media').getPublicUrl(fileName).data.publicUrl;
+                        
+                        // 5. Send message
+                        const metadataObj = JSON.parse(JSON.stringify(item));
+                        delete metadataObj.image; delete metadataObj.snapshot;
+                        delete metadataObj.bgImage; delete metadataObj.id;
+                        metadataObj.isPristineImage = true;
+                        
+                        // Prevent WebRTC overflow from nested massive base64 strings
+                        if (metadataObj.boloData && metadataObj.boloData.image) delete metadataObj.boloData.image;
+                        if (metadataObj.gametagData && metadataObj.gametagData.image) delete metadataObj.gametagData.image;
+                        if (metadataObj.licenseData && metadataObj.licenseData.image) delete metadataObj.licenseData.image;
+                        if (metadataObj.workstationData && metadataObj.workstationData.image) delete metadataObj.workstationData.image;
+                        
+                        const encryptedImage = TacticalCrypto.encrypt({
+                            message: "INCOMING SECURE HIGH-RES INTEL",
+                            image: thumbnailBase64,
+                            tapeUrl: publicUrl,
+                            user: commsUser,
+                            metadata: metadataObj
+                        });
+                        
                         const msgId = Math.random().toString(36).substring(2, 9);
-                        if (typeof window.receivedMsgIds !== 'undefined') window.receivedMsgIds.add(msgId);
+                        window.receivedMsgIds.add(msgId);
                         if (window.dataChannels) {
                             Object.values(window.dataChannels).forEach(dc => {
                                 if (dc && dc.readyState === 'open') {
-                                    try { dc.send(JSON.stringify({ event: 'chat', data: encrypted, msgId })); } catch (err) {}
+                                    try { dc.send(JSON.stringify({ event: 'chat', data: encryptedImage, msgId })); } catch(e2) {}
                                 }
                             });
                         }
                         if (commsChannel) {
-                            commsChannel.send({ type: 'broadcast', event: 'chat', payload: { data: encrypted, msgId } });
+                            commsChannel.send({ type: 'broadcast', event: 'chat', payload: { data: encryptedImage, msgId } });
+                        } else {
+                            window.pushTacLog("COMMS CHANNEL OFFLINE - INTEL SECURED BUT NOT BROADCASTED", "WARNING");
                         }
-                        renderChatMessage(commsUser || { callsign: item.author || c.author || 'OPERATOR', role: c.unit || 'FIELD UNIT', team: 'ALPHA' }, cardMsg, true, trophyPhoto);
-                        window.pushTacLog(`TRC BUSINESS CARD TRANSMITTED TO MISSION CHAT`, "SUCCESS");
-                    } catch (e) {
-                        window.pushTacLog("CARD TX ERROR: " + e.message, "ERROR");
-                    }
-                    return;
-                }
-
-                // Image / Intel Card / Workstation Library Card broadcast
-                window.pushTacLog("SECURING INTEL FOR TRANSMISSION...", "SYS");
-                const userObj = (typeof commsUser !== 'undefined' && commsUser && commsUser.callsign)
-                    ? commsUser
-                    : { callsign: 'OPERATOR', role: 'FIELD UNIT', team: 'ALPHA' };
-
-                const compressFn = window.compressBase64Image || (async (img, maxDim, q) => img);
-                const compressedImg = await compressFn(item.image, 800, 0.78);
-                const itemLabel = item.label || (item.title ? `WORKSTATION: ${item.title}` : `INTEL CARD: ${item.type?.toUpperCase() || 'SNAPSHOT'}`);
-                
-                const payloadItem = JSON.parse(JSON.stringify(item));
-                payloadItem.image = compressedImg;
-                if (payloadItem.data && payloadItem.data.image) {
-                    payloadItem.data.image = await compressFn(payloadItem.data.image, 800, 0.78);
-                }
-                if (payloadItem.workstationData && payloadItem.workstationData.image) {
-                    payloadItem.workstationData.image = await compressFn(payloadItem.workstationData.image, 800, 0.78);
-                }
-                if (payloadItem.workstationData && payloadItem.workstationData.data && payloadItem.workstationData.data.image) {
-                    payloadItem.workstationData.data.image = await compressFn(payloadItem.workstationData.data.image, 800, 0.78);
-                }
-
-                const encryptedImage = TacticalCrypto.encrypt({
-                    message: `[ ${itemLabel} ]`,
-                    image: compressedImg,
-                    user: userObj,
-                    metadata: payloadItem
-                });
-
-                const msgId = Math.random().toString(36).substring(2, 9);
-                if (window.receivedMsgIds) window.receivedMsgIds.add(msgId);
-                if (window.dataChannels) {
-                    Object.values(window.dataChannels).forEach(dc => {
-                        if (dc && dc.readyState === 'open') {
-                            try { dc.send(JSON.stringify({ event: 'chat', data: encryptedImage, msgId })); } catch(e2) {}
-                        }
-                    });
-                }
-                if (commsChannel) {
-                    try { commsChannel.send({ type: 'broadcast', event: 'chat', payload: { data: encryptedImage, msgId } }); } catch(e){}
-                }
-                renderChatMessage(userObj, `[ ${itemLabel} ]`, true, compressedImg, null, payloadItem);
-                window.pushTacLog(`SECURE INTEL SENT TO COMMS`, "SUCCESS");
+                        renderChatMessage(commsUser, "INCOMING SECURE HIGH-RES INTEL", true, thumbnailBase64);
+                        window.pushTacLog(`SECURE INTEL SENT TO COMMS`, "SUCCESS");
+                    } catch(e) { window.pushTacLog("IMAGE SECURE SEND FAILED: " + e.message, "ERROR"); }
+                };
+                img.onerror = () => window.pushTacLog('IMAGE LOAD ERR FOR VAULT SEND', 'ERROR');
+                img.src = item.image;
             }
         };
 
         const vaultChatsBtn = document.getElementById('vault-chats-btn');
         if (vaultChatsBtn) {
-            vaultChatsBtn.addEventListener('click', async (e) => {
-                e.stopPropagation();
-                
-                // Query BOTH Vault checkboxes AND Workstation Library checkboxes
-                const checkedBoxes = document.querySelectorAll('.vault-export-checkbox:checked, .ws-library-checkbox:checked');
-                if (checkedBoxes.length === 0) {
-                    alert("Please check at least one card using the checkbox [✓] before clicking CHATS.");
-                    return;
-                }
-
-                const selectedIds = Array.from(checkedBoxes).map(cb => cb.dataset.vaultId || cb.value);
-
-                // Build unified library across vaultCache, intelVault IDB AND workstationLibrary IDB
-                let allCards = [...(window.vaultCache || [])];
-                if (window.TRC_IDB) {
-                    try {
-                        const vaultCards = await window.TRC_IDB.getAll('intelVault');
-                        if (vaultCards) {
-                            Object.values(vaultCards).forEach(v => {
-                                if (v && !allCards.some(c => c && c.id && v.id && c.id.toString() === v.id.toString())) {
-                                    allCards.push(v);
-                                }
-                            });
-                        }
-                        const wsCards = await window.TRC_IDB.getAll('workstationLibrary');
-                        if (wsCards) {
-                            Object.values(wsCards).forEach(w => {
-                                if (w && !allCards.some(c => c && c.id && w.id && c.id.toString() === w.id.toString())) {
-                                    allCards.push(w);
-                                }
-                            });
-                        }
-                    } catch(err){}
-                }
-
-                const itemsToSend = allCards.filter(item => item && item.id && selectedIds.includes(item.id.toString()));
-
-                if (itemsToSend.length === 0) {
-                    alert("Selected cards could not be loaded from storage. Try refreshing the Intel Vault.");
-                    return;
-                }
-
-                for (let i = 0; i < itemsToSend.length; i++) {
-                    await window.sendVaultItemToChat(itemsToSend[i].id);
-                    if (i < itemsToSend.length - 1) {
-                        await new Promise(r => setTimeout(r, 600));
-                    }
-                }
-
-                checkedBoxes.forEach(cb => cb.checked = false);
-                if (window.pushTacLog) window.pushTacLog(`TRANSMITTING ${itemsToSend.length} CHECKED CARD(S) TO ENCRYPTED COMMS CHAT`, "SUCCESS");
-            });
-        }
-
-        const vaultToCardsBtn = document.getElementById('vault-to-cards-btn');
-        if (vaultToCardsBtn) {
-            vaultToCardsBtn.addEventListener('click', (e) => {
+            vaultChatsBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
                 const checkedBoxes = document.querySelectorAll('.vault-export-checkbox:checked');
+                if (checkedBoxes.length === 0) return;
+    
+                const selectedIds = Array.from(checkedBoxes).map(cb => cb.dataset.vaultId);
+                const itemsToSend = vaultCache.filter(item => selectedIds.includes(item.id.toString()));
                 
-                if (checkedBoxes.length > 0) {
-                    const selectedIds = Array.from(checkedBoxes).map(cb => cb.dataset.vaultId);
-                    const cardToLoad = (window.vaultCache || []).find(item => selectedIds.includes(item.id.toString()) && (item.contact || item.type === 'intel_report' || item.type === 'contact'))
-                        || (window.vaultCache || []).find(item => selectedIds.includes(item.id.toString()));
-
-                    if (cardToLoad) {
-                        if (window.reworkBusinessCard) window.reworkBusinessCard(cardToLoad);
-                        checkedBoxes.forEach(cb => cb.checked = false);
-                        window.pushTacLog(`LOADED VAULT CARD BACK TO FORM`, "SUCCESS");
-                        return;
-                    }
-                }
-
-                const cardsOnly = (window.vaultCache || []).filter(item => item.contact || item.type === 'intel_report' || item.type === 'contact');
-                if (cardsOnly.length === 0) {
-                    alert("No TRC Business Cards or Contacts found in Vault.");
-                    if (typeof refreshVaultGrid === 'function') refreshVaultGrid();
-                } else if (typeof refreshVaultGrid === 'function') {
-                    refreshVaultGrid(cardsOnly);
-                }
+                itemsToSend.forEach((item, index) => {
+                    // Delegate to the unified send function with a stagger for multiple items
+                    setTimeout(() => window.sendVaultItemToChat(item.id), index * 1200);
+                });
+                
+                // Uncheck boxes after sending
+                checkedBoxes.forEach(cb => cb.checked = false);
+                window.pushTacLog(`QUEUED ${itemsToSend.length} ITEM(S) FOR COMM CHANNEL`, "SUCCESS");
             });
         }
 
@@ -10004,7 +9362,7 @@ document.addEventListener('DOMContentLoaded', () => {
         updateTransform();
         zoomModal.classList.remove('hidden', 'pointer-events-none', 'opacity-0');
         zoomModal.classList.add('flex', 'opacity-100');
-        if (window.lucide) window.lucide.createIcons();
+        if (window.lucide) lucide.createIcons();
     }
 
     function closeZoomModal() {
@@ -10944,136 +10302,6 @@ if (window.DeviceOrientationEvent) {
 
 
 // ==============================================
-// MY GPS SYNC & TEAMMATE LOCATOR JUMP LOGIC
-// ==============================================
-window.geoSyncGPS = function() {
-    if (!navigator.geolocation) {
-        alert("Geolocation is not supported by your device browser.");
-        return;
-    }
-    const displayEl = document.getElementById('geo-my-coords-display');
-    const badgeEl = document.getElementById('geo-my-coords-badge');
-    if (displayEl) displayEl.textContent = "ACQUIRING...";
-    if (badgeEl) badgeEl.classList.remove('hidden');
-
-    navigator.geolocation.getCurrentPosition(
-        (pos) => {
-            const lat = pos.coords.latitude;
-            const lng = pos.coords.longitude;
-            window.myLatestCoords = { lat, lng };
-
-            const latStr = lat.toFixed(6);
-            const lngStr = lng.toFixed(6);
-            const coordText = `${latStr}, ${lngStr}`;
-
-            if (displayEl) displayEl.textContent = coordText;
-            const hudLat = document.getElementById('hud-gps-lat');
-            const hudLon = document.getElementById('hud-gps-lon');
-            if (hudLat) hudLat.textContent = latStr;
-            if (hudLon) hudLon.textContent = lngStr;
-
-            if (window.orbitalMap) {
-                window.orbitalMap.setView([lat, lng], 17);
-                if (window.mySelfPositionMarker) {
-                    window.mySelfPositionMarker.setLatLng([lat, lng]);
-                } else {
-                    const icon = L.divIcon({
-                        className: 'custom-div-icon',
-                        html: `<div class="relative w-4 h-4 flex items-center justify-center"><div class="absolute w-full h-full rounded-full bg-emerald-500 animate-ping opacity-75"></div><div class="relative w-3.5 h-3.5 bg-emerald-500 border-2 border-white rounded-full flex items-center justify-center text-[5px] text-white font-black">★</div></div>`,
-                        iconSize: [16, 16]
-                    });
-                    window.mySelfPositionMarker = L.marker([lat, lng], { icon }).addTo(window.orbitalMap);
-                    window.mySelfPositionMarker.bindTooltip(`MY POSITION: ${coordText}`, { permanent: true, direction: 'top', className: 'tactical-tooltip' });
-                }
-            }
-
-            if (window.pushTacLog) window.pushTacLog(`MY GPS SYNC COMPLETE: LAT ${latStr} | LON ${lngStr}`, "SUCCESS");
-        },
-        (err) => {
-            console.warn("GPS Sync error:", err);
-            if (displayEl) displayEl.textContent = "GPS ERROR / DENIED";
-            alert("Could not acquire GPS position. Ensure location services are enabled.");
-        },
-        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
-    );
-};
-
-window.teammateLocatorMarker = null;
-
-window.geoJumpToCoords = function() {
-    const input = document.getElementById('geo-coord-jump-input') || document.getElementById('geo-jump-coords');
-    if (!input || !input.value.trim()) {
-        alert("Please enter teammate coordinates in Lat, Lon format (e.g. 34.123456, -118.654321).");
-        return;
-    }
-
-    const val = input.value.trim();
-    const parts = val.split(/[\s,]+/).filter(Boolean);
-
-    if (parts.length < 2) {
-        alert("Invalid coordinate format. Enter Latitude and Longitude separated by comma (e.g. 34.1234, -118.5678).");
-        return;
-    }
-
-    const lat = parseFloat(parts[0]);
-    const lng = parseFloat(parts[1]);
-
-    if (isNaN(lat) || isNaN(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180) {
-        alert("Invalid Latitude/Longitude values. Latitude must be between -90 and 90, Longitude between -180 and 180.");
-        return;
-    }
-
-    if (!window.orbitalMap) {
-        alert("Sat Map is not initialized yet. Open Geo-Matrix panel first.");
-        return;
-    }
-
-    window.orbitalMap.setView([lat, lng], 17);
-
-    let distanceStr = '';
-    let bearingStr = '';
-    if (window.myLatestCoords) {
-        const R = 6371e3;
-        const φ1 = window.myLatestCoords.lat * Math.PI/180;
-        const φ2 = lat * Math.PI/180;
-        const Δφ = (lat - window.myLatestCoords.lat) * Math.PI/180;
-        const Δλ = (lng - window.myLatestCoords.lng) * Math.PI/180;
-
-        const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
-                  Math.cos(φ1) * Math.cos(φ2) *
-                  Math.sin(Δλ/2) * Math.sin(Δλ/2);
-        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-        const meters = R * c;
-        const yards = meters * 1.09361;
-        distanceStr = `${Math.round(yards)} YDS (${Math.round(meters)}m)`;
-
-        const y = Math.sin(Δλ) * Math.cos(φ2);
-        const x = Math.cos(φ1)*Math.sin(φ2) - Math.sin(φ1)*Math.cos(φ2)*Math.cos(Δλ);
-        let brng = Math.atan2(y, x) * 180 / Math.PI;
-        brng = (brng + 360) % 360;
-        bearingStr = `${Math.round(brng)}°`;
-    }
-
-    const icon = L.divIcon({
-        className: 'custom-div-icon',
-        html: `<div class="relative w-5 h-5 flex items-center justify-center"><div class="absolute w-full h-full rounded-full bg-cyan-400 animate-ping opacity-90"></div><div class="relative w-4 h-4 bg-cyan-500 border-2 border-white rounded-full flex items-center justify-center text-[7px] text-black font-black">🎯</div></div>`,
-        iconSize: [20, 20]
-    });
-
-    if (window.teammateLocatorMarker) {
-        window.orbitalMap.removeLayer(window.teammateLocatorMarker);
-    }
-
-    const labelText = `TEAMMATE LOCATOR: ${lat.toFixed(6)}, ${lng.toFixed(6)}` + (distanceStr ? ` | DIST: ${distanceStr} | BRG: ${bearingStr}` : '');
-    window.teammateLocatorMarker = L.marker([lat, lng], { icon }).addTo(window.orbitalMap);
-    window.teammateLocatorMarker.bindTooltip(labelText, { permanent: true, direction: 'top', className: 'tactical-tooltip' }).openTooltip();
-
-    if (window.pushTacLog) {
-        window.pushTacLog(`TEAMMATE LOCATOR JUMP: LAT ${lat.toFixed(6)}, LON ${lng.toFixed(6)} ${distanceStr ? `(DIST: ${distanceStr}, BRG: ${bearingStr})` : ''}`, "SUCCESS");
-    }
-};
-
-// ==============================================
 // EMERGENCY SIREN DETERRENT
 // ==============================================
 let sirenContext = null;
@@ -11567,7 +10795,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
         
-        if (window.lucide) window.lucide.createIcons();
+        if(window.lucide) window.lucide.createIcons();
     };
 
     window.loadCalendarBackToEditorById = function(id) {

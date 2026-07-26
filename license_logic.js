@@ -391,14 +391,31 @@ if (licenseToVaultBtnTop) {
         renderZone.style.zIndex = '-9999';
 
         try {
+            if (!window.html2canvas) {
+                if (typeof window.ensureHtml2Canvas === 'function') {
+                    await window.ensureHtml2Canvas();
+                } else if (window.loadScript) {
+                    await window.loadScript('html2canvas.min.js');
+                }
+            }
+            if (!window.html2canvas) {
+                throw new Error('html2canvas library not loaded');
+            }
+
             await new Promise(r => setTimeout(r, 600)); // Increased wait time for mobile image paint
-            const canvas = await html2canvas(renderZone, {
+            
+            const html2canvasPromise = window.html2canvas(renderZone, {
                 backgroundColor: typeBgColors[lic.type] || '#162b12',
                 scale:   2,
                 logging: false,
                 useCORS: true,
-                allowTaint: false
+                allowTaint: true
             });
+            const timeoutPromise = new Promise((_, reject) => 
+                setTimeout(() => reject(new Error('html2canvas render timed out')), 4000)
+            );
+            
+            const canvas = await Promise.race([html2canvasPromise, timeoutPromise]);
             const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
 
             if (window.saveIntelSnapshot) {
@@ -424,7 +441,8 @@ if (licenseToVaultBtnTop) {
             }
         } catch(err) {
             console.error('License capture failed:', err);
-            alert('Capture failed: ' + err.message);
+            if (window.showToast) window.showToast('⚠️ Capture failed: ' + err.message);
+            else alert('Capture failed: ' + err.message);
             licenseToVaultBtnTop.disabled  = false;
             licenseToVaultBtnTop.innerHTML = originalHtml;
             if (window.lucide) window.lucide.createIcons();
