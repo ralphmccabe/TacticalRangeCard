@@ -78,9 +78,18 @@ window.reworkBusinessCard = function(itemData) {
         if (contactChevron) contactChevron.classList.add('rotate-180');
     }
 
-    // Switch to Standalone Card mode if it's primarily a business card
-    const modeBtnCard = document.getElementById('mode-btn-card');
-    if (modeBtnCard) modeBtnCard.click();
+    // Switch mode depending on if it's a blog post or business card
+    if (itemData.type === 'blog_post' || itemData.content) {
+        const modeBtnPost = document.getElementById('mode-btn-post');
+        if (modeBtnPost) modeBtnPost.click();
+    } else {
+        const modeBtnCard = document.getElementById('mode-btn-card');
+        if (modeBtnCard) modeBtnCard.click();
+    }
+
+    // Close the Intel Vault if it's open so we can see the blogger
+    const vaultModal = document.getElementById('vault-modal');
+    if (vaultModal) vaultModal.classList.add('hidden');
 
     // Open Modal
     postModal.classList.remove('hidden');
@@ -210,6 +219,31 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Initial fetch on DOMContentLoaded
     fetchWirePosts();
+    
+    // Global Wire Realtime Feed Subscription
+    setTimeout(() => {
+        const client = typeof getSupabaseClient === 'function' ? getSupabaseClient() : window.supabaseClient;
+        if (client && !window.globalWireSubscription) {
+            window.globalWireSubscription = client
+                .channel('global-wire-channel')
+                .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'global_wire' }, payload => {
+                    // Update main feed if open
+                    const panel = document.getElementById('panel-global-wire');
+                    if (panel && !panel.classList.contains('hidden') && window.fetchWirePosts) {
+                        window.fetchWirePosts();
+                    }
+                    
+                    // Also update comm link (live comments) if open
+                    if (payload.new && payload.new.category === 'COMM_CHAT' && window.fetchCommLinkFeed) {
+                        const sidebar = document.getElementById('comm-link-sidebar');
+                        if (sidebar && sidebar.style.transform === 'translateX(0px)') {
+                            window.fetchCommLinkFeed();
+                        }
+                    }
+                })
+                .subscribe();
+        }
+    }, 1000);
 
     // --- 3. Mode Switch (INTEL SITREP vs STANDALONE TRC BUSINESS CARD) ---
     const modeBtnSitrep = document.getElementById('mode-btn-sitrep');
@@ -487,6 +521,36 @@ document.addEventListener('DOMContentLoaded', () => {
             pModal.style.setProperty('display', 'none', 'important');
             pModal.classList.add('hidden');
         }
+    };
+
+    window.clearTransmissionForm = function() {
+        // Clear main intel fields
+        const author = document.getElementById('post-author');
+        if(author) author.value = '';
+        const cat = document.getElementById('post-category');
+        if(cat) cat.value = 'GENERAL';
+        const content = document.getElementById('post-content');
+        if(content) content.value = '';
+        
+        // Clear attachments & files
+        if(window.clearPostImage) window.clearPostImage();
+        if(window.clearBizCardPhoto) window.clearBizCardPhoto();
+        
+        // Clear card fields
+        const fields = ['bizname', 'unit', 'phone', 'comms', 'web', 'details'];
+        fields.forEach(f => {
+            const el = document.getElementById('post-contact-' + f);
+            if(el) el.value = '';
+        });
+        
+        // Clear vault logic if exists
+        window.pendingVaultImageBase64 = null;
+        window.pendingVaultCardData = null;
+        
+        // Update Live Preview & UI
+        if(window.updateLiveCardPreview) window.updateLiveCardPreview();
+        const charCount = document.getElementById('post-char-count');
+        if(charCount) charCount.textContent = '0/500';
     };
 
     // Backdrop click to close modal & Escape key listener
@@ -864,9 +928,7 @@ async function fetchWirePosts() {
     feedContainer.innerHTML = `<div class="w-full text-center mt-12 text-black font-black uppercase tracking-widest flex items-center justify-center gap-3">
         <i data-lucide="loader" class="w-6 h-6 animate-spin"></i> INTERROGATING SATELLITE...
     </div>`;
-    if (window.lucide) window.lucide.createIcons();
-
-    try {
+try {
         let query = client
             .from('global_wire')
             .select('*')
@@ -884,24 +946,25 @@ async function fetchWirePosts() {
 
         if (error) throw error;
 
-        window.fetchedWirePosts = posts;
+        // Filter out COMM_CHAT messages from the main feed
+        const filteredData = posts ? posts.filter(post => post.category !== 'COMM_CHAT') : [];
+
+        window.fetchedWirePosts = filteredData;
         if (typeof window.updateBlogBookDisplay === 'function') window.updateBlogBookDisplay();
 
         feedContainer.innerHTML = '';
 
-        if (!posts || posts.length === 0) {
+        if (!filteredData || filteredData.length === 0) {
             feedContainer.innerHTML = `
-                <div class="w-full text-center mt-8 text-gray-500 font-bold uppercase tracking-widest border-4 border-dashed border-gray-400 p-8 flex flex-col items-center gap-3">
-                    <div>NO TRANSMISSIONS INTERCEPTED IN "${currentWireCategoryFilter}".</div>
-                    <button onclick="currentWireCategoryFilter='ALL'; fetchWirePosts();" class="bg-blue-600 text-white font-black text-xs px-4 py-2 rounded uppercase border border-black hover:bg-blue-500 cursor-pointer">
-                        SHOW ALL POSTS
-                    </button>
+                <div class="text-center py-20 px-4 border-4 border-dashed border-slate-700 rounded-xl bg-slate-900/50">
+                    <h3 class="text-slate-400 font-black text-sm uppercase tracking-widest mb-3">NO TRANSMISSIONS INTERCEPTED IN "${currentWireCategoryFilter}".</h3>
+                    <button onclick="window.currentWireCategoryFilter='ALL'; window.fetchWirePosts();" class="bg-blue-600 text-white font-black text-[10px] px-6 py-2.5 rounded hover:bg-blue-500 uppercase tracking-widest transition-colors shadow-lg">SHOW ALL POSTS</button>
                 </div>
             `;
             return;
         }
 
-        posts.forEach(post => {
+        filteredData.forEach(post => {
             // Unpack content JSON if contact card is attached
             let intelText = post.content || '';
             let contactData = null;
@@ -1414,3 +1477,129 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }, 500);
 });
+
+// ==========================================
+// LIVE COMM-LINK (GLOBAL CHAT) LOGIC
+// ==========================================
+let commLinkSubscription = null;
+
+window.toggleCommLink = function() {
+    const sidebar = document.getElementById('comm-link-sidebar');
+    if (!sidebar) return;
+    
+    const isOpen = sidebar.style.transform === 'translateX(0px)';
+    
+    if (!isOpen) {
+        sidebar.classList.remove('translate-x-full');
+        sidebar.style.transform = 'translateX(0)';
+        window.fetchCommLinkFeed();
+        const client = typeof getSupabaseClient === 'function' ? getSupabaseClient() : window.supabaseClient;
+        if (client && !commLinkSubscription) {
+            commLinkSubscription = client
+                .channel('comm-link-channel')
+                .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'global_wire', filter: "category=eq.COMM_CHAT" }, payload => {
+                    window.fetchCommLinkFeed();
+                })
+                .subscribe();
+        }
+    } else {
+        sidebar.classList.add('translate-x-full');
+        sidebar.style.transform = 'translateX(100%)';
+        if (commLinkSubscription) {
+            const client = typeof getSupabaseClient === 'function' ? getSupabaseClient() : window.supabaseClient;
+            if (client) client.removeChannel(commLinkSubscription);
+            commLinkSubscription = null;
+        }
+    }
+};
+
+window.fetchCommLinkFeed = async function() {
+    const client = typeof getSupabaseClient === 'function' ? getSupabaseClient() : window.supabaseClient;
+    if (!client) return;
+    const feed = document.getElementById('comm-link-feed');
+    if(!feed) return;
+    
+    feed.innerHTML = '<div class="text-center text-purple-400 text-xs animate-pulse font-mono py-4">RECEIVING...</div>';
+    
+    try {
+        const { data, error } = await client
+            .from('global_wire')
+            .select('*')
+            .eq('category', 'COMM_CHAT')
+            .order('created_at', { ascending: false })
+            .limit(100);
+            
+        if (error) throw error;
+        
+        feed.innerHTML = '';
+        if (!data || data.length === 0) {
+            feed.innerHTML = '<div class="text-slate-500 text-xs text-center font-mono py-4">NO TRAFFIC ON THIS FREQUENCY.</div>';
+            return;
+        }
+        
+        data.reverse().forEach(msg => {
+            const date = new Date(msg.created_at);
+            const timeStr = date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            const msgEl = document.createElement('div');
+            msgEl.className = 'bg-black/40 backdrop-blur-sm border-2 rounded p-2 text-xs font-mono shadow-md';
+            msgEl.style.borderColor = 'rgba(var(--accent-rgb), 0.3)';
+            msgEl.innerHTML = `
+                <div class="flex justify-between items-start mb-1 border-b pb-1" style="border-color: rgba(var(--accent-rgb), 0.3);">
+                    <span class="font-black uppercase text-ellipsis overflow-hidden whitespace-nowrap" style="color: var(--accent-color);">${msg.author || 'UNKNOWN'}</span>
+                    <span class="text-[9px] shrink-0" style="color: rgba(var(--accent-rgb), 0.7);">${timeStr}</span>
+                </div>
+                <div class="drop-shadow-md whitespace-pre-wrap break-words font-medium" style="color: rgba(255,255,255,0.9);">${msg.content}</div>
+            `;
+            feed.appendChild(msgEl);
+        });
+        
+        feed.scrollTop = feed.scrollHeight;
+        
+    } catch (err) {
+        console.error('Error fetching comm-link:', err);
+        feed.innerHTML = '<div class="text-red-400 text-xs text-center font-mono py-4">CONNECTION LOST.</div>';
+    }
+};
+
+window.submitCommLinkMessage = async function() {
+    const client = typeof getSupabaseClient === 'function' ? getSupabaseClient() : window.supabaseClient;
+    if (!client) return;
+    
+    const authorInput = document.getElementById('comm-link-author');
+    const msgInput = document.getElementById('comm-link-input');
+    
+    const author = authorInput.value.trim() || 'OPERATOR';
+    const msg = msgInput.value.trim();
+    
+    if (!msg) return;
+    
+    msgInput.value = '';
+    
+    try {
+        const { error } = await client
+            .from('global_wire')
+            .insert([
+                {
+                    author: author,
+                    category: 'COMM_CHAT',
+                    content: msg,
+                    upvotes: 0
+                }
+            ]);
+            
+        if (error) throw error;
+        window.fetchCommLinkFeed();
+        
+    } catch (err) {
+        console.error('Error sending message:', err);
+        alert('Failed to transmit message.');
+        msgInput.value = msg;
+    }
+};
+
+window.clearCommLinkFeed = function() {
+    const feed = document.getElementById('comm-link-feed');
+    if (feed) {
+        feed.innerHTML = '<div class="text-center text-slate-500 text-[10px] font-mono py-4">LOCAL FEED CLEARED.</div>';
+    }
+};

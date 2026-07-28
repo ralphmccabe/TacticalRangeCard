@@ -1012,3 +1012,17 @@ v7.27.35 - DEPLOYED 2026-07-26 01:30:00
 * Geo-Matrix Live SYNC GPS Readout & Teammate Locator Jump
 * Uncropped Intel Vault Card Thumbnails & 2-Party Map Restoration
 * All tactical systems: OPERATIONAL & DEPLOYED
+
+============================================================
+v7.27.36 - DEPLOYED 2026-07-28 01:26:36
+* Version auto-bumped from v7.27.35
+* Service Worker cache updated to: trc-v7.27.36
+* All tactical systems: OPERATIONAL
+* Toast updater: ACTIVE - users will see update prompt on next app open
+
+============================================================
+v7.27.37 - DEPLOYED 2026-07-28 01:34:39
+* Version auto-bumped from v7.27.36
+* Service Worker cache updated to: trc-v7.27.37
+* All tactical systems: OPERATIONAL
+* Toast updater: ACTIVE - users will see update prompt on next app open

@@ -1,4 +1,4 @@
-let geoDistanceUnit = 'YDS';
+﻿let geoDistanceUnit = 'YDS';
 /* 
     TACTICAL RANGE CARD PRO - PRODUCTION CORE v2.1
     SECURITY: AES-256 ENCRYPTED COMMS
@@ -110,7 +110,7 @@ window.TacticalBinaryCrypto = {
 
 function initializeTacticalDashboard1() {
 
-    // ── LAZY LOADERS ─────────────────────────────────────────────────────────
+    // â”€â”€ LAZY LOADERS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     // These scripts are NOT loaded at page start. They load the first time
     // they are actually needed, saving ~390 KB from the initial parse.
     window.ensureHtml2Canvas = function() {
@@ -145,7 +145,7 @@ function initializeTacticalDashboard1() {
         el.setAttribute('maxlength', '25');
     });
 
-    // type="number" ignores maxlength — enforce 25-char cap globally via JS
+    // type="number" ignores maxlength â€” enforce 25-char cap globally via JS
     document.querySelectorAll('input[type="number"]').forEach(el => {
         el.addEventListener('input', () => {
             if (el.value.length > 25) el.value = el.value.slice(0, 25);
@@ -458,10 +458,10 @@ function initializeTacticalDashboard1() {
                     const metrics = calculateGroupMetrics(shots);
                     if (metrics) {
                         const moa = (metrics.minSpread * 10).toFixed(2);
-                        let gradeText = '🥉 C-CLASS RECRUIT';
-                        if (moa < 0.5) gradeText = '👑 S-CLASS SNIPER';
-                        else if (moa < 1.0) gradeText = '🥇 A-CLASS EXPERT';
-                        else if (moa < 1.5) gradeText = '🥈 B-CLASS MARKSMAN';
+                        let gradeText = 'ðŸ¥‰ C-CLASS RECRUIT';
+                        if (moa < 0.5) gradeText = 'ðŸ‘‘ S-CLASS SNIPER';
+                        else if (moa < 1.0) gradeText = 'ðŸ¥‡ A-CLASS EXPERT';
+                        else if (moa < 1.5) gradeText = 'ðŸ¥ˆ B-CLASS MARKSMAN';
 
                         // Draw best 5-shot subset connect lines (subtle overlay)
                         ctx.strokeStyle = 'rgba(16, 185, 129, 0.2)';
@@ -698,7 +698,7 @@ function initializeTacticalDashboard1() {
                             <div class="min-w-0">
                                 <div class="font-bold text-sm text-gray-200 truncate pr-4 group-hover:text-white">${name}</div>
                                 <div class="text-[9px] text-gray-400 font-mono uppercase mt-1">
-                                    ${ps[name].isReconScenario ? '🗺️ RECON SITREP' : (ps[name].caliber || 'No Caliber')} • ${ps[name].isReconScenario ? (ps[name].timestamp ? new Date(ps[name].timestamp).toLocaleDateString() : '--') : (ps[name].date || '--')}
+                                    ${ps[name].isReconScenario ? 'ðŸ—ºï¸ RECON SITREP' : (ps[name].caliber || 'No Caliber')} â€¢ ${ps[name].isReconScenario ? (ps[name].timestamp ? new Date(ps[name].timestamp).toLocaleDateString() : '--') : (ps[name].date || '--')}
                                 </div>
                             </div>
                         </div>
@@ -724,10 +724,10 @@ function initializeTacticalDashboard1() {
         document.getElementById('previewName').textContent = name;
         
         if (data.isReconScenario) {
-            document.getElementById('previewCaliber').textContent = `🗺️ RECON SCENARIO SITREP`;
+            document.getElementById('previewCaliber').textContent = `ðŸ—ºï¸ RECON SCENARIO SITREP`;
             document.getElementById('prevDate').textContent = data.timestamp ? new Date(data.timestamp).toLocaleDateString() : '--';
         } else {
-            document.getElementById('previewCaliber').textContent = `${data.caliber || '---'} • ${data.bullet || '---'}`;
+            document.getElementById('previewCaliber').textContent = `${data.caliber || '---'} â€¢ ${data.bullet || '---'}`;
             document.getElementById('prevDate').textContent = data.date || '--';
         }
 
@@ -1345,7 +1345,7 @@ function initializeTacticalDashboard1() {
             canvas.addEventListener('mousemove', move);
             canvas.addEventListener('mouseup', stop);
             canvas.addEventListener('mouseleave', stop);
-            // passive:true = browser gesture pipeline stays open → pinch-zoom always works
+            // passive:true = browser gesture pipeline stays open â†’ pinch-zoom always works
             canvas.addEventListener('touchstart', start, { passive: true });
             canvas.addEventListener('touchmove', move, { passive: true });
             canvas.addEventListener('touchend', stop, { passive: true });
@@ -1421,7 +1421,7 @@ function initializeTacticalDashboard1() {
             canvas.addEventListener('mousemove', moveGrade);
             canvas.addEventListener('mouseup', stopGrade);
             canvas.addEventListener('mouseleave', stopGrade);
-            // passive:true = browser gesture pipeline stays open → pinch-zoom always works
+            // passive:true = browser gesture pipeline stays open â†’ pinch-zoom always works
             canvas.addEventListener('touchstart', startGrade, { passive: true });
             canvas.addEventListener('touchmove', moveGrade, { passive: true });
             canvas.addEventListener('touchend', stopGrade, { passive: true });
@@ -1637,7 +1637,7 @@ function initializeTacticalDashboard1() {
         const reconCard = document.getElementById('recon-card-container');
         if (reconCard) reconCard.style.borderColor = flavor.hex;
 
-        // ── ARCTIC WHITE / LIGHT FLAVOR BUG FIX ──────────────────────────────
+        // â”€â”€ ARCTIC WHITE / LIGHT FLAVOR BUG FIX â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         // The recon card is bg-white. If the accent IS white/near-white, the
         // title would be invisible. Force it to near-black in that case.
         const reconTitle = document.getElementById('display-recon-title');
@@ -2283,7 +2283,7 @@ function initializeTacticalDashboard2() {
 
         const deleteBtn = document.createElement('button');
         deleteBtn.className = 'text-[12px] text-red-400 hover:text-red-300 transition-colors bg-red-950/40 border border-red-500/30 w-5 h-5 rounded flex items-center justify-center p-0 ml-1 cursor-pointer font-sans font-black';
-        deleteBtn.innerHTML = '×';
+        deleteBtn.innerHTML = 'Ã—';
         deleteBtn.title = 'Delete Marker';
         
         // Stop drag & click propagation on contact
@@ -2461,7 +2461,7 @@ function initializeTacticalDashboard2() {
                 const label = reconPencilToggle.parentElement;
                 if (reconPencilToggle.checked) {
                     label.classList.add('bg-emerald-950/40', 'border-emerald-500', 'text-emerald-400', 'shadow-lg', 'shadow-emerald-500/20');
-                    label.querySelector('span').textContent = '🖊️ DRAWING ACTIVE';
+                    label.querySelector('span').textContent = 'ðŸ–Šï¸ DRAWING ACTIVE';
                     reconCanvas.classList.remove('pointer-events-none');
                     reconCanvas.style.touchAction = 'pinch-zoom';
                     if (mobileReconCanvas) {
@@ -2470,7 +2470,7 @@ function initializeTacticalDashboard2() {
                     }
                 } else {
                     label.classList.remove('bg-emerald-950/40', 'border-emerald-500', 'text-emerald-400', 'shadow-lg', 'shadow-emerald-500/20');
-                    label.querySelector('span').textContent = '🖊️ DRAW PATH';
+                    label.querySelector('span').textContent = 'ðŸ–Šï¸ DRAW PATH';
                     reconCanvas.classList.add('pointer-events-none');
                     if (mobileReconCanvas) mobileReconCanvas.classList.add('pointer-events-none');
                 }
@@ -2918,8 +2918,8 @@ function initializeTacticalDashboard2() {
                 row.className = "p-3 bg-gray-900 hover:bg-orange-900/20 border border-gray-800 hover:border-orange-500/50 rounded cursor-pointer flex items-center justify-between transition-all group";
                 
                 const meta = profiles[name].isReconScenario 
-                    ? `RECON • ${profiles[name].timestamp ? new Date(profiles[name].timestamp).toLocaleDateString() : 'Date Unknown'}`
-                    : `${profiles[name].caliber || 'NO CALIBER'} • ${profiles[name].date || '--'}`;
+                    ? `RECON â€¢ ${profiles[name].timestamp ? new Date(profiles[name].timestamp).toLocaleDateString() : 'Date Unknown'}`
+                    : `${profiles[name].caliber || 'NO CALIBER'} â€¢ ${profiles[name].date || '--'}`;
 
                 row.innerHTML = `
                     <div class="min-w-0">
@@ -3440,7 +3440,7 @@ function initializeTacticalDashboard2() {
 
         // UI Feedback for loading state
         const originalText = btn.innerHTML;
-        btn.innerHTML = `<span class="animate-pulse">📡 ACQUIRING ORBITAL LOC...</span>`;
+        btn.innerHTML = `<span class="animate-pulse">ðŸ“¡ ACQUIRING ORBITAL LOC...</span>`;
         btn.disabled = true;
         statusEl.textContent = 'SYNCING...';
         statusEl.className = 'text-[7px] font-bold text-yellow-500 uppercase';
@@ -3450,7 +3450,7 @@ function initializeTacticalDashboard2() {
                 const lat = pos.coords.latitude;
                 const lon = pos.coords.longitude;
                 
-                btn.innerHTML = `<span class="animate-pulse">🛰️ STREAMING CLIMATE...</span>`;
+                btn.innerHTML = `<span class="animate-pulse">ðŸ›°ï¸ STREAMING CLIMATE...</span>`;
 
                 // 1. Call Extended Open-Meteo API including Weather Code for Sky State
                 const apiURL = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,surface_pressure,wind_speed_10m,wind_direction_10m,weather_code&temperature_unit=fahrenheit&wind_speed_unit=mph&timezone=auto`;
@@ -3559,6 +3559,8 @@ function initializeTacticalDashboard2() {
     // GEOSPATIAL ORBITAL VECTOR MAP
     // ========================================================================
     let orbitalMap = null;
+    let stateBoundariesLayer = null;
+    let currentGmuLayer = null;
     window.eventMarkers = [];
     window.eventLines = [];
     let rallyPointLine = null;
@@ -3681,7 +3683,7 @@ function initializeTacticalDashboard2() {
     }
 
     // ----------------------------------------------------------------
-    // GEO COORDINATE JUMP — parses lat,long from toolbar input
+    // GEO COORDINATE JUMP â€” parses lat,long from toolbar input
     // ----------------------------------------------------------------
     window.geoJumpToCoords = function() {
         const input = document.getElementById('geo-coord-jump-input') || document.getElementById('geo-jump-input');
@@ -3692,20 +3694,20 @@ function initializeTacticalDashboard2() {
         // Accept formats: "34.0069, -101.98" or "34.0069 -101.98" or "34.0069,-101.98"
         const parts = raw.split(/[\s,]+/).filter(Boolean);
         if (parts.length < 2) {
-            if (window.showToast) window.showToast('⚠ Enter coordinates as: lat, long', 'WARNING');
+            if (window.showToast) window.showToast('âš  Enter coordinates as: lat, long', 'WARNING');
             return;
         }
         const lat = parseFloat(parts[0]);
         const lon = parseFloat(parts[1]);
         if (isNaN(lat) || isNaN(lon) || lat < -90 || lat > 90 || lon < -180 || lon > 180) {
-            if (window.showToast) window.showToast('⚠ Invalid coordinates. Lat: -90–90  Long: -180–180', 'WARNING');
+            if (window.showToast) window.showToast('âš  Invalid coordinates. Lat: -90â€“90  Long: -180â€“180', 'WARNING');
             return;
         }
 
         const targetMap = window.geoMap || window.orbitalMap || (typeof orbitalMap !== 'undefined' ? orbitalMap : null);
 
         if (!targetMap) {
-            if (window.showToast) window.showToast('⚠ Map not active — open Geo Matrix first', 'WARNING');
+            if (window.showToast) window.showToast('âš  Map not active â€” open Geo Matrix first', 'WARNING');
             return;
         }
 
@@ -3721,13 +3723,13 @@ function initializeTacticalDashboard2() {
                 iconSize: [18, 18], iconAnchor: [9, 9]
             });
             const marker = window.L.marker([lat, lon], { icon: jumpIcon }).addTo(targetMap);
-            marker.bindPopup(`<b style="font-family:monospace;font-size:10px;">📍 JUMP TARGET</b><br><span style="font-family:monospace;font-size:9px;">${lat.toFixed(5)}, ${lon.toFixed(5)}</span>`).openPopup();
+            marker.bindPopup(`<b style="font-family:monospace;font-size:10px;">ðŸ“ JUMP TARGET</b><br><span style="font-family:monospace;font-size:9px;">${lat.toFixed(5)}, ${lon.toFixed(5)}</span>`).openPopup();
             
             if (!window.wireIntelMarkers) window.wireIntelMarkers = [];
             window.wireIntelMarkers.push(marker);
         }
 
-        if (window.showToast) window.showToast(`📍 JUMPED → ${lat.toFixed(5)}, ${lon.toFixed(5)}`);
+        if (window.showToast) window.showToast(`ðŸ“ JUMPED â†’ ${lat.toFixed(5)}, ${lon.toFixed(5)}`);
         input.value = '';
     };
 
@@ -3740,7 +3742,7 @@ function initializeTacticalDashboard2() {
         
         const btn = document.getElementById('geo-live-gps-btn');
         const origHtml = btn.innerHTML;
-        btn.innerHTML = `<span class="animate-pulse">🛰️ LOCATING...</span>`;
+        btn.innerHTML = `<span class="animate-pulse">ðŸ›°ï¸ LOCATING...</span>`;
 
         navigator.geolocation.getCurrentPosition(
             (pos) => {
@@ -3755,7 +3757,7 @@ function initializeTacticalDashboard2() {
             },
             (err) => {
                 console.error(err);
-                btn.innerHTML = `❌ GPS FAIL`;
+                btn.innerHTML = `âŒ GPS FAIL`;
                 setTimeout(() => { btn.innerHTML = origHtml; if (window.lucide) window.lucide.createIcons(); }, 2000);
             },
             { enableHighAccuracy: true }
@@ -3763,11 +3765,11 @@ function initializeTacticalDashboard2() {
     }
 
     function handleMapClick(e) {
-    if (window.activeIconStamp) {
-        window.dropTacticalIcon(e.latlng.lat, e.latlng.lng, window.activeIconStamp);
-        return; // Don't do other click actions if we are stamping
-    }
         if (isDrawingMode) return;
+        if (window.activeIconStamp) {
+            if (window.dropTacticalIcon) window.dropTacticalIcon(e.latlng.lat, e.latlng.lng, window.activeIconStamp);
+            return;
+        }
         // Prevent accidental marker drops when clicking to expand the panel from the dashboard
         const panel = document.getElementById('panel-measuring');
         if (panel && !panel.classList.contains('is-maximized')) return;
@@ -3895,7 +3897,7 @@ function initializeTacticalDashboard2() {
         }
     }
 
-    window.clearMapMeasurements = function clearMapMeasurements() {
+window.clearMapMeasurements = function clearMapMeasurements() {
         if (orbitalMap) {
             mapMarkers.forEach(m => orbitalMap.removeLayer(m));
             if (mapPolyline) orbitalMap.removeLayer(mapPolyline);
@@ -3906,15 +3908,11 @@ function initializeTacticalDashboard2() {
                 window.wireIntelMarkers.forEach(m => orbitalMap.removeLayer(m));
                 window.wireIntelMarkers = [];
             }
-            // BUG FIX: Clear My GPS position marker + tooltip
-            if (window.mySelfPositionMarker) {
-                orbitalMap.removeLayer(window.mySelfPositionMarker);
-                window.mySelfPositionMarker = null;
-            }
-            // Also clear teammate locator marker
-            if (window.teammateLocatorMarker) {
-                orbitalMap.removeLayer(window.teammateLocatorMarker);
-                window.teammateLocatorMarker = null;
+            if (window.tacticalIconLayers) {
+                window.tacticalIconLayers.forEach(m => orbitalMap.removeLayer(m));
+                window.tacticalIconLayers = [];
+                window.tacticalIconData = [];
+                localStorage.removeItem('trc_tactical_icons');
             }
         }
         mapMarkers = [];
@@ -3922,12 +3920,6 @@ function initializeTacticalDashboard2() {
         mapLabelMarker = null;
         mapPolylines = [];
         mapLabelMarkers = [];
-        // Reset GPS display badge
-        window.myLatestCoords = null;
-        const gpsDisplay = document.getElementById('geo-my-coords-display');
-        if (gpsDisplay) gpsDisplay.textContent = '';
-        const gpsBadge = document.getElementById('geo-my-coords-badge');
-        if (gpsBadge) gpsBadge.classList.add('hidden');
         document.getElementById('live-map-dist').textContent = "--.--";
 
         // Reset Minimized View Back to Idle State
@@ -3950,10 +3942,6 @@ function initializeTacticalDashboard2() {
     const clearMapBtn = document.getElementById('geo-clear-map-btn');
     if (clearMapBtn) { clearMapBtn.addEventListener('click', (e) => { e.stopPropagation(); clearMapMeasurements(); }); }
 
-    
-    let stateBoundariesLayer = null;
-    let currentGmuLayer = null;
-
     const statesBtn = document.getElementById('geo-states-btn');
     if (statesBtn) {
         statesBtn.addEventListener('click', async (e) => {
@@ -3964,25 +3952,51 @@ function initializeTacticalDashboard2() {
                 if (orbitalMap.hasLayer(stateBoundariesLayer)) {
                     orbitalMap.removeLayer(stateBoundariesLayer);
                     statesBtn.classList.replace('bg-yellow-800', 'bg-yellow-950/80');
-                    if (window.pushTacLog) window.pushTacLog('STATE LINES CLEARED', 'GEO');
                 } else {
                     stateBoundariesLayer.addTo(orbitalMap);
                     statesBtn.classList.replace('bg-yellow-950/80', 'bg-yellow-800');
-                    if (window.pushTacLog) window.pushTacLog('STATE LINES LOADED', 'GEO');
                 }
             } else {
-                statesBtn.classList.replace('bg-yellow-950/80', 'bg-yellow-800');
-                if (window.pushTacLog) window.pushTacLog('DOWNLOADING STATE LINES', 'GEO');
-                
-                const url = 'https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}';
-                stateBoundariesLayer = L.tileLayer(url, {
-                    maxZoom: 19,
-                    attribution: 'Esri, HERE, Garmin',
-                    zIndex: 200,
-                    opacity: 1.0
-                }).addTo(orbitalMap);
-                
-                if (window.pushTacLog) window.pushTacLog('STATE OVERLAY LOADED', 'SUCCESS');
+                statesBtn.innerHTML = '<i data-lucide="loader" class="w-4 h-4 animate-spin"></i> LOADING...';
+                if (window.lucide) window.lucide.createIcons();
+                try {
+                    if (!window.usStatesData) throw new Error("States data not loaded.");
+                    
+                    stateBoundariesLayer = L.geoJSON(window.usStatesData, {
+                        style: function (feature) {
+                            return {
+                                color: "#fbbf24", // Yellow border
+                                weight: 2,
+                                opacity: 0.8,
+                                fillOpacity: 0.05,
+                                fillColor: "#fbbf24"
+                            };
+                        },
+                        onEachFeature: function(feature, layer) {
+                            const name = feature.properties ? (feature.properties.NAME || feature.properties.name) : null;
+                            if (name) {
+                                layer.bindTooltip(name, {
+                                    permanent: true, 
+                                    direction: "center", 
+                                    className: "state-label-tooltip"
+                                });
+                            }
+                        }
+                    }).addTo(orbitalMap);
+                    
+                    statesBtn.innerHTML = '<i data-lucide="map" class="w-4 h-4"></i> STATE LINES';
+                    statesBtn.classList.replace('bg-yellow-950/80', 'bg-yellow-800');
+                    if (window.lucide) window.lucide.createIcons();
+                    if (window.pushTacLog) window.pushTacLog('STATE BOUNDARIES LOADED', 'GEO');
+                } catch (error) {
+                    console.error("Error loading states GeoJSON:", error);
+                    statesBtn.innerHTML = '<i data-lucide="alert-circle" class="w-4 h-4"></i> ERROR';
+                    if (window.lucide) window.lucide.createIcons();
+                    setTimeout(() => {
+                        statesBtn.innerHTML = '<i data-lucide="map" class="w-4 h-4"></i> STATE LINES';
+                        if (window.lucide) window.lucide.createIcons();
+                    }, 3000);
+                }
             }
         });
     }
@@ -4002,13 +4016,13 @@ function initializeTacticalDashboard2() {
                 countiesBtn.classList.replace('bg-indigo-950/80', 'bg-indigo-800');
                 
                 const originalText = countiesBtn.innerHTML;
-                countiesBtn.innerHTML = '<i data-lucide="loader" class="w-4 h-4 animate-spin"></i> DOWNLOADING...';
-                if (window.lucide) window.lucide.createIcons();
+                countiesBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-map w-4 h-4"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"></polygon><line x1="9" x2="9" y1="3" y2="18"></line><line x1="15" x2="15" y1="6" y2="21"></line></svg> DOWNLOADING...';
                 countiesBtn.disabled = true;
 
                 async function loadCounties() {
                     try {
                         let data = null;
+                        // Using a reliable Github repository that has permissive CORS enabled globally
                         const countiesUrl = 'https://raw.githubusercontent.com/plotly/datasets/master/geojson-counties-fips.json';
                         const cacheName = 'trc-counties-cache-v3';
                         const cache = await caches.open(cacheName);
@@ -4028,7 +4042,7 @@ function initializeTacticalDashboard2() {
                         currentGmuLayer = L.geoJSON(data, {
                             style: function (feature) {
                                 return {
-                                    color: "#818cf8", // Indigo 400
+                                    color: "#818cf8",
                                     weight: 1,
                                     opacity: 0.6,
                                     fillOpacity: 0.0
@@ -4054,7 +4068,6 @@ function initializeTacticalDashboard2() {
                     } finally {
                         countiesBtn.innerHTML = originalText;
                         countiesBtn.disabled = false;
-                        if (window.lucide) window.lucide.createIcons();
                     }
                 }
                 loadCounties();
@@ -4195,7 +4208,7 @@ function initializeTacticalDashboard2() {
                     }
                     
                     geoJumpInput.value = '';
-                    if (window.showToast) window.showToast(`📍 JUMPED TO ${lat.toFixed(5)}, ${lon.toFixed(5)}`);
+                    if (window.showToast) window.showToast(`ðŸ“ JUMPED TO ${lat.toFixed(5)}, ${lon.toFixed(5)}`);
                 } else {
                     alert("Invalid coordinates or Map not active. Use LAT, LON format.");
                 }
@@ -4245,7 +4258,7 @@ function initializeTacticalDashboard2() {
             if (customName.trim() === '') customName = "GEO_" + Date.now().toString().slice(-4);
 
             const originalHtml = mapSnapBtn.innerHTML;
-            mapSnapBtn.innerHTML = `<span class="animate-pulse">📸 SAVING...</span>`;
+            mapSnapBtn.innerHTML = `<span class="animate-pulse">ðŸ“¸ SAVING...</span>`;
             mapSnapBtn.disabled = true;
 
             const label = customName.trim().toUpperCase();
@@ -4283,7 +4296,7 @@ function initializeTacticalDashboard2() {
                 };
             }
 
-            if (typeof mapMarkers !== 'undefined' && mapMarkers.length >= 2) {
+            if (typeof mapMarkers !== 'undefined' && mapMarkers.length > 0) {
                 meta.markers = mapMarkers.map(m => m.getLatLng());
             }
             if (typeof allDrawings !== 'undefined' && allDrawings.length > 0) {
@@ -4296,6 +4309,28 @@ function initializeTacticalDashboard2() {
                 meta.zoom = window.orbitalMap.getZoom();
             }
             if (typeof distVal !== 'undefined' && distVal) meta.distance = distVal + ' ' + (typeof geoDistanceUnit !== 'undefined' ? geoDistanceUnit : 'YDS');
+            
+            // Capture Tactical Icons
+            if (window.tacticalIconData && window.tacticalIconData.length > 0) {
+                meta.tacticalIcons = JSON.parse(JSON.stringify(window.tacticalIconData));
+            }
+
+            // Extract Target Coordinates (Last Marker)
+            if (meta.markers && meta.markers.length > 0) {
+                const tgt = meta.markers[meta.markers.length - 1];
+                meta.targetLat = tgt.lat;
+                meta.targetLng = tgt.lng;
+            } else if (meta.tacticalIcons && meta.tacticalIcons.length > 0) {
+                const tgt = meta.tacticalIcons[meta.tacticalIcons.length - 1];
+                meta.targetLat = tgt.lat;
+                meta.targetLng = tgt.lng;
+            }
+
+            // Extract True Azimuth
+            const azEl = document.getElementById('live-map-azimuth');
+            if (azEl && azEl.textContent && azEl.textContent !== '--Â°') {
+                meta.azimuth = azEl.textContent;
+            }
 
             // Rich Tactical Card Generator (Generous Padding & Readable Formatting)
             function buildTacticalGeoCanvas() {
@@ -4325,7 +4360,7 @@ function initializeTacticalDashboard2() {
                 ctx.fillStyle = '#10b981';
                 ctx.font = 'bold 24px monospace';
                 ctx.textAlign = 'left';
-                ctx.fillText(`🛰️ TACTICAL GEO MATRIX INTEL REPORT`, leftX, 65);
+                ctx.fillText(`ðŸ›°ï¸ TACTICAL GEO MATRIX INTEL REPORT`, leftX, 65);
 
                 ctx.fillStyle = '#6b7280';
                 ctx.font = '13px monospace';
@@ -4370,19 +4405,38 @@ function initializeTacticalDashboard2() {
                     }
                 }
 
-                // Section 3: Measurements / Distance
+                // Section 3: Target & Intel Data
                 const distEl = document.getElementById('live-map-dist');
                 const distValStr = (distEl && distEl.textContent !== '--.--') ? distEl.textContent : (meta.distance || null);
-                if (distValStr) {
+                
+                let yOffset = 375;
+                if (distValStr || meta.targetLat || meta.azimuth || (meta.tacticalIcons && meta.tacticalIcons.length > 0)) {
                     ctx.fillStyle = '#f59e0b';
                     ctx.font = 'bold 18px monospace';
-                    ctx.fillText(`[ MEASURED TARGET DISTANCE ]`, leftX, 375);
+                    ctx.fillText(`[ TARGET & INTEL DATA ]`, leftX, yOffset);
+                    yOffset += 40;
 
                     ctx.fillStyle = '#ffffff';
-                    ctx.font = 'bold 26px monospace';
-                    ctx.fillText(`${distValStr} YDS`, leftX + 20, 415);
+                    ctx.font = 'bold 20px monospace';
+                    
+                    if (distValStr) {
+                        ctx.fillText(`DISTANCE : ${distValStr} YDS`, leftX + 20, yOffset);
+                        yOffset += 30;
+                    }
+                    if (meta.azimuth) {
+                        ctx.fillText(`AZIMUTH  : ${meta.azimuth}`, leftX + 20, yOffset);
+                        yOffset += 30;
+                    }
+                    if (meta.targetLat && meta.targetLng) {
+                        ctx.fillText(`TARGET   : ${meta.targetLat.toFixed(6)}, ${meta.targetLng.toFixed(6)}`, leftX + 20, yOffset);
+                        yOffset += 30;
+                    }
+                    if (meta.tacticalIcons && meta.tacticalIcons.length > 0) {
+                        const iconsStr = meta.tacticalIcons.map(i => i.icon).join(' ');
+                        ctx.fillText(`ASSETS   : ${iconsStr}`, leftX + 20, yOffset);
+                        yOffset += 30;
+                    }
                 }
-
                 // Footer Watermark
                 ctx.fillStyle = '#10b981';
                 ctx.font = 'bold 15px monospace';
@@ -4395,184 +4449,34 @@ function initializeTacticalDashboard2() {
             try {
                 let dataUri = null;
 
-                // STAGE 1: Try to capture the map perfectly using html2canvas.
-                // Works perfectly if Esri tiles are served with CORS headers (which they are).
-                if (window.orbitalMap && typeof html2canvas !== 'undefined') {
+                if (window.html2canvas) {
                     try {
-                        const mapContainer = window.orbitalMap.getContainer();
-                        const canvas = await html2canvas(mapContainer, { 
-                            useCORS: true, 
-                            allowTaint: false,
-                            backgroundColor: '#030712'
+                        const target = document.getElementById('geo-measure-stage');
+                        if (target) target.style.background = '#030712';
+
+                        const html2canvasPromise = window.html2canvas(target, {
+                            useCORS: false,
+                            scale: 1,
+                            backgroundColor: '#030712',
+                            logging: false,
+                            allowTaint: true,
+                            ignoreElements: (el) => el.classList && (el.classList.contains('leaflet-control-container') || el.id === 'geo-coord-jump-input')
                         });
-                        dataUri = canvas.toDataURL('image/jpeg', 0.88);
-                        
-                        // If canvas is pure black (no tiles rendered), reject it
-                        const sCtx = canvas.getContext('2d');
-                        const px = sCtx.getImageData(Math.floor(canvas.width/2), Math.floor(canvas.height/2), 1, 1).data;
-                        if (px[0] < 5 && px[1] < 5 && px[2] < 5) dataUri = null;
-                    } catch(e) {
-                        console.warn('[GEO CAPTURE] html2canvas failed:', e);
-                        dataUri = null;
+
+                        const timeoutPromise = new Promise((_, reject) =>
+                            setTimeout(() => reject(new Error('RENDER_TIMEOUT')), 1800)
+                        );
+
+                        const canvas = await Promise.race([html2canvasPromise, timeoutPromise]);
+                        dataUri = canvas.toDataURL('image/jpeg', 0.85);
+                    } catch(renderErr) {
+                        console.warn("DOM Capture timed out or blocked â€” using high-res Tactical Geo Canvas", renderErr);
                     }
                 }
 
-                // STAGE 2: Rich tactical map card — drawn entirely with Canvas 2D API.
-                // Looks like a real tactical map: dark satellite-style bg, compass, GPS pin, range lines.
                 if (!dataUri) {
-                    const fb = document.createElement('canvas');
-                    fb.width = 900; fb.height = 700;
-                    const c = fb.getContext('2d');
-
-                    // ── Background: dark with subtle satellite-style noise grid ──
-                    c.fillStyle = '#050f05';
-                    c.fillRect(0, 0, fb.width, fb.height);
-
-                    // Satellite-style grid pattern
-                    c.strokeStyle = 'rgba(16,185,129,0.07)';
-                    c.lineWidth = 1;
-                    for (let x = 0; x < fb.width; x += 30) { c.beginPath(); c.moveTo(x,0); c.lineTo(x,fb.height); c.stroke(); }
-                    for (let y = 0; y < fb.height; y += 30) { c.beginPath(); c.moveTo(0,y); c.lineTo(fb.width,y); c.stroke(); }
-
-                    // Outer border
-                    c.strokeStyle = '#10b981'; c.lineWidth = 3;
-                    c.strokeRect(15, 15, fb.width - 30, fb.height - 30);
-                    c.strokeStyle = '#064e3b'; c.lineWidth = 1;
-                    c.strokeRect(22, 22, fb.width - 44, fb.height - 44);
-
-                    // ── Header ──
-                    c.fillStyle = '#10b981'; c.font = 'bold 22px monospace';
-                    c.textAlign = 'left';
-                    c.fillText('🛰  TACTICAL GEO MATRIX INTEL', 40, 60);
-                    c.fillStyle = '#6b7280'; c.font = '11px monospace';
-                    c.fillText(`CARD: ${label}   ·   ${new Date().toISOString()}`, 40, 82);
-                    c.strokeStyle = 'rgba(16,185,129,0.35)'; c.lineWidth = 1;
-                    c.beginPath(); c.moveTo(40, 96); c.lineTo(fb.width - 40, 96); c.stroke();
-
-                    const cx = fb.width / 2, cy = fb.height / 2 + 30;
-                    const R  = Math.min(fb.width, fb.height) * 0.30;
-
-                    // ── Compass ring (top-left quadrant) ──
-                    const rX = 120, rY = 210, rR = 80;
-                    c.strokeStyle = '#1e40af'; c.lineWidth = 2;
-                    c.beginPath(); c.arc(rX, rY, rR, 0, Math.PI * 2); c.stroke();
-                    c.strokeStyle = '#3b82f6'; c.lineWidth = 1;
-                    c.beginPath(); c.arc(rX, rY, rR - 10, 0, Math.PI * 2); c.stroke();
-                    // Cardinal labels
-                    [['N',0],['E',90],['S',180],['W',270]].forEach(([d, deg]) => {
-                        const rad = (deg - 90) * Math.PI / 180;
-                        const tx = rX + (rR - 20) * Math.cos(rad);
-                        const ty = rY + (rR - 20) * Math.sin(rad);
-                        c.fillStyle = d === 'N' ? '#ef4444' : '#93c5fd';
-                        c.font = `bold ${d === 'N' ? 18 : 14}px Arial`;
-                        c.textAlign = 'center'; c.textBaseline = 'middle';
-                        c.fillText(d, tx, ty);
-                    });
-                    c.fillStyle = '#6b7280'; c.font = '10px monospace'; c.textAlign = 'left'; c.textBaseline = 'alphabetic';
-                    c.fillText('COMPASS VECTOR', rX - rR, rY + rR + 18);
-
-                    // ── Range ring (main area) ──
-                    c.strokeStyle = 'rgba(59,130,246,0.5)'; c.lineWidth = 2;
-                    c.beginPath(); c.arc(cx, cy, R, 0, Math.PI * 2); c.stroke();
-                    c.strokeStyle = 'rgba(59,130,246,0.2)'; c.lineWidth = 1;
-                    c.beginPath(); c.arc(cx, cy, R * 0.6, 0, Math.PI * 2); c.stroke();
-
-                    // ── GPS / My Position pin (center) ──
-                    if (meta.myCoords) {
-                        // Pulsing rings
-                        [0.22, 0.14, 0.08].forEach((scale, i) => {
-                            c.strokeStyle = `rgba(16,185,129,${0.2 + i*0.15})`;
-                            c.lineWidth = 1;
-                            c.beginPath(); c.arc(cx, cy, R * scale, 0, Math.PI * 2); c.stroke();
-                        });
-                        // GPS star pin
-                        c.fillStyle = '#10b981';
-                        c.beginPath(); c.arc(cx, cy, 10, 0, Math.PI * 2); c.fill();
-                        c.fillStyle = '#ffffff';
-                        c.font = 'bold 12px Arial'; c.textAlign = 'center'; c.textBaseline = 'middle';
-                        c.fillText('★', cx, cy);
-
-                        // MY GPS label box
-                        c.fillStyle = 'rgba(16,185,129,0.15)';
-                        c.fillRect(cx - 200, cy + 18, 400, 50);
-                        c.strokeStyle = '#10b981'; c.lineWidth = 1;
-                        c.strokeRect(cx - 200, cy + 18, 400, 50);
-                        c.fillStyle = '#34d399'; c.font = 'bold 11px monospace'; c.textAlign = 'center'; c.textBaseline = 'alphabetic';
-                        c.fillText('MY GPS POSITION', cx, cy + 34);
-                        c.fillStyle = '#ffffff'; c.font = 'bold 16px monospace';
-                        c.fillText(`${meta.myCoords.lat.toFixed(6)},  ${meta.myCoords.lng.toFixed(6)}`, cx, cy + 56);
-                    }
-
-                    // ── Range markers & lines ──
-                    const distEl = document.getElementById('live-map-dist');
-                    const distValStr = (distEl && distEl.textContent !== '--.--') ? distEl.textContent : (meta.distance || null);
-
-                    if (mapMarkers && mapMarkers.length >= 2) {
-                        // Draw dashed line between virtual marker positions
-                        const angleStep = (2 * Math.PI) / mapMarkers.length;
-                        const markerCanvasPositions = mapMarkers.map((m, i) => {
-                            const angle = angleStep * i - Math.PI / 6;
-                            return { x: cx + R * 0.55 * Math.cos(angle), y: cy + R * 0.55 * Math.sin(angle), latlng: m.getLatLng() };
-                        });
-
-                        // Draw dashed lines between markers
-                        c.setLineDash([8, 5]);
-                        c.strokeStyle = '#ff1493'; c.lineWidth = 2;
-                        c.beginPath();
-                        markerCanvasPositions.forEach((p, i) => { if (i === 0) c.moveTo(p.x, p.y); else c.lineTo(p.x, p.y); });
-                        c.stroke();
-                        c.setLineDash([]);
-
-                        // Draw marker dots
-                        markerCanvasPositions.forEach((p, i) => {
-                            c.fillStyle = '#000';
-                            c.beginPath(); c.arc(p.x, p.y, 7, 0, Math.PI * 2); c.fill();
-                            c.strokeStyle = '#ff1493'; c.lineWidth = 2;
-                            c.beginPath(); c.arc(p.x, p.y, 7, 0, Math.PI * 2); c.stroke();
-                            c.fillStyle = '#ff1493'; c.font = 'bold 9px monospace'; c.textAlign = 'center'; c.textBaseline = 'middle';
-                            c.fillText(`T${i+1}`, p.x, p.y);
-                        });
-                    } else {
-                        // Just draw crosshair target marker
-                        const tx = cx + R * 0.45, ty = cy - R * 0.3;
-                        c.strokeStyle = '#ff1493'; c.lineWidth = 2;
-                        c.beginPath(); c.moveTo(cx, cy); c.lineTo(tx, ty); c.stroke();
-                        c.fillStyle = '#000';
-                        c.beginPath(); c.arc(tx, ty, 8, 0, Math.PI * 2); c.fill();
-                        c.strokeStyle = '#ff1493'; c.lineWidth = 2;
-                        c.beginPath(); c.arc(tx, ty, 8, 0, Math.PI * 2); c.stroke();
-                    }
-
-                    // ── Distance readout panel ──
-                    if (distValStr) {
-                        c.fillStyle = 'rgba(245,158,11,0.12)';
-                        c.fillRect(cx + R + 10, cy - 55, 200, 90);
-                        c.strokeStyle = '#f59e0b'; c.lineWidth = 1;
-                        c.strokeRect(cx + R + 10, cy - 55, 200, 90);
-                        c.fillStyle = '#f59e0b'; c.font = 'bold 11px monospace'; c.textAlign = 'center'; c.textBaseline = 'alphabetic';
-                        c.fillText('TARGET DISTANCE', cx + R + 110, cy - 36);
-                        c.fillStyle = '#ffffff'; c.font = 'bold 28px monospace';
-                        c.fillText(`${distValStr} YDS`, cx + R + 110, cy + 4);
-                    }
-
-                    // ── Teammate coords ──
-                    if (meta.teammateCoords) {
-                        c.fillStyle = 'rgba(34,211,238,0.1)';
-                        c.fillRect(40, 460, 820, 55);
-                        c.strokeStyle = '#22d3ee'; c.lineWidth = 1;
-                        c.strokeRect(40, 460, 820, 55);
-                        c.fillStyle = '#22d3ee'; c.font = 'bold 11px monospace'; c.textAlign = 'left'; c.textBaseline = 'alphabetic';
-                        c.fillText('🎯 TEAMMATE / TARGET LOCATOR:', 55, 479);
-                        c.fillStyle = '#fff'; c.font = 'bold 15px monospace';
-                        const tmText = meta.teammateCoords.tooltip || `${meta.teammateCoords.lat.toFixed(6)}, ${meta.teammateCoords.lng.toFixed(6)}`;
-                        c.fillText(tmText, 55, 500);
-                    }
-
-                    // ── Footer ──
-                    c.fillStyle = '#10b981'; c.font = 'bold 12px monospace'; c.textAlign = 'center'; c.textBaseline = 'alphabetic';
-                    c.fillText('TRC TACTICAL GEO MATRIX  ·  SECURE INTEL REPORT', fb.width / 2, fb.height - 22);
-
-                    dataUri = fb.toDataURL('image/jpeg', 0.88);
+                    const fallbackCanvas = buildTacticalGeoCanvas();
+                    dataUri = fallbackCanvas.toDataURL('image/jpeg', 0.85);
                 }
 
                 await window.saveIntelSnapshot(label, dataUri, meta);
@@ -4727,7 +4631,7 @@ function initializeTacticalDashboard2() {
             if (window.orbitalMap) {
                 const icon = L.divIcon({
                     className: 'custom-div-icon',
-                    html: `<div class="relative w-4 h-4 flex items-center justify-center"><div class="absolute w-full h-full rounded-full bg-emerald-500 animate-ping opacity-75"></div><div class="relative w-3.5 h-3.5 bg-emerald-500 border-2 border-white rounded-full flex items-center justify-center text-[5px] text-white font-black">★</div></div>`,
+                    html: `<div class="relative w-4 h-4 flex items-center justify-center"><div class="absolute w-full h-full rounded-full bg-emerald-500 animate-ping opacity-75"></div><div class="relative w-3.5 h-3.5 bg-emerald-500 border-2 border-white rounded-full flex items-center justify-center text-[5px] text-white font-black">â˜…</div></div>`,
                     iconSize: [16, 16]
                 });
                 if (window.mySelfPositionMarker) window.orbitalMap.removeLayer(window.mySelfPositionMarker);
@@ -4744,7 +4648,7 @@ function initializeTacticalDashboard2() {
             if (window.orbitalMap) {
                 const icon = L.divIcon({
                     className: 'custom-div-icon',
-                    html: `<div class="relative w-5 h-5 flex items-center justify-center"><div class="absolute w-full h-full rounded-full bg-cyan-400 animate-ping opacity-90"></div><div class="relative w-4 h-4 bg-cyan-500 border-2 border-white rounded-full flex items-center justify-center text-[7px] text-black font-black">🎯</div></div>`,
+                    html: `<div class="relative w-5 h-5 flex items-center justify-center"><div class="absolute w-full h-full rounded-full bg-cyan-400 animate-ping opacity-90"></div><div class="relative w-4 h-4 bg-cyan-500 border-2 border-white rounded-full flex items-center justify-center text-[7px] text-black font-black">ðŸŽ¯</div></div>`,
                     iconSize: [20, 20]
                 });
                 if (window.teammateLocatorMarker) window.orbitalMap.removeLayer(window.teammateLocatorMarker);
@@ -4756,6 +4660,31 @@ function initializeTacticalDashboard2() {
                 window.teammateLocatorMarker = L.marker([item.teammateCoords.lat, item.teammateCoords.lng], { icon }).addTo(window.orbitalMap);
                 window.teammateLocatorMarker.bindTooltip(labelText, { permanent: true, direction: 'top', className: 'tactical-tooltip' }).openTooltip();
             }
+        }
+
+        // 3.95. Restore Tactical Icons
+        if (item.tacticalIcons && Array.isArray(item.tacticalIcons)) {
+            if (!window.tacticalIconLayers) window.tacticalIconLayers = [];
+            if (!window.tacticalIconData) window.tacticalIconData = [];
+            
+            // DEEP CLONE to protect the original vault card from live map actions
+            const clonedIcons = JSON.parse(JSON.stringify(item.tacticalIcons));
+            
+            clonedIcons.forEach(iconData => {
+                const marker = L.marker([iconData.lat, iconData.lng], {
+                    icon: L.divIcon({
+                        className: 'tactical-map-icon',
+                        html: `<div class="text-xl drop-shadow-md text-white font-bold" style="text-shadow: 0px 0px 4px #000, 0px 0px 8px #000;">${iconData.icon}</div>`,
+                        iconSize: [30, 30],
+                        iconAnchor: [15, 15]
+                    }),
+                    draggable: false 
+                }).addTo(window.orbitalMap);
+                window.tacticalIconLayers.push(marker);
+                window.tacticalIconData.push(iconData);
+            });
+            // Update local storage so they persist properly
+            localStorage.setItem('trc_tactical_icons', JSON.stringify(window.tacticalIconData));
         }
 
         // 4. Draw Line
@@ -5427,7 +5356,7 @@ function initializeTacticalDashboard2() {
             newTouchZone.addEventListener('click', (e) => {
                 e.stopPropagation();
                 const currentVal = document.getElementById('geo-loaded-dist').textContent;
-                const override = prompt("🔐 MANUAL OVERRIDE: Enter Confirmed Yardage Vector:", currentVal);
+                const override = prompt("ðŸ” MANUAL OVERRIDE: Enter Confirmed Yardage Vector:", currentVal);
                 
                 if (override !== null && override.trim() !== "") {
                     const cleanVal = override.replace(/[^\d.]/g, ''); // Keep only digits/dots
@@ -5524,7 +5453,7 @@ function initializeTacticalDashboard2() {
         if (compassValue) {
             const dirs = ["N","NE","E","SE","S","SW","W","NW","N"];
             const ord = dirs[Math.round(((currentHudHeading % 360) / 45))];
-            compassValue.textContent = Math.round(currentHudHeading).toString().padStart(3, '0') + '° ' + ord;
+            compassValue.textContent = Math.round(currentHudHeading).toString().padStart(3, '0') + 'Â° ' + ord;
         }
         if (compassTape) {
             if (!compassTape.innerHTML.includes('E')) {
@@ -5562,7 +5491,7 @@ function initializeTacticalDashboard2() {
         const pitchLadder = document.getElementById('hud-pitch-ladder');
         
         let p = Math.round(currentHudPitch);
-        if (pitchAngle) pitchAngle.textContent = `A: ${Math.abs(p)}° ${p > 0 ? 'UP' : (p < 0 ? 'DN' : '')}`;
+        if (pitchAngle) pitchAngle.textContent = `A: ${Math.abs(p)}Â° ${p > 0 ? 'UP' : (p < 0 ? 'DN' : '')}`;
         if (pitchCos) {
             let cosVal = Math.cos(p * Math.PI / 180);
             pitchCos.textContent = `C: ${cosVal.toFixed(2)}`;
@@ -5926,7 +5855,7 @@ function initializeTacticalDashboard2() {
             ctx.fillRect(cw / 2 - 1, tapeY, 2, tapeHeight);
 
             // Numerical Value Box
-            const compassTxt = document.getElementById('hud-compass-value')?.textContent || "000° N";
+            const compassTxt = document.getElementById('hud-compass-value')?.textContent || "000Â° N";
             const valWidth = 50;
             const valHeight = 16;
             const valX = cw / 2 - valWidth / 2;
@@ -5962,7 +5891,7 @@ function initializeTacticalDashboard2() {
             ctx.textAlign = "left";
             const tAng = document.getElementById('hud-pitch-angle')?.textContent || "A: --";
             const tCos = document.getElementById('hud-pitch-cos')?.textContent || "C: 1.00";
-            const tTmp = document.getElementById('hud-tel-temp')?.textContent || "--°";
+            const tTmp = document.getElementById('hud-tel-temp')?.textContent || "--Â°";
             ctx.fillText(tAng, 15, cy - 15);
             ctx.fillText(tCos, 15, cy);
             ctx.fillText(tTmp, 15, cy + 15);
@@ -6082,7 +6011,7 @@ function initializeTacticalDashboard2() {
                         let userLabel = input.value.trim().toUpperCase() || defaultLabel;
                         saveBtn.disabled = true;
                         saveBtn.textContent = 'ENCRYPTING...';
-                        // Convert Blob → base64 data URL before saving
+                        // Convert Blob â†’ base64 data URL before saving
                         const reader = new FileReader();
                         reader.onloadend = () => {
                             saveIntelSnapshot(userLabel, reader.result, { type: 'video' });
@@ -6348,11 +6277,11 @@ function initializeTacticalDashboard2() {
         const windIndicatorEl = document.getElementById('bal-wind-dir-indicator');
         if (windIndicatorEl) {
             if (Math.abs(rawSine) < 0.1) {
-                windIndicatorEl.textContent = (Math.cos(angleRad) > 0) ? "HEADWIND ⬆" : "TAILWIND ⬇";
+                windIndicatorEl.textContent = (Math.cos(angleRad) > 0) ? "HEADWIND â¬†" : "TAILWIND â¬‡";
             } else if (rawSine > 0) {
-                windIndicatorEl.textContent = "FROM R ⬅";
+                windIndicatorEl.textContent = "FROM R â¬…";
             } else {
-                windIndicatorEl.textContent = "FROM L ➡";
+                windIndicatorEl.textContent = "FROM L âž¡";
             }
         }
         
@@ -6442,11 +6371,11 @@ function initializeTacticalDashboard2() {
 
         // --- HUD LIVE SYNC ---
         const hTelTemp = document.getElementById('hud-tel-temp');
-        if (hTelTemp) hTelTemp.textContent = tempF + '°';
+        if (hTelTemp) hTelTemp.textContent = tempF + 'Â°';
         const hTelBaro = document.getElementById('hud-tel-baro');
         if (hTelBaro) hTelBaro.textContent = baroInHg.toFixed(2);
         const hTelWind = document.getElementById('hud-tel-wind');
-        if (hTelWind) hTelWind.textContent = `${windMph} MPH @ ${windDirDeg}°`;
+        if (hTelWind) hTelWind.textContent = `${windMph} MPH @ ${windDirDeg}Â°`;
         
         // Approximate DA for HUD (simplified model for visual display)
         // Standard formula: DA = Altitude + 120*(Temp - Standard Temp at Alt)
@@ -7550,10 +7479,10 @@ function initializeTacticalDashboard2() {
                   if (data) {
                       window.pushTacLog("S.O.S. RECEIVED FROM " + data.user.callsign + "!", "ALERT");
                       
-                      // ── RECEIVED SOS BAR INDICATOR ──────────────────────────────────
+                      // â”€â”€ RECEIVED SOS BAR INDICATOR â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
                       if (window.showReceivedSosBar) window.showReceivedSosBar(data.user.callsign, data.user.id);
 
-                      // Red map marker removed — banner-only SOS indicator
+                      // Red map marker removed â€” banner-only SOS indicator
                       if (window.playChatAlert) {
                           window.playChatAlert();
                           setTimeout(window.playChatAlert, 500);
@@ -7581,7 +7510,7 @@ function initializeTacticalDashboard2() {
                     return true;
                 });
             }
-            // ── CLEAR RECEIVED SOS BAR ──────────────────────────────────────
+            // â”€â”€ CLEAR RECEIVED SOS BAR â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             if (window.clearReceivedSosBar) window.clearReceivedSosBar(data.user.id, data.user.callsign);
             window.pushTacLog("S.O.S. CANCELLED BY " + data.user.callsign, "SYS");
         });
@@ -7625,7 +7554,7 @@ function initializeTacticalDashboard2() {
                     const toastText = document.getElementById('sos-toast-text');
                     
                     if (toast && toastText) {
-                        toastText.innerText = `⚠ DISTRESS SIGNAL: ${callsigns.join(' & ')} ⚠`;
+                        toastText.innerText = `âš  DISTRESS SIGNAL: ${callsigns.join(' & ')} âš `;
                         toast.classList.remove('hidden');
                         toast.style.display = 'flex';
                     }
@@ -7673,7 +7602,7 @@ function initializeTacticalDashboard2() {
             const allNames = (sosBarEl.dataset.receivedSosCallsigns || '').split(',').filter(Boolean);
             if (!allNames.includes(callsign)) allNames.push(callsign);
             sosBarEl.dataset.receivedSosCallsigns = allNames.join(',');
-            lbl.innerHTML = `⚠ DISTRESS SIGNAL: ${allNames.join(' & ')} ⚠`;
+            lbl.innerHTML = `âš  DISTRESS SIGNAL: ${allNames.join(' & ')} âš `;
             if (window.triggerSosFlashSequence) window.triggerSosFlashSequence();
         };
 
@@ -7698,7 +7627,7 @@ function initializeTacticalDashboard2() {
                 if (toast) toast.classList.add('hidden');
             } else {
                 const lbl = document.getElementById('received-sos-label');
-                if (lbl) lbl.innerHTML = `⚠ DISTRESS SIGNAL: ${names.join(' & ')} ⚠`;
+                if (lbl) lbl.innerHTML = `âš  DISTRESS SIGNAL: ${names.join(' & ')} âš `;
             }
         };
         
@@ -7726,7 +7655,7 @@ function initializeTacticalDashboard2() {
                         if (payload.data && payload.data.user && window.showReceivedSosBar) {
                             window.showReceivedSosBar(payload.data.user.callsign, payload.data.user.id);
                         }
-                        // Red map marker removed — banner-only SOS indicator
+                        // Red map marker removed â€” banner-only SOS indicator
                         if (window.playChatAlert) {
                             window.playChatAlert();
                             setTimeout(window.playChatAlert, 500);
@@ -7919,13 +7848,13 @@ function initializeTacticalDashboard2() {
             });
         });
 
-        // ── RECONNECT FIX: When a new player joins, ALL existing players
+        // â”€â”€ RECONNECT FIX: When a new player joins, ALL existing players
         // immediately re-track their GPS so the new joiner sees the full
-        // team on the map — not an empty field.
+        // team on the map â€” not an empty field.
         commsChannel.on('presence', { event: 'join' }, ({ key, newPresences }) => {
             // Only react if it's a genuinely different player joining (not us)
             if (key === commsUser.id) return;
-            window.pushTacLog(`PLAYER JOINED: ${newPresences[0]?.user?.callsign || key} — RE-BROADCASTING POSITION`, "SYS");
+            window.pushTacLog(`PLAYER JOINED: ${newPresences[0]?.user?.callsign || key} â€” RE-BROADCASTING POSITION`, "SYS");
             // Small delay so the new player's channel is fully subscribed
             setTimeout(() => {
                 if (commsChannel && commsUser && window.myLatestCoords) {
@@ -7933,7 +7862,8 @@ function initializeTacticalDashboard2() {
                         online_at:  new Date().toISOString(),
                         location:   window.myLatestCoords,
                         user:       commsUser,
-                        distress:   window.isDistressActive || false
+                        distress:   window.isDistressActive || false,
+                        dutyStatus: window.myDutyStatus || null
                     }).catch(e => console.warn("Re-track on join failed:", e));
                 }
             }, 1500);
@@ -7957,7 +7887,7 @@ function initializeTacticalDashboard2() {
 
         let isIntentionalDisconnect = false;
 
-        // ── BULLETPROOF DISCONNECT ───────────────────────────────────────────
+        // â”€â”€ BULLETPROOF DISCONNECT â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         // Named function so it can never be double-bound. Always resets UI
         // even if Supabase or WebRTC throws an error.
         function doDisconnect() {
@@ -7990,7 +7920,7 @@ function initializeTacticalDashboard2() {
                 if (geoWatchId) { navigator.geolocation.clearWatch(geoWatchId); geoWatchId = null; }
             } catch(e) {}
 
-            // 5. ALWAYS reset UI — this must never be skipped
+            // 5. ALWAYS reset UI â€” this must never be skipped
             try {
                 document.getElementById('comms-login').classList.remove('hidden');
                 document.getElementById('comms-dashboard').classList.add('hidden');
@@ -8034,7 +7964,7 @@ function initializeTacticalDashboard2() {
                 document.getElementById('comms-dashboard').classList.add('grid');
                 document.getElementById('comms-sos-bar').classList.remove('hidden');
                 
-                // Wire up disconnect button — use a single named handler to avoid stacking
+                // Wire up disconnect button â€” use a single named handler to avoid stacking
                 const disconnectBtn = document.getElementById('comms-terminate-link-btn');
                 if (disconnectBtn) {
                     disconnectBtn.classList.remove('hidden');
@@ -8053,7 +7983,7 @@ function initializeTacticalDashboard2() {
 
                 // Track presence
                 if (commsChannel) {
-                    commsChannel.track({ online_at: new Date().toISOString(), user: commsUser, distress: window.isDistressActive }).catch(e => console.warn("Initial track failed:", e));
+                    commsChannel.track({ online_at: new Date().toISOString(), user: commsUser, distress: window.isDistressActive, dutyStatus: window.myDutyStatus || null }).catch(e => console.warn("Initial track failed:", e));
                 }
             }
         });
@@ -8111,7 +8041,7 @@ function initializeTacticalDashboard2() {
             contentHtml += `
                 <div class="mt-2 p-2 bg-slate-900 border border-cyan-500/60 rounded-lg text-left text-xs text-white max-w-full space-y-1.5 shadow-lg">
                     <div class="font-black text-cyan-300 text-[10px] uppercase tracking-wider flex items-center justify-between border-b border-slate-800 pb-1">
-                        <span>🚓 OFFICER SITREP DOSSIER</span>
+                        <span>ðŸš“ OFFICER SITREP DOSSIER</span>
                         <span class="text-[8px] bg-red-950 text-red-400 px-1.5 py-0.5 rounded border border-red-600/50 font-mono">ENCRYPTED INTEL</span>
                     </div>
                     ${imageBase64 ? `<img src="${imageBase64}" class="w-full h-36 object-contain rounded border border-slate-700 bg-black cursor-pointer shadow" onclick="if(window.loadSnapshotToViewer) window.loadSnapshotToViewer(${cardJsonEscaped});">` : ''}
@@ -8130,7 +8060,7 @@ function initializeTacticalDashboard2() {
                 <div class="mt-2 p-1.5 bg-slate-950 border border-cyan-500/60 rounded-lg text-left shadow-lg">
                     <div class="flex items-center justify-between text-[9px] font-black text-cyan-300 uppercase tracking-widest px-1 pb-1">
                         <span>INTEL CARD PREVIEW</span>
-                        <span class="text-[8px] text-slate-400 font-mono">🔍 TAP TO ZOOM</span>
+                        <span class="text-[8px] text-slate-400 font-mono">ðŸ” TAP TO ZOOM</span>
                     </div>
                     <img src="${imageBase64}" class="w-full max-w-[320px] h-auto object-contain rounded border border-slate-700 bg-slate-900 cursor-pointer shadow" onclick="if(window.loadSnapshotToViewer) { window.loadSnapshotToViewer({ image: this.src, label: '${(tapeMetadata?.label || 'INTEL CARD').replace(/'/g, "\\'")}' }); } else { window.open(this.src); }">
                 </div>
@@ -8162,7 +8092,7 @@ function initializeTacticalDashboard2() {
                             const decryptedBlob = await window.TacticalBinaryCrypto.decryptBlob(encryptedBlob, originalMime);
                             window.pushTacLog("ENCRYPTED TAPE DECRYPTED", "SUCCESS");
                             
-                            // Convert decrypted Blob → base64 data URL so vault can store and play it
+                            // Convert decrypted Blob â†’ base64 data URL so vault can store and play it
                             const tapeReader = new FileReader();
                             tapeReader.onloadend = () => {
                                 const metadata = tapeMetadata ? Object.assign({}, tapeMetadata) : { label: "INCOMING_TAPE_" + Date.now().toString().slice(-4), type: "video" };
@@ -8181,7 +8111,7 @@ function initializeTacticalDashboard2() {
                             };
                             tapeReader.onerror = () => { throw new Error('FileReader failed on decrypted tape'); };
                             tapeReader.readAsDataURL(decryptedBlob);
-                            return; // FileReader is async — vault save happens in callback above
+                            return; // FileReader is async â€” vault save happens in callback above
                             btn.innerHTML = `<i data-lucide="check" class="w-3 h-3 text-green-400 inline-block mr-1"></i> SENT TO INTEL VAULT`;
                             btn.classList.replace('bg-purple-700', 'bg-green-900/50');
                             window.pushTacLog("ENCRYPTED TAPE DECRYPTED AND SAVED", "SUCCESS");
@@ -8212,7 +8142,7 @@ function initializeTacticalDashboard2() {
         feed.appendChild(entry);
         feed.scrollTop = feed.scrollHeight;
 
-        // ── AUTO-SAVE INCOMING IMAGES & CARDS TO INTEL VAULT & WORKSTATION ──────────────
+        // â”€â”€ AUTO-SAVE INCOMING IMAGES & CARDS TO INTEL VAULT & WORKSTATION â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         if (!isMe && !(tapeMetadata && tapeMetadata.isPristineImage)) {
             if (imageBase64 || isBizCard || tapeMetadata) {
                 const wsCardData = tapeMetadata?.workstationData || (tapeMetadata && ['medevac', 'scorecard', 'logistics', 'roster', 'bragboard', 'officer', 'workstation'].includes(tapeMetadata.type) ? tapeMetadata : null);
@@ -8262,7 +8192,7 @@ function initializeTacticalDashboard2() {
                     }).catch(e => console.error("Error auto-saving incoming workstation card to library:", e));
                 }
 
-                if (window.pushTacLog) window.pushTacLog(`INCOMING WIRE INTEL FROM ${userObj.callsign} → SAVED TO INTEL VAULT & WORKSTATION`, "SUCCESS");
+                if (window.pushTacLog) window.pushTacLog(`INCOMING WIRE INTEL FROM ${userObj.callsign} â†’ SAVED TO INTEL VAULT & WORKSTATION`, "SUCCESS");
             }
         }
     }
@@ -8583,7 +8513,7 @@ function initializeTacticalDashboard2() {
                                 online_at: new Date().toISOString(),
                                 location: { lat: latitude, lng: longitude },
                                 user: commsUser,
-                                distress: window.isDistressActive
+                                distress: window.isDistressActive, dutyStatus: window.myDutyStatus || null
                             }).catch(e => console.warn("Track rate limit:", e));
                         }
                     }
@@ -8650,18 +8580,18 @@ function initializeTacticalDashboard2() {
                         window.pushTacLog(`SUPABASE SOS EXCEPTION: ` + err.message, "ERROR");
                     });
                     
-                    // Red map marker removed — banner-only SOS indicator
+                    // Red map marker removed â€” banner-only SOS indicator
                 }
             } else {
                 window.isDistressActive = false;
                 if (sosBtn) sosBtn.classList.add('hidden');
                 if (sosToggle) {
                     sosToggle.classList.remove('hidden');
-                    // Fully reset the toggle button back to neutral — wipe any red stuck-state classes
+                    // Fully reset the toggle button back to neutral â€” wipe any red stuck-state classes
                     sosToggle.classList.remove('bg-red-950', 'border-red-700', 'text-red-400', 'animate-pulse');
                     sosToggle.classList.add('bg-gray-900', 'border-gray-700', 'text-gray-500');
                 }
-                // Reset the SOS bar container back to neutral — no red background remnants
+                // Reset the SOS bar container back to neutral â€” no red background remnants
                 const sosBarEl = document.getElementById('comms-sos-bar');
                 if (sosBarEl) {
                     sosBarEl.classList.remove('bg-red-950', 'bg-red-900', 'border-red-700', 'border-red-600', 'animate-pulse');
@@ -8721,7 +8651,7 @@ function initializeTacticalDashboard2() {
                         online_at: new Date().toISOString(),
                         location: window.myLatestCoords || null,
                         user: commsUser,
-                        distress: window.isDistressActive
+                        distress: window.isDistressActive, dutyStatus: window.myDutyStatus || null
                     });
                 }
             }, 500);
@@ -8744,7 +8674,8 @@ function initializeTacticalDashboard2() {
                 if (p.user && !seenUsers.has(p.user.id)) {
                     seenUsers.add(p.user.id);
                     const tag = document.createElement('span');
-                    const statusIcon = p.dutyStatus ? ` ${p.dutyStatus}` : '';
+                    
+                    const statusIcon = p.dutyStatus ? `<span class="ml-1 text-[10px] drop-shadow-md">${p.dutyStatus}</span>` : '';
                     
                     if (p.distress) {
                         tag.className = 'bg-red-950/80 border border-red-500/50 text-red-400 px-1.5 py-0.5 rounded text-[7px] font-black uppercase flex items-center gap-1 animate-pulse';
@@ -8782,7 +8713,7 @@ function initializeTacticalDashboard2() {
                     });
 
                     // Tooltip above unit: plain callsign text. Distress shown via banner, not on map.
-                    const tooltipText = `${p.user.callsign} [${p.user.role}]`;
+                    const tooltipText = p.dutyStatus ? `${p.user.callsign} [${p.user.role}] | ${p.dutyStatus}` : `${p.user.callsign} [${p.user.role}]`;
                     const tooltipClass = 'tactical-tooltip'; // Distress shown via banner ONLY, not on map.
 
                     if (!teamMarkers[p.user.id]) {
@@ -9318,7 +9249,7 @@ function initializeTacticalDashboard2() {
           <rect x="20" y="20" width="860" height="610" rx="16" fill="#0b0f19" stroke="#a855f7" stroke-width="3" filter="drop-shadow(0 0 15px rgba(168,85,247,0.5))"/>
           
           <line x1="40" y1="80" x2="860" y2="80" stroke="#a855f7" stroke-width="1.5" opacity="0.5"/>
-          <text x="50" y="60" fill="#c084fc" font-family="monospace" font-size="20" font-weight="900" letter-spacing="3">🛡️ TACTICAL RANGE CARD OPERATOR INTEL</text>
+          <text x="50" y="60" fill="#c084fc" font-family="monospace" font-size="20" font-weight="900" letter-spacing="3">ðŸ›¡ï¸ TACTICAL RANGE CARD OPERATOR INTEL</text>
           <rect x="710" y="42" width="130" height="26" rx="4" fill="#064e3b" stroke="#10b981" stroke-width="1"/>
           <text x="775" y="60" fill="#34d399" font-family="monospace" font-size="11" font-weight="700" text-anchor="middle">VERIFIED CONTACT</text>
           
@@ -9341,7 +9272,7 @@ function initializeTacticalDashboard2() {
             <text x="50" y="195" fill="#d8b4fe" font-family="monospace" font-size="15" font-style="italic">Specialties: "${details}"</text>
           </g>
 
-          <text x="450" y="615" fill="#4b5563" font-family="monospace" font-size="12" text-anchor="middle" letter-spacing="4">TACTICAL RANGE CARD SURVEILLANCE REVIEW • ALL RIGHTS RESERVED</text>
+          <text x="450" y="615" fill="#4b5563" font-family="monospace" font-size="12" text-anchor="middle" letter-spacing="4">TACTICAL RANGE CARD SURVEILLANCE REVIEW â€¢ ALL RIGHTS RESERVED</text>
         </svg>`;
 
         return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
@@ -9388,7 +9319,7 @@ function initializeTacticalDashboard2() {
                         </span>
                         <div class="flex items-center gap-2">
                             <button onclick="event.stopPropagation(); window.loadWorkstationBackToEditorById('${item.id}');" class="bg-cyan-600 hover:bg-cyan-500 text-white font-black text-[10px] sm:text-xs px-3 py-1 rounded.full uppercase tracking-wider transition-all flex items-center gap-1 cursor-pointer shadow-lg z-30">
-                                <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> 🔄 REWORK IN WORKSTATION #6
+                                <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> ðŸ”„ REWORK IN WORKSTATION #6
                             </button>
                             <button onclick="event.stopPropagation(); if(window.closeSurveillanceReview) window.closeSurveillanceReview();" class="bg-red-800 hover:bg-red-700 text-white font-black text-[10px] sm:text-xs px-3 py-1 rounded-full uppercase tracking-wider transition-all flex items-center gap-1 cursor-pointer z-30">
                                 <i data-lucide="x" class="w-3.5 h-3.5"></i> CLOSE
@@ -9467,7 +9398,7 @@ function initializeTacticalDashboard2() {
         const survFooter = document.getElementById('surveillance-footer');
         if (survFooter) survFooter.classList.remove('hidden');
 
-            // IMAGE REVIEW MODE: Hide all live-feed controls — image is static, they don't apply
+            // IMAGE REVIEW MODE: Hide all live-feed controls â€” image is static, they don't apply
             const _flipSnap = document.getElementById('feed-switch-cam-btn');
             const _hudSnap = document.getElementById('feed-hud-toggle-btn');
             const _recStartSnap = document.getElementById('surveillance-record-start-btn');
@@ -9480,7 +9411,7 @@ function initializeTacticalDashboard2() {
             const killBtn = document.getElementById('feed-kill-btn');
             if (killBtn) {
                 killBtn.classList.remove('hidden');
-                killBtn.textContent = '✕  CLOSE REVIEW';
+                killBtn.textContent = 'âœ•  CLOSE REVIEW';
             }
 
             if (label) label.textContent = `INTEL REVIEW [${item.label || 'SNAPSHOT'}]`;
@@ -9783,11 +9714,11 @@ function initializeTacticalDashboard2() {
         
         const handleVaultClick = (e, btnElement) => {
             e.stopPropagation();
-            let originalText = btnElement.innerHTML; // hoisted so catch{} can reset the button
             try {
                 const checkedBoxes = document.querySelectorAll('.briefing-vault-checkbox:checked');
                 if (checkedBoxes.length === 0) return;
 
+                const originalText = btnElement.innerHTML;
                 btnElement.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 animate-spin inline-block mr-1"></i> SAVING...`;
                 if (window.lucide) window.lucide.createIcons();
 
@@ -9836,16 +9767,6 @@ function initializeTacticalDashboard2() {
         };
 
         // -----------------------------------------------------------------------
-        // BUG FIX: Wire vault buttons to handleVaultClick (were defined but never bound)
-        // -----------------------------------------------------------------------
-        if (toVaultBtnTop) {
-            toVaultBtnTop.addEventListener('click', (e) => handleVaultClick(e, toVaultBtnTop));
-        }
-        if (toVaultBtnBottom) {
-            toVaultBtnBottom.addEventListener('click', (e) => handleVaultClick(e, toVaultBtnBottom));
-        }
-
-        // -----------------------------------------------------------------------
         // SEND VAULT ITEM TO CHAT (called from viewer SEND button & CHATS button)
         // -----------------------------------------------------------------------
         window.sendVaultItemToChat = async function(itemId) {
@@ -9892,7 +9813,7 @@ function initializeTacticalDashboard2() {
                     image: lightImage
                 };
 
-                const messageText = `[ 🚓 ${item.label || 'OFFICER SITREP'} ] CAD: ${cardObj.data?.cadNumber || 'N/A'}`;
+                const messageText = `[ ðŸš“ ${item.label || 'OFFICER SITREP'} ] CAD: ${cardObj.data?.cadNumber || 'N/A'}`;
 
                 if (typeof TacticalCrypto !== 'undefined') {
                     const encrypted = TacticalCrypto.encrypt({
@@ -9973,7 +9894,7 @@ function initializeTacticalDashboard2() {
                             } else {
                                 window.pushTacLog("COMMS CHANNEL OFFLINE - TAPE SECURED BUT NOT BROADCASTED", "WARNING");
                             }
-                            renderChatMessage(commsUser, `🎥 SECURE TAPE: ${item.label}`, true, null, publicUrl);
+                            renderChatMessage(commsUser, `ðŸŽ¥ SECURE TAPE: ${item.label}`, true, null, publicUrl);
                             window.pushTacLog("SECURE TAPE TRANSMITTED TO TEAM", "SUCCESS");
                         });
                     }).catch(err => window.pushTacLog("TAPE ENCRYPT FAILED: " + err.message, "ERROR"));
@@ -9998,7 +9919,7 @@ function initializeTacticalDashboard2() {
 </div>` : '';
 
                     const cardMsg = `<div style="font-family: monospace; font-size: 11px; line-height: 1.5;">
-<div style="color: #e879f9; font-weight: 900; letter-spacing: 1px; margin-bottom: 4px; border-bottom: 1px solid rgba(232,121,249,0.4); padding-bottom: 2px;">🎴 [TRC BIZ CARD]</div>
+<div style="color: #e879f9; font-weight: 900; letter-spacing: 1px; margin-bottom: 4px; border-bottom: 1px solid rgba(232,121,249,0.4); padding-bottom: 2px;">ðŸŽ´ [TRC BIZ CARD]</div>
 <div><span style="color: #f0abfc; font-weight: 800;">Author:</span> <span style="color: #ffffff; font-weight: 700;">${item.author || c.author || 'OPERATOR'}</span></div>
 <div><span style="color: #f0abfc; font-weight: 800;">Company:</span> <span style="color: #67e8f9; font-weight: 800;">${c.bizname || 'N/A'}</span></div>
 <div><span style="color: #f0abfc; font-weight: 800;">Unit:</span> <span style="color: #9ca3af; font-weight: 700;">${c.unit || 'N/A'}</span></div>
@@ -10085,7 +10006,7 @@ ${cardImgHtml}
                 // Query BOTH Vault checkboxes AND Workstation Library checkboxes
                 const checkedBoxes = document.querySelectorAll('.vault-export-checkbox:checked, .ws-library-checkbox:checked');
                 if (checkedBoxes.length === 0) {
-                    alert("Please check at least one card using the checkbox [✓] before clicking CHATS.");
+                    alert("Please check at least one card using the checkbox [âœ“] before clicking CHATS.");
                     return;
                 }
 
@@ -10139,23 +10060,25 @@ ${cardImgHtml}
                 e.stopPropagation();
                 const checkedBoxes = document.querySelectorAll('.vault-export-checkbox:checked');
                 
-                if (checkedBoxes.length === 0) {
-                    alert("Please select a Business Card or Intel Report to rework using the checkbox.");
-                    return;
+                if (checkedBoxes.length > 0) {
+                    const selectedIds = Array.from(checkedBoxes).map(cb => cb.dataset.vaultId);
+                    const cardToLoad = (window.vaultCache || []).find(item => selectedIds.includes(item.id.toString()) && (item.contact || item.type === 'intel_report' || item.type === 'contact'))
+                        || (window.vaultCache || []).find(item => selectedIds.includes(item.id.toString()));
+
+                    if (cardToLoad) {
+                        if (window.reworkBusinessCard) window.reworkBusinessCard(cardToLoad);
+                        checkedBoxes.forEach(cb => cb.checked = false);
+                        window.pushTacLog(`LOADED VAULT CARD BACK TO FORM`, "SUCCESS");
+                        return;
+                    }
                 }
 
-                const selectedIds = Array.from(checkedBoxes).map(cb => cb.dataset.vaultId);
-                const cardToLoad = (window.vaultCache || []).find(item => selectedIds.includes(item.id.toString()) && (item.contact || item.type === 'intel_report' || item.type === 'contact' || item.type === 'blog_post'))
-                    || (window.vaultCache || []).find(item => selectedIds.includes(item.id.toString()));
-
-                if (cardToLoad) {
-                    if (window.reworkBusinessCard) {
-                        window.reworkBusinessCard(cardToLoad);
-                    }
-                    checkedBoxes.forEach(cb => cb.checked = false);
-                    if (window.pushTacLog) window.pushTacLog(`LOADED VAULT CARD BACK TO FORM`, "SUCCESS");
-                } else {
-                    alert("Could not load the selected card. It may have been removed.");
+                const cardsOnly = (window.vaultCache || []).filter(item => item.contact || item.type === 'intel_report' || item.type === 'contact');
+                if (cardsOnly.length === 0) {
+                    alert("No TRC Business Cards or Contacts found in Vault.");
+                    if (typeof refreshVaultGrid === 'function') refreshVaultGrid();
+                } else if (typeof refreshVaultGrid === 'function') {
+                    refreshVaultGrid(cardsOnly);
                 }
             });
         }
@@ -11270,7 +11193,7 @@ window.geoSyncGPS = function() {
                 } else {
                     const icon = L.divIcon({
                         className: 'custom-div-icon',
-                        html: `<div class="relative w-4 h-4 flex items-center justify-center"><div class="absolute w-full h-full rounded-full bg-emerald-500 animate-ping opacity-75"></div><div class="relative w-3.5 h-3.5 bg-emerald-500 border-2 border-white rounded-full flex items-center justify-center text-[5px] text-white font-black">★</div></div>`,
+                        html: `<div class="relative w-4 h-4 flex items-center justify-center"><div class="absolute w-full h-full rounded-full bg-emerald-500 animate-ping opacity-75"></div><div class="relative w-3.5 h-3.5 bg-emerald-500 border-2 border-white rounded-full flex items-center justify-center text-[5px] text-white font-black">â˜…</div></div>`,
                         iconSize: [16, 16]
                     });
                     window.mySelfPositionMarker = L.marker([lat, lng], { icon }).addTo(window.orbitalMap);
@@ -11342,12 +11265,12 @@ window.geoJumpToCoords = function() {
         const x = Math.cos(φ1)*Math.sin(φ2) - Math.sin(φ1)*Math.cos(φ2)*Math.cos(Δλ);
         let brng = Math.atan2(y, x) * 180 / Math.PI;
         brng = (brng + 360) % 360;
-        bearingStr = `${Math.round(brng)}°`;
+        bearingStr = `${Math.round(brng)}Â°`;
     }
 
     const icon = L.divIcon({
         className: 'custom-div-icon',
-        html: `<div class="relative w-5 h-5 flex items-center justify-center"><div class="absolute w-full h-full rounded-full bg-cyan-400 animate-ping opacity-90"></div><div class="relative w-4 h-4 bg-cyan-500 border-2 border-white rounded-full flex items-center justify-center text-[7px] text-black font-black">🎯</div></div>`,
+        html: `<div class="relative w-5 h-5 flex items-center justify-center"><div class="absolute w-full h-full rounded-full bg-cyan-400 animate-ping opacity-90"></div><div class="relative w-4 h-4 bg-cyan-500 border-2 border-white rounded-full flex items-center justify-center text-[7px] text-black font-black">ðŸŽ¯</div></div>`,
         iconSize: [20, 20]
     });
 
@@ -11934,16 +11857,15 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-
-
-// ============================================================================
-// GLOBAL TACTICAL ICON SYSTEM
-// ============================================================================
-window.tacticalIconLayers = [];
-window.tacticalIconData = [];
-window.activeIconStamp = null;
+// ========================================================================
+// TACTICAL ICON TRAY & PERSISTENCE
+// ========================================================================
 
 function initTacticalIconTray() {
+    window.activeIconStamp = null;
+    window.tacticalIconLayers = [];
+    window.tacticalIconData = []; // Array of {lat, lng, icon}
+
     const geoIconTrayBtn = document.getElementById('geo-icons-btn');
     const commsIconTrayBtn = document.getElementById('comms-icons-btn');
     const iconTray = document.getElementById('tactical-icon-tray');
@@ -11998,13 +11920,14 @@ function initTacticalIconTray() {
             btn.classList.remove('ring-2', 'ring-green-500', 'bg-green-900/50');
         });
         if (window.orbitalMap) {
-            window.orbitalMap.getContainer().style.cursor = '';
+            window.orbitalMap.getContainer().style.cursor = ''; // Reset cursor
         }
         if (window.commsMapInstance) {
-            window.commsMapInstance.getContainer().style.cursor = '';
+            window.commsMapInstance.getContainer().style.cursor = ''; // Reset cursor
         }
     }
 
+    // Stamp Selection
     stampBtns.forEach(btn => {
         btn.addEventListener('click', (e) => {
             e.stopPropagation();
@@ -12024,6 +11947,7 @@ function initTacticalIconTray() {
                 }
             }
             
+            // Auto-hide tray on mobile so map is visible
             if (window.innerWidth < 768 && iconTray) {
                 iconTray.classList.add('hidden');
                 if(geoIconTrayBtn) {
@@ -12037,7 +11961,9 @@ function initTacticalIconTray() {
         });
     });
 
+    // Drop logic (called from handleMapClick)
     window.dropTacticalIcon = function(lat, lng, icon) {
+        
         const createMarker = (mapInstance) => {
             if (!mapInstance) return null;
             return L.marker([lat, lng], {
@@ -12075,7 +12001,7 @@ function initTacticalIconTray() {
         });
     }
 
-    function saveTacticalIcons() {
+        function saveTacticalIcons() {
         localStorage.setItem('tacticalIconsData', JSON.stringify(window.tacticalIconData));
     }
     
@@ -12100,9 +12026,6 @@ if (document.readyState === 'loading') {
 } else {
     initTacticalIconTray();
 }
-
-
-
 
 
 // ============================================================================
@@ -12152,3 +12075,5 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 });
+
+

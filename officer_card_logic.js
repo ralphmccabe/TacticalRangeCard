@@ -11,16 +11,10 @@ let isDrawingOfficerCanvas = false;
 let currentOfficerDrawTool = 'draw';
 
 window.clearOfficerForm = function() {
-    const wrapper = document.getElementById('officer-form-wrapper');
-    if (wrapper) {
-        const inputs = wrapper.querySelectorAll('input[type="text"], textarea');
-        inputs.forEach(i => i.value = '');
+    // Re-initialize the studio completely to generate a new unique ID
+    if (typeof window.openOfficerCardStudio === 'function') {
+        window.openOfficerCardStudio(null);
     }
-    officerRosterParties = [];
-    officerScenePhotos = [];
-    if (typeof window.clearOfficerCanvas === 'function') window.clearOfficerCanvas();
-    if (typeof window.renderOfficerPartyRows === 'function') window.renderOfficerPartyRows();
-    if (typeof window.renderOfficerPhotoThumbnails === 'function') window.renderOfficerPhotoThumbnails();
     if (window.pushTacLog) window.pushTacLog("OFFICER FORM CLEARED", "SYS");
 };
 
@@ -33,15 +27,37 @@ window.renderOfficerForm = function(cardData = null) {
     officerScenePhotos = (cardData && cardData.data && cardData.data.scenePhotos) ? cardData.data.scenePhotos : [];
     
     const id = cardData ? cardData.id : Date.now();
-    const unitCallsign = (cardData && cardData.data) ? cardData.data.unitCallsign || '' : (window.userObj?.callsign || 'OFFICER-104');
+    const unitCallsign = (cardData && cardData.data) ? cardData.data.unitCallsign || '' : '';
     const cadNumber = (cardData && cardData.data) ? cardData.data.cadNumber || '' : '';
     const sceneStatus = (cardData && cardData.data) ? cardData.data.sceneStatus || 'ACTIVE' : 'ACTIVE';
     const incidentType = (cardData && cardData.data) ? cardData.data.incidentType || 'TRAFFIC ACCIDENT' : 'TRAFFIC ACCIDENT';
     const incidentNotes = (cardData && cardData.data) ? cardData.data.incidentNotes || '' : '';
-    const tacComms = (cardData && cardData.data) ? cardData.data.tacComms || 'LAW TAC 3 / 155.370 MHz' : 'LAW TAC 3 / 155.370 MHz';
+    const tacComms = (cardData && cardData.data) ? cardData.data.tacComms || '' : '';
     const backupUnits = (cardData && cardData.data) ? cardData.data.backupUnits || '' : '';
     const emsHospital = (cardData && cardData.data) ? cardData.data.emsHospital || '' : '';
     const existingSketch = (cardData && cardData.data) ? cardData.data.sketchImage || null : null;
+
+    const sketchTools = [
+        { label: 'Suspect', color: '#ef4444' }, { label: 'Victim', color: '#fb7185' },
+        { label: 'Officer', color: '#3b82f6' }, { label: 'Car', color: '#38bdf8' },
+        { label: 'Truck', color: '#818cf8' }, { label: 'Evidence', color: '#f59e0b' },
+        { label: 'Accident', color: '#f97316' }, { label: 'Pen', color: '#ffffff' },
+        { label: 'Witness', color: '#84cc16' }, { label: 'ByStand', color: '#2dd4bf' },
+        { label: 'Shooter', color: '#dc2626' }, { label: 'House', color: '#facc15' },
+        { label: 'Building', color: '#94a3b8' }, { label: 'Plane', color: '#22d3ee' },
+        { label: 'Helo', color: '#c084fc' }, { label: 'Water', color: '#7dd3fc' },
+        { label: 'Road', color: '#d6d3d1' }, { label: 'RR', color: '#a16207' },
+        { label: 'Camera', color: '#e879f9' }, { label: 'Cones', color: '#fb923c' },
+        { label: 'Rescue', color: '#22c55e' }, { label: 'Teams', color: '#10b981' },
+        { label: 'Dog', color: '#d97706' }, { label: 'Drone', color: '#60a5fa' },
+        { label: 'TacVeh', color: '#16a34a' }, { label: 'Equip', color: '#a3e635' }
+    ];
+    
+    const toolsHtml = sketchTools.map(t => `
+        <button type="button" onclick="window.setOfficerSketchTool('${t.color}', '${t.label}')" id="sketch-tool-${t.label.replace(/\s+/g, '-')}" data-color="${t.color}" class="sketch-tool-btn text-[9px] font-bold px-2 py-0.5 rounded border transition-colors uppercase shrink-0" style="color: ${t.color}; border-color: ${t.color}; background: rgba(0,0,0,0.4);" title="${t.label}">
+            ${t.label}
+        </button>
+    `).join('');
 
     container.innerHTML = `
         <div id="officer-form-wrapper" class="w-full bg-slate-950 border-2 border-cyan-400 rounded-xl p-3 sm:p-4 shadow-[0_0_30px_rgba(56,189,248,0.3)] relative font-sans text-slate-100 max-h-[75vh] overflow-y-auto custom-scrollbar">
@@ -69,11 +85,11 @@ window.renderOfficerForm = function(cardData = null) {
             <div class="bg-slate-900/90 border border-slate-800 rounded-lg p-2.5 sm:p-3 mb-3 grid grid-cols-1 sm:grid-cols-4 gap-2.5">
                 <div>
                     <label class="block text-[9px] font-black uppercase text-cyan-400 tracking-wider mb-1">Unit / Callsign</label>
-                    <input type="text" id="officer-unit-callsign" value="${unitCallsign}" placeholder="e.g. PATROL 104" class="w-full bg-slate-950 border border-slate-700 rounded p-1.5 text-xs text-white uppercase font-bold focus:border-cyan-400 focus:outline-none">
+                    <input type="text" id="officer-unit-callsign" maxlength="20" value="${unitCallsign}" placeholder="OFFICER-104" class="w-full bg-slate-950 border border-slate-700 rounded p-1.5 text-xs text-white uppercase font-bold focus:border-cyan-400 focus:outline-none">
                 </div>
                 <div>
                     <label class="block text-[9px] font-black uppercase text-cyan-400 tracking-wider mb-1">CAD / Incident #</label>
-                    <input type="text" id="officer-cad-number" value="${cadNumber}" placeholder="e.g. CAD-2026-8912" class="w-full bg-slate-950 border border-slate-700 rounded p-1.5 text-xs text-white uppercase font-mono focus:border-cyan-400 focus:outline-none">
+                    <input type="text" id="officer-cad-number" maxlength="20" value="${cadNumber}" placeholder="e.g. CAD-2026-8912" class="w-full bg-slate-950 border border-slate-700 rounded p-1.5 text-xs text-white uppercase font-mono focus:border-cyan-400 focus:outline-none">
                 </div>
                 <div>
                     <label class="block text-[9px] font-black uppercase text-amber-400 tracking-wider mb-1">Scene Threat Status</label>
@@ -113,22 +129,25 @@ window.renderOfficerForm = function(cardData = null) {
             </div>
 
             <!-- SECTION 3A: SCENE DIAGRAM / CRIME SCENE SKETCHPAD -->
-            <div class="bg-slate-900/90 border border-slate-800 rounded-lg p-2.5 sm:p-3 mb-3">
+            <div class="bg-slate-900/90 border border-slate-800 rounded-lg p-2 sm:p-3 mb-3">
                 <div class="flex items-center justify-between border-b border-slate-800 pb-1.5 mb-2 flex-wrap gap-2">
                     <span class="text-[10px] font-black text-cyan-300 uppercase tracking-widest flex items-center gap-1.5">
-                        <i data-lucide="pen-tool" class="w-4 h-4 text-cyan-400"></i> TACTICAL SCENE SKETCHPAD (CRIME SCENE LAYOUT)
+                        <i data-lucide="pen-tool" class="w-4 h-4 text-cyan-400"></i> CRIME SCENE SKETCHPAD: <span id="active-sketch-tool-status" class="ml-1 font-mono tracking-widest text-white">PEN</span>
                     </span>
-                    <div class="flex items-center gap-1 flex-wrap">
-                        <button type="button" onclick="window.setOfficerDrawTool('draw')" class="bg-slate-800 text-slate-200 text-[8px] font-bold px-2 py-0.5 rounded border border-slate-700 hover:border-cyan-400">Pencil</button>
-                        <button type="button" onclick="window.addOfficerStamp('X')" class="bg-red-950 text-red-300 text-[8px] font-bold px-2 py-0.5 rounded border border-red-700">Point of Impact [X]</button>
-                        <button type="button" onclick="window.addOfficerStamp('E1')" class="bg-amber-950 text-amber-300 text-[8px] font-bold px-2 py-0.5 rounded border border-amber-700">Evidence [E1]</button>
-                        <button type="button" onclick="window.addOfficerStamp('VEH')" class="bg-blue-950 text-blue-300 text-[8px] font-bold px-2 py-0.5 rounded border border-blue-700">Vehicle [V]</button>
-                        <button type="button" onclick="window.clearOfficerCanvas()" class="bg-slate-950 text-red-400 text-[8px] font-bold px-2 py-0.5 rounded border border-red-900 hover:bg-red-900 hover:text-white transition-colors">Clear</button>
+                    <div class="flex items-center gap-1.5 flex-wrap">
+                        <button type="button" onclick="window.setOfficerSketchTool('#0a0f1a', 'ERASER')" id="sketch-tool-ERASER" data-color="#0a0f1a" class="sketch-tool-btn text-[9px] font-bold px-2 py-1 rounded border border-slate-500 text-slate-300 bg-slate-800 hover:bg-slate-700 uppercase flex items-center gap-1 shrink-0"><i data-lucide="eraser" class="w-3 h-3"></i> ERASER</button>
+                        <button type="button" onclick="window.undoOfficerCanvas()" class="bg-slate-800 text-slate-300 text-[9px] font-bold px-2 py-1 rounded border border-slate-600 hover:bg-slate-700 uppercase flex items-center gap-1 shrink-0"><i data-lucide="undo" class="w-3 h-3"></i> UNDO</button>
+                        <button type="button" onclick="window.clearOfficerCanvas()" class="bg-red-950/80 text-red-400 text-[9px] font-bold px-2 py-1 rounded border border-red-900 hover:bg-red-900 hover:text-white transition-colors uppercase flex items-center gap-1 shrink-0"><i data-lucide="trash-2" class="w-3 h-3"></i> CLEAR MAP</button>
                     </div>
                 </div>
 
-                <div class="relative w-full bg-slate-950 rounded border border-slate-800 overflow-hidden flex justify-center items-center">
-                    <canvas id="officer-scene-canvas" width="650" height="220" class="w-full h-44 cursor-crosshair bg-[radial-gradient(#1e293b_1px,transparent_1px)] [background-size:12px_12px]"></canvas>
+                <!-- Tool Palette -->
+                <div class="flex flex-wrap gap-1 mb-2 bg-slate-950 p-1.5 rounded border border-slate-800 shadow-inner">
+                    ${toolsHtml}
+                </div>
+
+                <div class="relative w-full bg-[#0a0f1a] rounded border-2 border-slate-700 overflow-hidden flex justify-center items-center shadow-inner" style="height: 400px; touch-action: pinch-zoom;">
+                    <canvas id="officer-scene-canvas" width="900" height="600" class="w-full h-full cursor-crosshair"></canvas>
                 </div>
             </div>
 
@@ -158,7 +177,7 @@ window.renderOfficerForm = function(cardData = null) {
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5 mb-3">
                 <div>
                     <label class="block text-[9px] font-black uppercase text-cyan-400 tracking-wider mb-1">TAC Comms Radio Channel</label>
-                    <input type="text" id="officer-tac-comms" value="${tacComms}" placeholder="e.g. LAW TAC 3 / 155.370 MHz" class="w-full bg-slate-900 border border-slate-700 rounded p-1.5 text-xs text-white font-mono focus:border-cyan-400 focus:outline-none">
+                    <input type="text" id="officer-tac-comms" value="${tacComms}" placeholder="LAW TAC 3 / 155.370 MHz" class="w-full bg-slate-900 border border-slate-700 rounded p-1.5 text-xs text-white font-mono focus:border-cyan-400 focus:outline-none">
                 </div>
                 <div>
                     <label class="block text-[9px] font-black uppercase text-cyan-400 tracking-wider mb-1">Backup Units on Scene</label>
@@ -171,8 +190,11 @@ window.renderOfficerForm = function(cardData = null) {
             </div>
 
             <div class="mb-4">
-                <label class="block text-[9px] font-black uppercase text-cyan-400 tracking-wider mb-1">Master SITREP Summary & Observations</label>
-                <textarea id="officer-incident-notes" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-xs text-slate-100 placeholder:text-slate-500 h-16 focus:border-cyan-400 focus:outline-none custom-scrollbar" placeholder="Enter incident summary, suspect flight path, witness remarks, or initial investigation findings...">${incidentNotes}</textarea>
+                <div class="flex justify-between items-end mb-1">
+                    <label class="block text-[9px] font-black uppercase text-cyan-400 tracking-wider">Master SITREP Summary & Observations</label>
+                    <span id="officer-incident-notes-counter" class="text-[9px] font-mono text-slate-500">${incidentNotes.length} / 1000</span>
+                </div>
+                <textarea id="officer-incident-notes" maxlength="1000" oninput="document.getElementById('officer-incident-notes-counter').textContent = this.value.length + ' / 1000'" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-xs text-slate-100 placeholder:text-slate-500 h-16 focus:border-cyan-400 focus:outline-none custom-scrollbar" placeholder="Enter incident summary, suspect flight path, witness remarks, or initial investigation findings...">${incidentNotes}</textarea>
             </div>
 
             <!-- ACTION PIPELINE BUTTONS -->
@@ -301,22 +323,22 @@ window.renderOfficerPartyRows = function() {
 
             <div>
                 <span class="text-[8px] text-slate-400 font-bold uppercase block">Full Name / Alias</span>
-                <input type="text" value="${p.name || ''}" onchange="window.updateOfficerParty(${idx}, 'name', this.value)" placeholder="Name" class="w-full bg-slate-900 border border-slate-700 rounded p-1 text-[10px] text-white uppercase">
+                <input type="text" maxlength="20" value="${p.name || ''}" onchange="window.updateOfficerParty(${idx}, 'name', this.value)" placeholder="Name" class="w-full bg-slate-900 border border-slate-700 rounded p-1 text-[10px] text-white uppercase">
             </div>
 
             <div>
                 <span class="text-[8px] text-slate-400 font-bold uppercase block">Phone / Contact</span>
-                <input type="text" value="${p.phone || ''}" onchange="window.updateOfficerParty(${idx}, 'phone', this.value)" placeholder="Phone" class="w-full bg-slate-900 border border-slate-700 rounded p-1 text-[10px] text-white">
+                <input type="text" maxlength="20" value="${p.phone || ''}" onchange="window.updateOfficerParty(${idx}, 'phone', this.value)" placeholder="Phone" class="w-full bg-slate-900 border border-slate-700 rounded p-1 text-[10px] text-white">
             </div>
 
             <div>
                 <span class="text-[8px] text-slate-400 font-bold uppercase block">DL # / State</span>
-                <input type="text" value="${p.license || ''}" onchange="window.updateOfficerParty(${idx}, 'license', this.value)" placeholder="DL Number" class="w-full bg-slate-900 border border-slate-700 rounded p-1 text-[10px] text-white uppercase font-mono">
+                <input type="text" maxlength="20" value="${p.license || ''}" onchange="window.updateOfficerParty(${idx}, 'license', this.value)" placeholder="DL Number" class="w-full bg-slate-900 border border-slate-700 rounded p-1 text-[10px] text-white uppercase font-mono">
             </div>
 
             <div>
                 <span class="text-[8px] text-slate-400 font-bold uppercase block">Vehicle & Plate</span>
-                <input type="text" value="${p.vehicle || ''}" onchange="window.updateOfficerParty(${idx}, 'vehicle', this.value)" placeholder="Make/Model/Plate" class="w-full bg-slate-900 border border-slate-700 rounded p-1 text-[10px] text-white uppercase">
+                <input type="text" maxlength="20" value="${p.vehicle || ''}" onchange="window.updateOfficerParty(${idx}, 'vehicle', this.value)" placeholder="Make/Model/Plate" class="w-full bg-slate-900 border border-slate-700 rounded p-1 text-[10px] text-white uppercase">
             </div>
 
             <div class="flex items-center justify-between gap-1">
@@ -366,77 +388,203 @@ window.updateOfficerParty = function(idx, key, val) {
 };
 
 // Canvas Sketchpad Handlers
+window.officerUndoStack = [];
+window.officerActiveToolLabel = 'Pen';
+window.officerActiveColor = '#ffffff';
+
 window.initOfficerCanvas = function(existingImage) {
     officerCanvas = document.getElementById('officer-scene-canvas');
     if (!officerCanvas) return;
 
-    officerCtx = officerCanvas.getContext('2d');
-    officerCtx.strokeStyle = '#38bdf8';
-    officerCtx.lineWidth = 2;
+    officerCtx = officerCanvas.getContext('2d', { willReadFrequently: true });
+    officerCtx.lineCap = 'round';
+    officerCtx.lineJoin = 'round';
+    
+    window.officerUndoStack = [];
+    window.setOfficerSketchTool('#ffffff', 'Pen');
+
+    const saveState = () => {
+        window.officerUndoStack.push(officerCanvas.toDataURL());
+        if (window.officerUndoStack.length > 20) window.officerUndoStack.shift();
+    };
+
+    const drawGrid = () => {
+        officerCtx.strokeStyle = 'rgba(255,255,255,0.05)';
+        officerCtx.lineWidth = 1;
+        for (let x = 0; x < officerCanvas.width; x += 30) { officerCtx.beginPath(); officerCtx.moveTo(x,0); officerCtx.lineTo(x,officerCanvas.height); officerCtx.stroke(); }
+        for (let y = 0; y < officerCanvas.height; y += 30) { officerCtx.beginPath(); officerCtx.moveTo(0,y); officerCtx.lineTo(officerCanvas.width,y); officerCtx.stroke(); }
+    };
 
     if (existingImage) {
         const img = new Image();
         img.onload = () => {
             officerCtx.drawImage(img, 0, 0, officerCanvas.width, officerCanvas.height);
+            saveState();
         };
         img.src = existingImage;
+    } else {
+        // Init blank
+        officerCtx.fillStyle = '#0a0f1a';
+        officerCtx.fillRect(0, 0, officerCanvas.width, officerCanvas.height);
+        drawGrid();
+        saveState();
     }
 
+    const getScaledCoords = (e) => {
+        const rect = officerCanvas.getBoundingClientRect();
+        const clientX = e.clientX || (e.touches && e.touches[0].clientX);
+        const clientY = e.clientY || (e.touches && e.touches[0].clientY);
+        
+        const scaleX = officerCanvas.width / rect.width;
+        const scaleY = officerCanvas.height / rect.height;
+        
+        return {
+            x: (clientX - rect.left) * scaleX,
+            y: (clientY - rect.top) * scaleY
+        };
+    };
+
     const startDraw = (e) => {
+        if (e.touches && e.touches.length > 1) {
+            isDrawingOfficerCanvas = false;
+            return; // Abort drawing on multi-touch
+        }
         isDrawingOfficerCanvas = true;
         officerCtx.beginPath();
-        const rect = officerCanvas.getBoundingClientRect();
-        const x = (e.clientX || (e.touches && e.touches[0].clientX)) - rect.left;
-        const y = (e.clientY || (e.touches && e.touches[0].clientY)) - rect.top;
-        officerCtx.moveTo(x, y);
+        const coords = getScaledCoords(e);
+        officerCtx.moveTo(coords.x, coords.y);
+        window.lastTextPoint = { x: coords.x, y: coords.y };
     };
 
     const draw = (e) => {
         if (!isDrawingOfficerCanvas) return;
-        const rect = officerCanvas.getBoundingClientRect();
-        const x = (e.clientX || (e.touches && e.touches[0].clientX)) - rect.left;
-        const y = (e.clientY || (e.touches && e.touches[0].clientY)) - rect.top;
-        officerCtx.lineTo(x, y);
+        if (e.touches && e.touches.length > 1) {
+            isDrawingOfficerCanvas = false;
+            return; // Abort drawing if a second finger is added
+        }
+        const coords = getScaledCoords(e);
+        officerCtx.lineTo(coords.x, coords.y);
+        
+        const isEraser = window.officerActiveToolLabel === 'ERASER';
+        const isPen = window.officerActiveToolLabel === 'Pen';
+        
+        officerCtx.strokeStyle = window.officerActiveColor;
+        // Thicker lines for Pen and text to survive heavy 15KB base64 compression later
+        officerCtx.lineWidth = isEraser ? 35 : (isPen ? 5 : 2.5);
+        
         officerCtx.stroke();
+        
+        // Dynamic Path Text Stamping
+        if (!isPen && !isEraser && window.lastTextPoint) {
+            const dx = coords.x - window.lastTextPoint.x;
+            const dy = coords.y - window.lastTextPoint.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            
+            // Stamp text much closer together (every 40 pixels)
+            if (dist > 40) {
+                const angle = Math.atan2(dy, dx);
+                
+                officerCtx.save();
+                officerCtx.translate(coords.x, coords.y);
+                
+                // Keep text readable left-to-right
+                let textAngle = angle;
+                if (angle > Math.PI/2 || angle < -Math.PI/2) textAngle += Math.PI;
+                officerCtx.rotate(textAngle);
+                
+                // Slightly smaller, sharper font
+                officerCtx.font = "bold 10px monospace";
+                officerCtx.textAlign = "center";
+                officerCtx.textBaseline = "middle";
+                
+                // Thinner black outline to prevent blurriness, while keeping the contrast
+                officerCtx.strokeStyle = '#000000';
+                officerCtx.lineWidth = 1.5;
+                officerCtx.strokeText(window.officerActiveToolLabel, 0, 0);
+                
+                // Bright fill color
+                officerCtx.fillStyle = window.officerActiveColor;
+                officerCtx.fillText(window.officerActiveToolLabel, 0, 0);
+                
+                officerCtx.restore();
+                
+                window.lastTextPoint = { x: coords.x, y: coords.y };
+                // Start a new path so stroke doesn't glitch across the text translation
+                officerCtx.beginPath();
+                officerCtx.moveTo(coords.x, coords.y);
+            }
+        }
     };
 
     const stopDraw = () => {
-        isDrawingOfficerCanvas = false;
+        if (isDrawingOfficerCanvas) {
+            isDrawingOfficerCanvas = false;
+            saveState();
+        }
     };
 
     officerCanvas.onmousedown = startDraw;
     officerCanvas.onmousemove = draw;
     officerCanvas.onmouseup = stopDraw;
-    officerCanvas.ontouchstart = startDraw;
-    officerCanvas.ontouchmove = draw;
-    officerCanvas.ontouchend = stopDraw;
+    officerCanvas.onmouseleave = stopDraw;
+    
+    officerCanvas.addEventListener('touchstart', startDraw, {passive: false});
+    officerCanvas.addEventListener('touchmove', draw, {passive: false});
+    officerCanvas.addEventListener('touchend', stopDraw);
+    officerCanvas.addEventListener('touchcancel', stopDraw);
 };
 
-window.setOfficerDrawTool = function(tool) {
-    currentOfficerDrawTool = tool;
+window.setOfficerSketchTool = function(hexColor, label) {
+    window.officerActiveColor = hexColor;
+    window.officerActiveToolLabel = label;
+    
+    document.querySelectorAll('.sketch-tool-btn').forEach(btn => {
+        if (btn.id === 'sketch-tool-' + label.replace(/\s+/g, '-')) {
+            btn.style.backgroundColor = hexColor;
+            btn.style.color = '#000000';
+            btn.style.boxShadow = `0 0 8px ${hexColor}`;
+        } else {
+            const orgColor = btn.getAttribute('data-color') || btn.style.borderColor;
+            btn.style.backgroundColor = 'rgba(0,0,0,0.4)';
+            btn.style.color = orgColor;
+            btn.style.boxShadow = 'none';
+        }
+    });
+    
+    const statusEl = document.getElementById('active-sketch-tool-status');
+    if (statusEl) {
+        statusEl.textContent = label.toUpperCase();
+        statusEl.style.color = hexColor;
+    }
 };
 
-window.addOfficerStamp = function(type) {
-    if (!officerCtx || !officerCanvas) return;
-    officerCtx.font = "bold 14px monospace";
-    const x = officerCanvas.width / 2 + (Math.random() * 60 - 30);
-    const y = officerCanvas.height / 2 + (Math.random() * 40 - 20);
-
-    if (type === 'X') {
-        officerCtx.fillStyle = '#ef4444';
-        officerCtx.fillText("❌ IMPACT POINT", x, y);
-    } else if (type === 'E1') {
-        officerCtx.fillStyle = '#fbbf24';
-        officerCtx.fillText("⚠️ EVIDENCE #1", x, y);
-    } else if (type === 'VEH') {
-        officerCtx.fillStyle = '#38bdf8';
-        officerCtx.fillText("🚗 VEHICLE [V]", x, y);
+window.undoOfficerCanvas = function() {
+    if (window.officerUndoStack.length > 1) {
+        window.officerUndoStack.pop(); // Remove current state
+        const lastState = window.officerUndoStack[window.officerUndoStack.length - 1];
+        const img = new Image();
+        img.onload = () => {
+            if (officerCtx && officerCanvas) {
+                officerCtx.clearRect(0, 0, officerCanvas.width, officerCanvas.height);
+                officerCtx.drawImage(img, 0, 0);
+            }
+        };
+        img.src = lastState;
     }
 };
 
 window.clearOfficerCanvas = function() {
     if (officerCtx && officerCanvas) {
-        officerCtx.clearRect(0, 0, officerCanvas.width, officerCanvas.height);
+        officerCtx.fillStyle = '#0a0f1a';
+        officerCtx.fillRect(0, 0, officerCanvas.width, officerCanvas.height);
+        
+        officerCtx.strokeStyle = 'rgba(255,255,255,0.05)';
+        officerCtx.lineWidth = 1;
+        for (let x = 0; x < officerCanvas.width; x += 30) { officerCtx.beginPath(); officerCtx.moveTo(x,0); officerCtx.lineTo(x,officerCanvas.height); officerCtx.stroke(); }
+        for (let y = 0; y < officerCanvas.height; y += 30) { officerCtx.beginPath(); officerCtx.moveTo(0,y); officerCtx.lineTo(officerCanvas.width,y); officerCtx.stroke(); }
+        
+        window.officerUndoStack = [];
+        window.officerUndoStack.push(officerCanvas.toDataURL());
     }
 };
 
@@ -448,9 +596,9 @@ window.collectOfficerCardData = function(id = null) {
         id: id || Date.now(),
         timestamp: Date.now(),
         type: 'officer',
-        title: `SITREP: ${document.getElementById('officer-unit-callsign')?.value || 'OFFICER-104'}`,
+        title: `SITREP: ${document.getElementById('officer-unit-callsign')?.value || 'UNSPECIFIED'}`,
         data: {
-            unitCallsign: document.getElementById('officer-unit-callsign')?.value || 'OFFICER-104',
+            unitCallsign: document.getElementById('officer-unit-callsign')?.value || '',
             cadNumber: document.getElementById('officer-cad-number')?.value || '',
             sceneStatus: document.getElementById('officer-scene-status')?.value || 'ACTIVE',
             incidentType: document.getElementById('officer-incident-type')?.value || 'TRAFFIC ACCIDENT',
@@ -710,7 +858,7 @@ window.generateOfficerCardHTML = function(card) {
                         <div class="text-xs font-black text-cyan-300 uppercase tracking-widest flex items-center gap-1.5">
                             OFFICER SITREP DOSSIER <span class="text-[8px] bg-red-950 text-red-400 border border-red-500/60 px-1.5 py-0.5 rounded font-mono">FIRST RESPONDER</span>
                         </div>
-                        <div class="text-[10px] font-mono text-slate-400">UNIT: ${data.unitCallsign || 'OFFICER-104'} | CAD: ${data.cadNumber || 'N/A'}</div>
+                        <div class="text-[10px] font-mono text-slate-400">UNIT: ${data.unitCallsign || 'UNSPECIFIED'} | CAD: ${data.cadNumber || 'N/A'}</div>
                     </div>
                 </div>
                 <div class="flex items-center gap-2">
@@ -729,7 +877,7 @@ window.generateOfficerCardHTML = function(card) {
                 </div>
                 <div class="text-right">
                     <span class="text-[9px] text-slate-400 font-bold uppercase block">TAC Radio Channel</span>
-                    <span class="text-xs font-mono text-cyan-400 font-bold">${data.tacComms || 'LAW TAC 3 / 155.370 MHz'}</span>
+                    <span class="text-xs font-mono text-cyan-400 font-bold">${data.tacComms || 'UNSPECIFIED'}</span>
                 </div>
             </div>
 
