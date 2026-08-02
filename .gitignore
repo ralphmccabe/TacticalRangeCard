@@ -35,3 +35,6 @@ android.keystore
 
 *.pem
 generate_cert.py
+
+# Local dev scratch folder (never pushed)
+_dev/

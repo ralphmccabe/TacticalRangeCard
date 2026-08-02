@@ -4,6 +4,7 @@
 // =========================================================================
 
 let officerRosterParties = [];
+let officerFirstAidList = [];
 let officerScenePhotos = [];
 let officerCanvas = null;
 let officerCtx = null;
@@ -24,6 +25,7 @@ window.renderOfficerForm = function(cardData = null) {
     if (!container) return;
 
     officerRosterParties = (cardData && cardData.data && cardData.data.parties) ? cardData.data.parties : [];
+    officerFirstAidList = (cardData && cardData.data && cardData.data.firstAid) ? cardData.data.firstAid : [];
     officerScenePhotos = (cardData && cardData.data && cardData.data.scenePhotos) ? cardData.data.scenePhotos : [];
     
     const id = cardData ? cardData.id : Date.now();
@@ -53,14 +55,32 @@ window.renderOfficerForm = function(cardData = null) {
         { label: 'TacVeh', color: '#16a34a' }, { label: 'Equip', color: '#a3e635' }
     ];
     
-    const toolsHtml = sketchTools.map(t => `
-        <button type="button" onclick="window.setOfficerSketchTool('${t.color}', '${t.label}')" id="sketch-tool-${t.label.replace(/\s+/g, '-')}" data-color="${t.color}" class="sketch-tool-btn text-[9px] font-bold px-2 py-0.5 rounded border transition-colors uppercase shrink-0" style="color: ${t.color}; border-color: ${t.color}; background: rgba(0,0,0,0.4);" title="${t.label}">
-            ${t.label}
+    let customTools = [];
+    try {
+        customTools = JSON.parse(localStorage.getItem('trc_custom_sketch_tools')) || [];
+    } catch(e) {}
+    
+    const allTools = sketchTools.map(t => ({ ...t, isCustom: false })).concat(
+        customTools.map(t => ({ ...t, isCustom: true }))
+    );
+    
+    const toolsHtml = allTools.map(t => `
+        <div class="relative inline-block group" style="margin-right: 4px;" id="sketch-tool-wrapper-${t.label.replace(/\s+/g, '-')}">
+            <button type="button" onclick="window.setOfficerSketchTool('${t.color}', '${t.label}')" id="sketch-tool-${t.label.replace(/\s+/g, '-')}" data-color="${t.color}" class="sketch-tool-btn text-[9px] font-bold px-2 py-0.5 rounded border transition-colors uppercase shrink-0" style="color: ${t.color}; border-color: ${t.color}; background: rgba(0,0,0,0.4);" title="${t.label}">
+                ${t.label}
+            </button>
+            ${t.isCustom ? `<button type="button" onclick="event.stopPropagation(); window.deleteCustomSketchTool('${t.label}')" class="absolute -top-1.5 -right-1.5 w-3.5 h-3.5 bg-red-600 hover:bg-red-500 text-white border border-slate-900 rounded-full flex items-center justify-center opacity-80 hover:opacity-100 z-10 shadow" title="Delete ${t.label}">
+                <svg xmlns="http://www.w3.org/2000/svg" width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+            </button>` : ''}
+        </div>
+    `).join('') + `
+        <button type="button" onclick="window.addCustomSketchTool()" id="add-custom-sketch-tool-btn" class="text-[9px] font-black px-2 py-0.5 rounded border border-slate-500 text-slate-300 bg-slate-800 hover:bg-slate-700 uppercase shrink-0 flex items-center gap-1 shadow ml-1">
+            <i data-lucide="plus" class="w-3 h-3"></i> CUSTOM
         </button>
-    `).join('');
+    `;
 
     container.innerHTML = `
-        <div id="officer-form-wrapper" class="w-full bg-slate-950 border-2 border-cyan-400 rounded-xl p-3 sm:p-4 shadow-[0_0_30px_rgba(56,189,248,0.3)] relative font-sans text-slate-100 max-h-[75vh] overflow-y-auto custom-scrollbar">
+        <div id="officer-form-wrapper" class="w-full bg-slate-950 border-2 border-cyan-400 rounded-xl p-3 sm:p-4 shadow-[0_0_30px_rgba(56,189,248,0.3)] relative font-sans text-slate-100  custom-scrollbar">
             
             <!-- Header Bar -->
             <div class="flex items-center justify-between border-b border-cyan-500/40 pb-2 mb-3">
@@ -97,6 +117,7 @@ window.renderOfficerForm = function(cardData = null) {
                         <option value="ACTIVE" ${sceneStatus === 'ACTIVE' ? 'selected' : ''}>🔴 ACTIVE SCENE (HIGH THREAT)</option>
                         <option value="CONTAINED" ${sceneStatus === 'CONTAINED' ? 'selected' : ''}>🟡 CONTAINED / MONITORING</option>
                         <option value="SECURED" ${sceneStatus === 'SECURED' ? 'selected' : ''}>🟢 SECURED / CLEAR</option>
+                        <option value="ENROUTE" ${sceneStatus === 'ENROUTE' ? 'selected' : ''}>🚙 ENROUTE / RESPONDING</option>
                     </select>
                 </div>
                 <div>
@@ -108,6 +129,7 @@ window.renderOfficerForm = function(cardData = null) {
                         <option value="SEARCH & RESCUE" ${incidentType === 'SEARCH & RESCUE' ? 'selected' : ''}>🌲 SEARCH & RESCUE</option>
                         <option value="HIGH-RISK WARRANT" ${incidentType === 'HIGH-RISK WARRANT' ? 'selected' : ''}>🛡️ HIGH-RISK WARRANT</option>
                         <option value="HAZMAT / FIRE" ${incidentType === 'HAZMAT / FIRE' ? 'selected' : ''}>🔥 HAZMAT / FIRE</option>
+                        <option value="QUESTIONS" ${incidentType === 'QUESTIONS' ? 'selected' : ''}>🗺️ QUESTIONS</option>
                     </select>
                 </div>
             </div>
@@ -128,11 +150,26 @@ window.renderOfficerForm = function(cardData = null) {
                 </div>
             </div>
 
+            <!-- SECTION 2.5: FIRST AID & VET CARE -->
+            <div class="bg-slate-900/90 border border-slate-800 rounded-lg p-2.5 sm:p-3 mb-3">
+                <div class="flex items-center justify-between border-b border-slate-800 pb-1.5 mb-2">
+                    <span class="text-[10px] font-black text-pink-400 uppercase tracking-widest flex items-center gap-1.5">
+                        <i data-lucide="heart-pulse" class="w-4 h-4 text-pink-500"></i> FIRST AID & VET CARE
+                    </span>
+                    <button type="button" onclick="window.addOfficerFirstAidRow()" class="bg-pink-950 text-pink-300 hover:bg-pink-900 border border-pink-500/50 text-[9px] font-black px-2.5 py-1 rounded uppercase tracking-wider flex items-center gap-1 transition-colors cursor-pointer">
+                        <i data-lucide="plus" class="w-3.5 h-3.5"></i> Add Patient
+                    </button>
+                </div>
+                <div id="officer-firstaid-container" class="space-y-2.5 max-h-80 overflow-y-auto custom-scrollbar p-0.5">
+                    <!-- First Aid Rows rendered dynamically -->
+                </div>
+            </div>
+
             <!-- SECTION 3A: SCENE DIAGRAM / CRIME SCENE SKETCHPAD -->
             <div class="bg-slate-900/90 border border-slate-800 rounded-lg p-2 sm:p-3 mb-3">
                 <div class="flex items-center justify-between border-b border-slate-800 pb-1.5 mb-2 flex-wrap gap-2">
                     <span class="text-[10px] font-black text-cyan-300 uppercase tracking-widest flex items-center gap-1.5">
-                        <i data-lucide="pen-tool" class="w-4 h-4 text-cyan-400"></i> CRIME SCENE SKETCHPAD: <span id="active-sketch-tool-status" class="ml-1 font-mono tracking-widest text-white">PEN</span>
+                        <i data-lucide="pen-tool" class="w-4 h-4 text-cyan-400"></i> CRIME SCENE SKETCHPAD: <span id="active-sketch-tool-status" class="ml-1 font-mono tracking-widest text-slate-500">NONE</span>
                     </span>
                     <div class="flex items-center gap-1.5 flex-wrap">
                         <button type="button" onclick="window.setOfficerSketchTool('#0a0f1a', 'ERASER')" id="sketch-tool-ERASER" data-color="#0a0f1a" class="sketch-tool-btn text-[9px] font-bold px-2 py-1 rounded border border-slate-500 text-slate-300 bg-slate-800 hover:bg-slate-700 uppercase flex items-center gap-1 shrink-0"><i data-lucide="eraser" class="w-3 h-3"></i> ERASER</button>
@@ -142,7 +179,7 @@ window.renderOfficerForm = function(cardData = null) {
                 </div>
 
                 <!-- Tool Palette -->
-                <div class="flex flex-wrap gap-1 mb-2 bg-slate-950 p-1.5 rounded border border-slate-800 shadow-inner">
+                <div id="officer-sketch-tools-palette" class="flex flex-wrap gap-1 mb-2 bg-slate-950 p-1.5 rounded border border-slate-800 shadow-inner">
                     ${toolsHtml}
                 </div>
 
@@ -168,7 +205,7 @@ window.renderOfficerForm = function(cardData = null) {
                         </label>
                     </div>
                 </div>
-                <div id="officer-photos-container" class="flex items-center gap-2 overflow-x-auto p-1 custom-scrollbar min-h-[60px]">
+                <div id="officer-photos-container" class="flex items-center justify-center gap-2 overflow-x-auto p-1 custom-scrollbar min-h-[60px] flex-wrap sm:flex-nowrap">
                     <!-- Rendered photo thumbnails -->
                 </div>
             </div>
@@ -203,15 +240,10 @@ window.renderOfficerForm = function(cardData = null) {
                     <i data-lucide="refresh-cw" class="w-4 h-4"></i> CLEAR FORM
                 </button>
                 <div class="flex items-center gap-2 flex-wrap">
-                    <button type="button" onclick="window.saveOfficerCardToWorkstation('${id}')" class="bg-cyan-600 hover:bg-cyan-500 text-black font-black text-xs px-4 py-2 rounded-lg uppercase tracking-wider flex items-center gap-1.5 shadow-[0_0_15px_rgba(6,182,212,0.4)] cursor-pointer">
+                    <button type="button" onclick="window.saveOfficerCardToWorkstation('${id}')" style="background-color: #06b6d4 !important; color: #000000 !important;" class="hover:brightness-110 font-black font-black text-xs px-4 py-2 rounded-lg uppercase tracking-wider flex items-center gap-1.5 shadow-[0_0_15px_rgba(6,182,212,0.4)] cursor-pointer">
                         <i data-lucide="save" class="w-4 h-4"></i> SAVE TO WORKSTATION
                     </button>
-                    <button type="button" onclick="window.saveOfficerCardToVault('${id}')" class="bg-purple-900 hover:bg-purple-800 text-purple-200 border border-purple-500/50 font-black text-xs px-4 py-2 rounded-lg uppercase tracking-wider flex items-center gap-1.5 shadow cursor-pointer">
-                        <i data-lucide="folder-plus" class="w-4 h-4 text-purple-400"></i> TRANSMIT TO VAULT
-                    </button>
-                    <button type="button" onclick="window.blogOfficerCardToWire('${id}')" class="bg-emerald-600 hover:bg-emerald-500 text-black font-black text-xs px-4 py-2 rounded-lg uppercase tracking-wider flex items-center gap-1.5 shadow-[0_0_15px_rgba(16,185,129,0.4)] cursor-pointer">
-                        <i data-lucide="radio" class="w-4 h-4"></i> BROADCAST TO WIRE
-                    </button>
+
                 </div>
             </div>
 
@@ -220,8 +252,9 @@ window.renderOfficerForm = function(cardData = null) {
 
     if (window.lucide) window.lucide.createIcons();
 
-    // Render initial party rows & photos
+    // Populate dynamic lists
     window.renderOfficerPartyRows();
+    window.renderOfficerFirstAidRows();
     window.renderOfficerPhotoThumbnails();
 
     // Init sketchpad canvas
@@ -278,9 +311,9 @@ window.renderOfficerPhotoThumbnails = function() {
     }
 
     container.innerHTML = officerScenePhotos.map((img, idx) => `
-        <div class="relative w-16 h-16 rounded border border-slate-700 overflow-hidden bg-slate-950 shrink-0 group">
-            <img src="${img}" class="w-full h-full object-cover">
-            <button type="button" onclick="window.removeOfficerPhoto(${idx})" class="absolute top-0.5 right-0.5 bg-red-600 hover:bg-red-500 text-white rounded-full p-0.5 shadow" title="Remove Photo">
+        <div class="relative w-20 h-20 rounded border border-cyan-500/50 overflow-hidden bg-slate-950 shrink-0 group shadow-md flex items-center justify-center">
+            <img src="${img}" class="w-full h-full object-cover rounded">
+            <button type="button" onclick="window.removeOfficerPhoto(${idx})" class="absolute top-0.5 right-0.5 bg-red-600 hover:bg-red-500 text-white rounded-full p-0.5 shadow z-10" title="Remove Photo">
                 <i data-lucide="x" class="w-3 h-3"></i>
             </button>
         </div>
@@ -387,6 +420,75 @@ window.updateOfficerParty = function(idx, key, val) {
     }
 };
 
+window.renderOfficerFirstAidRows = function() {
+    const container = document.getElementById('officer-firstaid-container');
+    if (!container) return;
+
+    if (!officerFirstAidList || officerFirstAidList.length === 0) {
+        container.innerHTML = `<div class="text-[10px] text-slate-500 italic text-center py-2">No patients added. Click + Add Patient if medical care was rendered.</div>`;
+        return;
+    }
+
+    container.innerHTML = officerFirstAidList.map((p, idx) => `
+        <div class="bg-slate-950 border border-slate-800 rounded p-2 grid grid-cols-1 sm:grid-cols-2 gap-2 items-center relative">
+            <div>
+                <label class="block text-[8px] font-black uppercase text-pink-400/80 tracking-wider mb-0.5">Patient Type</label>
+                <select onchange="window.updateOfficerFirstAid(${idx}, 'faType', this.value)" class="w-full bg-slate-900 border border-slate-700 rounded p-1 text-[10px] text-white uppercase font-bold">
+                    <option value="HUMAN" ${p.faType === 'HUMAN' ? 'selected' : ''}>HUMAN PATIENT</option>
+                    <option value="K9/ANIMAL" ${p.faType === 'K9/ANIMAL' ? 'selected' : ''}>K9 / ANIMAL</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-[8px] font-black uppercase text-pink-400/80 tracking-wider mb-0.5">Patient Name / Tag ID</label>
+                <input type="text" value="${p.faName}" onchange="window.updateOfficerFirstAid(${idx}, 'faName', this.value)" placeholder="e.g. Officer Smith" class="w-full bg-slate-900 border border-slate-700 rounded p-1 text-[10px] text-white font-mono">
+            </div>
+            <div class="sm:col-span-2">
+                <label class="block text-[8px] font-black uppercase text-pink-400/80 tracking-wider mb-0.5">Chief Complaint & Vitals (HR/RR/Temp)</label>
+                <input type="text" value="${p.faVitals}" onchange="window.updateOfficerFirstAid(${idx}, 'faVitals', this.value)" placeholder="e.g. GSW Right Leg" class="w-full bg-slate-900 border border-slate-700 rounded p-1 text-[10px] text-white">
+            </div>
+            <div class="sm:col-span-2">
+                <label class="block text-[8px] font-black uppercase text-pink-400/80 tracking-wider mb-0.5">Treatment / Meds Given / Tourniquet</label>
+                <textarea onchange="window.updateOfficerFirstAid(${idx}, 'faTreatment', this.value)" class="w-full bg-slate-900 border border-slate-700 rounded p-1 text-[10px] text-white h-12 custom-scrollbar">${p.faTreatment}</textarea>
+            </div>
+            <div class="sm:col-span-2">
+                <label class="block text-[8px] font-black uppercase text-pink-400/80 tracking-wider mb-0.5">Evacuation Status</label>
+                <select onchange="window.updateOfficerFirstAid(${idx}, 'faEvac', this.value)" class="w-full bg-slate-900 border border-slate-700 rounded p-1 text-[10px] text-white uppercase font-bold">
+                    <option value="NONE" ${p.faEvac === 'NONE' ? 'selected' : ''}>NO EVAC REQUIRED</option>
+                    <option value="ROUTINE" ${p.faEvac === 'ROUTINE' ? 'selected' : ''}>ROUTINE (NON-EMERGENCY)</option>
+                    <option value="PRIORITY" ${p.faEvac === 'PRIORITY' ? 'selected' : ''}>PRIORITY EVAC</option>
+                    <option value="URGENT" ${p.faEvac === 'URGENT' ? 'selected' : ''}>URGENT / MEDEVAC REQUIRED</option>
+                </select>
+            </div>
+            <button type="button" onclick="window.removeOfficerFirstAidRow(${idx})" class="absolute top-1 right-1 w-5 h-5 flex items-center justify-center bg-red-950 text-red-500 rounded hover:bg-red-900">
+                <i data-lucide="x" class="w-3 h-3"></i>
+            </button>
+        </div>
+    `).join('');
+    if (window.lucide) window.lucide.createIcons();
+};
+
+window.addOfficerFirstAidRow = function() {
+    officerFirstAidList.push({
+        faType: 'HUMAN',
+        faName: '',
+        faVitals: '',
+        faTreatment: '',
+        faEvac: 'NONE'
+    });
+    window.renderOfficerFirstAidRows();
+};
+
+window.removeOfficerFirstAidRow = function(idx) {
+    officerFirstAidList.splice(idx, 1);
+    window.renderOfficerFirstAidRows();
+};
+
+window.updateOfficerFirstAid = function(idx, key, val) {
+    if (officerFirstAidList[idx]) {
+        officerFirstAidList[idx][key] = val;
+    }
+};
+
 // Canvas Sketchpad Handlers
 window.officerUndoStack = [];
 window.officerActiveToolLabel = 'Pen';
@@ -401,7 +503,7 @@ window.initOfficerCanvas = function(existingImage) {
     officerCtx.lineJoin = 'round';
     
     window.officerUndoStack = [];
-    window.setOfficerSketchTool('#ffffff', 'Pen');
+    window.setOfficerSketchTool('', '');
 
     const saveState = () => {
         window.officerUndoStack.push(officerCanvas.toDataURL());
@@ -449,6 +551,10 @@ window.initOfficerCanvas = function(existingImage) {
             isDrawingOfficerCanvas = false;
             return; // Abort drawing on multi-touch
         }
+        if (!window.officerActiveToolLabel) {
+            // Optional: alert or just return silently
+            return;
+        }
         isDrawingOfficerCanvas = true;
         officerCtx.beginPath();
         const coords = getScaledCoords(e);
@@ -457,7 +563,7 @@ window.initOfficerCanvas = function(existingImage) {
     };
 
     const draw = (e) => {
-        if (!isDrawingOfficerCanvas) return;
+        if (!isDrawingOfficerCanvas || !window.officerActiveToolLabel) return;
         if (e.touches && e.touches.length > 1) {
             isDrawingOfficerCanvas = false;
             return; // Abort drawing if a second finger is added
@@ -535,11 +641,18 @@ window.initOfficerCanvas = function(existingImage) {
 };
 
 window.setOfficerSketchTool = function(hexColor, label) {
-    window.officerActiveColor = hexColor;
-    window.officerActiveToolLabel = label;
+    if (window.officerActiveToolLabel === label) {
+        window.officerActiveColor = 'transparent';
+        window.officerActiveToolLabel = '';
+        label = ''; 
+        hexColor = '';
+    } else {
+        window.officerActiveColor = hexColor || 'transparent';
+        window.officerActiveToolLabel = label || '';
+    }
     
     document.querySelectorAll('.sketch-tool-btn').forEach(btn => {
-        if (btn.id === 'sketch-tool-' + label.replace(/\s+/g, '-')) {
+        if (label && btn.id === 'sketch-tool-' + label.replace(/\s+/g, '-')) {
             btn.style.backgroundColor = hexColor;
             btn.style.color = '#000000';
             btn.style.boxShadow = `0 0 8px ${hexColor}`;
@@ -553,8 +666,101 @@ window.setOfficerSketchTool = function(hexColor, label) {
     
     const statusEl = document.getElementById('active-sketch-tool-status');
     if (statusEl) {
-        statusEl.textContent = label.toUpperCase();
-        statusEl.style.color = hexColor;
+        statusEl.textContent = label ? label.toUpperCase() : 'NONE';
+        statusEl.style.color = hexColor || '#64748b';
+    }
+};
+
+window.addCustomSketchTool = function() {
+    let customTools = [];
+    try {
+        customTools = JSON.parse(localStorage.getItem('trc_custom_sketch_tools')) || [];
+    } catch(e) {}
+    
+    if (customTools.length >= 53) {
+        alert("Maximum limit of 53 custom labels reached. Please delete some before creating more.");
+        return;
+    }
+
+    const label = prompt("Enter custom label name (max 10 chars):");
+    if (!label) return;
+    const cleanLabel = label.trim().substring(0, 10).toUpperCase();
+    if (!cleanLabel) return;
+    
+    if (customTools.some(t => t.label.toUpperCase() === cleanLabel)) {
+        alert("A label with this name already exists.");
+        return;
+    }
+    
+    let color = getComputedStyle(document.documentElement).getPropertyValue('--accent-color').trim();
+    if (!color) color = '#06b6d4'; // fallback cyber cyan
+    
+    const newTool = { label: cleanLabel, color: color };
+    
+    customTools.push(newTool);
+    localStorage.setItem('trc_custom_sketch_tools', JSON.stringify(customTools));
+    
+    const palette = document.getElementById('officer-sketch-tools-palette');
+    if (palette) {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'relative inline-block group';
+        wrapper.style.marginRight = '4px';
+        wrapper.id = 'sketch-tool-wrapper-' + newTool.label.replace(/\s+/g, '-');
+        
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.onclick = () => window.setOfficerSketchTool(newTool.color, newTool.label);
+        btn.id = 'sketch-tool-' + newTool.label.replace(/\s+/g, '-');
+        btn.setAttribute('data-color', newTool.color);
+        btn.className = 'sketch-tool-btn text-[9px] font-bold px-2 py-0.5 rounded border transition-colors uppercase shrink-0';
+        btn.style.color = newTool.color;
+        btn.style.borderColor = newTool.color;
+        btn.style.backgroundColor = 'rgba(0,0,0,0.4)';
+        btn.title = newTool.label;
+        btn.textContent = newTool.label;
+        
+        const delBtn = document.createElement('button');
+        delBtn.type = 'button';
+        delBtn.onclick = (event) => {
+            event.stopPropagation();
+            window.deleteCustomSketchTool(newTool.label);
+        };
+        delBtn.className = 'absolute -top-1.5 -right-1.5 w-3.5 h-3.5 bg-red-600 hover:bg-red-500 text-white border border-slate-900 rounded-full flex items-center justify-center opacity-80 hover:opacity-100 z-10 shadow';
+        delBtn.title = 'Delete ' + newTool.label;
+        delBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>`;
+        
+        wrapper.appendChild(btn);
+        wrapper.appendChild(delBtn);
+        
+        const customBtn = document.getElementById('add-custom-sketch-tool-btn');
+        if (customBtn) {
+            palette.insertBefore(wrapper, customBtn);
+        } else {
+            palette.appendChild(wrapper);
+        }
+    }
+    
+    window.setOfficerSketchTool(newTool.color, newTool.label);
+};
+
+window.deleteCustomSketchTool = function(label) {
+    if (!confirm(`Delete custom label "${label}"?`)) return;
+    
+    let customTools = [];
+    try {
+        customTools = JSON.parse(localStorage.getItem('trc_custom_sketch_tools')) || [];
+    } catch(e) {}
+    
+    customTools = customTools.filter(t => t.label !== label);
+    localStorage.setItem('trc_custom_sketch_tools', JSON.stringify(customTools));
+    
+    const wrapper = document.getElementById('sketch-tool-wrapper-' + label.replace(/\s+/g, '-'));
+    if (wrapper) {
+        wrapper.remove();
+    }
+    
+    if (window.officerActiveToolLabel === label) {
+        window.setOfficerSketchTool('', '');
     }
 };
 
@@ -607,6 +813,7 @@ window.collectOfficerCardData = function(id = null) {
             emsHospital: document.getElementById('officer-ems-hospital')?.value || '',
             incidentNotes: document.getElementById('officer-incident-notes')?.value || '',
             parties: officerRosterParties || [],
+            firstAid: officerFirstAidList || [],
             scenePhotos: officerScenePhotos || [],
             sketchImage: sketchImage
         }
@@ -750,11 +957,18 @@ window.blogOfficerCardToWire = async function(id) {
 
     const lightImage = cardData.data?.sketchImage || (cardData.data?.scenePhotos && cardData.data.scenePhotos[0]) || '';
 
-    const payload = {
+    const payloadItem = {
         type: 'officer_sitrep',
         label: `OFFICER SITREP: ${cardData.data.unitCallsign}`,
         workstationData: cardData,
         image: lightImage
+    };
+    const userObj = (typeof commsUser !== 'undefined' && commsUser && commsUser.callsign) ? commsUser : { callsign: 'OPERATOR', role: 'FIRST RESPONDER', team: 'ALPHA' };
+    const payload = {
+        message: `[ OFFICER SITREP: ${cardData.data.unitCallsign} ]`,
+        image: lightImage,
+        user: userObj,
+        metadata: payloadItem
     };
 
     // 1. Broadcast over Encrypted Comms Chat (P2P + Supabase)
@@ -798,6 +1012,9 @@ window.blogOfficerCardToWire = async function(id) {
         const wireText = `[ 🚓 FIRST RESPONDER SITREP • ${cardData.data.sceneStatus} ]\nUNIT: ${cardData.data.unitCallsign} | CAD: ${cardData.data.cadNumber || 'N/A'}\nINCIDENT: ${cardData.data.incidentType}\nNOTES: ${cardData.data.incidentNotes || 'None'}`;
         window.submitGlobalWirePost(wireText, compressedCardImage, 'OFFICER SITREP');
     }
+
+    // Reset and clear form fields & photos cleanly after transmit
+    if (typeof window.clearOfficerForm === 'function') window.clearOfficerForm();
 };
 
 window.sendOfficerCardToComms = window.blogOfficerCardToWire;
@@ -902,6 +1119,30 @@ window.generateOfficerCardHTML = function(card) {
                 </div>
                 <div class="space-y-2">
                     ${partiesHtml}
+                </div>
+            </div>
+            ` : ''}
+
+            <!-- First Aid & Vet Care Snapshot -->
+            ${(data.firstAid && data.firstAid.length > 0) ? `
+            <div class="space-y-1.5 mt-2">
+                <div class="text-[9.5px] font-black text-pink-400 uppercase tracking-wider flex items-center gap-1">
+                    <i data-lucide="heart-pulse" class="w-3.5 h-3.5 text-pink-500"></i> First Aid Patients (${data.firstAid.length})
+                </div>
+                <div class="space-y-2">
+                    ${data.firstAid.map(fa => `
+                    <div style="background-color: #0f172a; border: 1px solid #1e293b; border-left: 4px solid #f472b6;" class="p-2.5 rounded-lg text-xs space-y-2">
+                        <div class="text-[9px] font-black text-pink-400 uppercase tracking-wider mb-1 flex items-center justify-between">
+                            <span><i data-lucide="user" class="w-3 h-3 inline-block"></i> ${fa.faType} PATIENT</span>
+                            <span class="text-white">${fa.faEvac !== 'NONE' ? fa.faEvac + ' EVAC' : ''}</span>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2 text-slate-300">
+                            <div><span class="text-slate-500 font-bold block text-[9px] uppercase">Patient Name / Tag</span> ${fa.faName || 'UNKNOWN'}</div>
+                            <div><span class="text-slate-500 font-bold block text-[9px] uppercase">Complaint & Vitals</span> ${fa.faVitals || 'N/A'}</div>
+                            <div class="col-span-2"><span class="text-slate-500 font-bold block text-[9px] uppercase">Treatments & Meds Administered</span> ${fa.faTreatment || 'N/A'}</div>
+                        </div>
+                    </div>
+                    `).join('')}
                 </div>
             </div>
             ` : ''}

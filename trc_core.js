@@ -7919,24 +7919,15 @@ function initializeTacticalDashboard2() {
             });
         });
 
-        // ── RECONNECT FIX: When a new player joins, ALL existing players
-        // immediately re-track their GPS so the new joiner sees the full
-        // team on the map — not an empty field.
+        //  RECONNECT FIX: When a new player joins, ALL existing players
+        // automatically sync state natively via Supabase Presence. We do not need
+        // to forcefully re-track, as that causes an infinite rate-limit ping-pong loop.
         commsChannel.on('presence', { event: 'join' }, ({ key, newPresences }) => {
-            // Only react if it's a genuinely different player joining (not us)
+            const state = commsChannel.presenceState();
+            updateTeamRoster(state);
+            updateTeamMarkers(state);
             if (key === commsUser.id) return;
-            window.pushTacLog(`PLAYER JOINED: ${newPresences[0]?.user?.callsign || key} — RE-BROADCASTING POSITION`, "SYS");
-            // Small delay so the new player's channel is fully subscribed
-            setTimeout(() => {
-                if (commsChannel && commsUser && window.myLatestCoords) {
-                    commsChannel.track({
-                        online_at:  new Date().toISOString(),
-                        location:   window.myLatestCoords,
-                        user:       commsUser,
-                        distress:   window.isDistressActive || false
-                    }).catch(e => console.warn("Re-track on join failed:", e));
-                }
-            }, 1500);
+            window.pushTacLog(`PLAYER JOINED: ${newPresences[0]?.user?.callsign || key}`, "SYS");
         });
 
         commsChannel.on('presence', { event: 'leave' }, ({ key, leftPresences }) => {
@@ -8063,6 +8054,34 @@ function initializeTacticalDashboard2() {
         }
     }
 
+    window.chatPayloadStore = window.chatPayloadStore || {};
+
+    window.saveChatCardToVault = function(key) {
+        const cardObj = window.chatPayloadStore[key];
+        if (!cardObj) return;
+        const title = cardObj.title || cardObj.name || cardObj.label || 'TRANSMITTED CARD';
+        const img = cardObj.image || (cardObj.workstationData ? cardObj.workstationData.image : '') || '';
+        if (window.saveIntelSnapshot) {
+            window.saveIntelSnapshot(title, img, cardObj);
+        }
+        if (window.pushTacLog) window.pushTacLog(`CARD "${title}" SAVED TO INTEL VAULT`, 'SUCCESS');
+        alert(`"${title}" Saved to Intel Vault!`);
+    };
+
+    window.reworkChatCard = function(key) {
+        const cardObj = window.chatPayloadStore[key];
+        if (!cardObj) return;
+        const cardType = cardObj.type || (cardObj.workstationData ? cardObj.workstationData.type : 'officer');
+        
+        const vaultModal = document.getElementById('vault-modal');
+        if (vaultModal) vaultModal.classList.add('hidden');
+        
+        if (typeof window.openWorkstationForm === 'function') {
+            window.openWorkstationForm(cardType, cardObj);
+            if (window.pushTacLog) window.pushTacLog(`CARD LOADED FOR REWORK [${cardType.toUpperCase()}]`, 'SUCCESS');
+        }
+    };
+
     function renderChatMessage(userObj, msg, isMe, imageBase64 = null, tapeUrl = null, tapeMetadata = null) {
         const feed = document.getElementById('chat-feed');
         if (!feed) return;
@@ -8105,22 +8124,25 @@ function initializeTacticalDashboard2() {
                     if (statusEl) { statusEl.className = "text-[8px] text-red-400 mt-1"; statusEl.innerText = "DECRYPTION FAILED"; }
                 }
             }, 100);
-        } else if (tapeMetadata && (tapeMetadata.type === 'officer_sitrep' || tapeMetadata.type === 'officer' || tapeMetadata.workstationData?.type === 'officer')) {
+        } else if (tapeMetadata && (tapeMetadata.type === 'officer_sitrep' || tapeMetadata.type === 'officer' || tapeMetadata.workstationData?.type === 'officer' || tapeMetadata.workstationData)) {
             const cardObj = tapeMetadata.workstationData || tapeMetadata;
-            const cardJsonEscaped = JSON.stringify(cardObj).replace(/"/g, '&quot;');
+            const chatKey = `card_${Math.random().toString(36).substring(2, 9)}`;
+            window.chatPayloadStore = window.chatPayloadStore || {};
+            window.chatPayloadStore[chatKey] = cardObj;
+
             contentHtml += `
                 <div class="mt-2 p-2 bg-slate-900 border border-cyan-500/60 rounded-lg text-left text-xs text-white max-w-full space-y-1.5 shadow-lg">
                     <div class="font-black text-cyan-300 text-[10px] uppercase tracking-wider flex items-center justify-between border-b border-slate-800 pb-1">
-                        <span>🚓 OFFICER SITREP DOSSIER</span>
+                        <span>🚓 ${cardObj.title || cardObj.label || 'WORKSTATION DOSSIER'}</span>
                         <span class="text-[8px] bg-red-950 text-red-400 px-1.5 py-0.5 rounded border border-red-600/50 font-mono">ENCRYPTED INTEL</span>
                     </div>
-                    ${imageBase64 ? `<img src="${imageBase64}" class="w-full h-36 object-contain rounded border border-slate-700 bg-black cursor-pointer shadow" onclick="if(window.loadSnapshotToViewer) window.loadSnapshotToViewer(${cardJsonEscaped});">` : ''}
+                    ${imageBase64 ? `<img src="${imageBase64}" class="w-full h-44 object-contain rounded border border-slate-700 bg-black cursor-pointer shadow" onclick="if(window.loadSnapshotToViewer) window.loadSnapshotToViewer(window.chatPayloadStore['${chatKey}']);">` : ''}
                     <div class="flex items-center gap-1.5 pt-1 flex-wrap">
-                        <button type="button" onclick="event.stopPropagation(); if(window.saveIntelSnapshot) window.saveIntelSnapshot('SITREP: ${cardObj.data?.unitCallsign || 'OFFICER'}', '${imageBase64 || ''}', ${cardJsonEscaped}); if(window.pushTacLog) window.pushTacLog('SITREP CARD SAVED TO VAULT', 'SUCCESS'); alert('Officer SITREP Saved to Intel Vault!');" class="bg-purple-900 hover:bg-purple-800 text-purple-200 text-[9px] font-black px-2 py-1 rounded border border-purple-500/60 uppercase flex items-center gap-1 cursor-pointer shadow">
+                        <button type="button" onclick="event.stopPropagation(); if(window.saveChatCardToVault) window.saveChatCardToVault('${chatKey}');" class="bg-purple-900 hover:bg-purple-800 text-purple-200 text-[9px] font-black px-2.5 py-1 rounded border border-purple-500/60 uppercase flex items-center gap-1 cursor-pointer shadow">
                             <i data-lucide="folder-plus" class="w-3 h-3 text-purple-300"></i> SAVE TO VAULT
                         </button>
-                        <button type="button" onclick="event.stopPropagation(); if(window.openWorkstationForm) window.openWorkstationForm('officer', ${cardJsonEscaped});" class="bg-cyan-900 hover:bg-cyan-800 text-cyan-200 text-[9px] font-black px-2 py-1 rounded border border-cyan-500/60 uppercase flex items-center gap-1 cursor-pointer shadow">
-                            <i data-lucide="refresh-cw" class="w-3 h-3 text-cyan-300"></i> REWORK SITREP
+                        <button type="button" onclick="event.stopPropagation(); if(window.reworkChatCard) window.reworkChatCard('${chatKey}');" class="bg-cyan-900 hover:bg-cyan-800 text-cyan-200 text-[9px] font-black px-2.5 py-1 rounded border border-cyan-500/60 uppercase flex items-center gap-1 cursor-pointer shadow">
+                            <i data-lucide="refresh-cw" class="w-3 h-3 text-cyan-300"></i> REWORK CARD
                         </button>
                     </div>
                 </div>
@@ -8215,7 +8237,7 @@ function initializeTacticalDashboard2() {
         // ── AUTO-SAVE INCOMING IMAGES & CARDS TO INTEL VAULT & WORKSTATION ──────────────
         if (!isMe && !(tapeMetadata && tapeMetadata.isPristineImage)) {
             if (imageBase64 || isBizCard || tapeMetadata) {
-                const wsCardData = tapeMetadata?.workstationData || (tapeMetadata && ['medevac', 'scorecard', 'logistics', 'roster', 'bragboard', 'officer', 'workstation'].includes(tapeMetadata.type) ? tapeMetadata : null);
+                const wsCardData = tapeMetadata?.workstationData || (tapeMetadata && ['medevac', 'scorecard', 'logistics', 'roster', 'bragboard', 'officer', 'workstation', 'master_op'].includes(tapeMetadata.type) ? tapeMetadata : null);
 
                 const cardId = tapeMetadata?.id || wsCardData?.id || Date.now();
                 const label = (tapeMetadata && (tapeMetadata.label || tapeMetadata.title))
@@ -8248,12 +8270,15 @@ function initializeTacticalDashboard2() {
                     }).catch(e => console.error("Error auto-saving incoming card to intelVault IDB:", e));
                 }
 
-                // 2. Save to vaultCache memory
-                if (window.vaultCache) {
-                    window.vaultCache = window.vaultCache.filter(v => v && v.id && v.id.toString() !== cardId.toString());
+                // 2. Save to vaultCache memory with deduplication check
+                if (!window.vaultCache) window.vaultCache = [];
+                const existingIdx = window.vaultCache.findIndex(v => v && v.id && (v.id.toString() === cardId.toString() || (v.content && vaultMeta.content && v.content === vaultMeta.content && v.author === vaultMeta.author)));
+                if (existingIdx >= 0) {
+                    window.vaultCache[existingIdx] = Object.assign({}, window.vaultCache[existingIdx], vaultMeta);
+                } else {
                     window.vaultCache.unshift(vaultMeta);
-                    if (typeof window.refreshVaultGrid === 'function') window.refreshVaultGrid();
                 }
+                if (typeof window.refreshVaultGrid === 'function') window.refreshVaultGrid();
 
                 // 3. Save to workstationLibrary IDB if it's a workstation card
                 if (wsCardData && window.TRC_IDB) {
@@ -8563,6 +8588,37 @@ function initializeTacticalDashboard2() {
         if (navigator.geolocation && commsMapInstance) {
             if (geoWatchId) navigator.geolocation.clearWatch(geoWatchId);
             let lastTrackTime = 0;
+            const fallbackIpGeo = async () => {
+                try {
+                    window.pushTacLog("CONNECTING TO SATELLITE IP GEOLOCATION...", "SYS");
+                    const res = await fetch('https://ipapi.co/json/');
+                    if (res.ok) {
+                        const data = await res.json();
+                        if (data.latitude && data.longitude) {
+                            lastLat = data.latitude;
+                            lastLng = data.longitude;
+                            window.myLatestCoords = { lat: lastLat, lng: lastLng };
+                            if (commsMapInstance) {
+                                commsMapInstance.setView([lastLat, lastLng], 13);
+                                hasCentered = true;
+                            }
+                            if (commsChannel) {
+                                commsChannel.track({
+                                    online_at: new Date().toISOString(),
+                                    location: window.myLatestCoords,
+                                    user: commsUser,
+                                    distress: window.isDistressActive,
+                                    dutyStatus: window.myDutyStatus || null
+                                }).catch(e => {});
+                            }
+                            window.pushTacLog(`IP-GEOLOCATION SECURED: [${data.city || 'NETWORK'}, ${data.region_code || ''}]`, "SUCCESS");
+                            return;
+                        }
+                    }
+                } catch(e) {}
+                window.pushTacLog("GPS UN-AVAILABLE - SATELLITE MAP STANDBY", "WARNING");
+            };
+
             const startGeoWatch = (highAcc) => {
                 return navigator.geolocation.watchPosition((pos) => {
                     const { latitude, longitude } = pos.coords; window.myLatestCoords = { lat: latitude, lng: longitude };
@@ -8583,20 +8639,21 @@ function initializeTacticalDashboard2() {
                                 online_at: new Date().toISOString(),
                                 location: { lat: latitude, lng: longitude },
                                 user: commsUser,
-                                distress: window.isDistressActive
+                                distress: window.isDistressActive,
+                                dutyStatus: window.myDutyStatus || null
                             }).catch(e => console.warn("Track rate limit:", e));
                         }
                     }
                 }, (err) => {
                     console.warn("Main GPS Error:", err);
                     if (highAcc) {
-                        window.pushTacLog("HIGH ACCURACY GPS FAILED. SWITCHING TO IP LOC...", "SYS");
+                        window.pushTacLog("HIGH ACCURACY GPS TIMED OUT. SWITCHING TO NETWORK LOC...", "SYS");
                         if (geoWatchId) navigator.geolocation.clearWatch(geoWatchId);
                         geoWatchId = startGeoWatch(false);
                     } else {
-                        window.pushTacLog("ALL GPS MODULES FAILED.", "ERROR");
+                        fallbackIpGeo();
                     }
-                }, { enableHighAccuracy: highAcc, maximumAge: 0, timeout: 5000 });
+                }, { enableHighAccuracy: highAcc, maximumAge: 30000, timeout: highAcc ? 12000 : 20000 });
             };
             geoWatchId = startGeoWatch(true);
         }
@@ -8721,7 +8778,8 @@ function initializeTacticalDashboard2() {
                         online_at: new Date().toISOString(),
                         location: window.myLatestCoords || null,
                         user: commsUser,
-                        distress: window.isDistressActive
+                        distress: window.isDistressActive,
+                        dutyStatus: window.myDutyStatus || null
                     });
                 }
             }, 500);
@@ -8732,6 +8790,7 @@ function initializeTacticalDashboard2() {
     }
 
     function updateTeamRoster(state) {
+        window.latestPresenceState = state;
         const roster = document.getElementById('team-roster');
         if (!roster) return;
         roster.innerHTML = '';
@@ -8744,7 +8803,7 @@ function initializeTacticalDashboard2() {
                 if (p.user && !seenUsers.has(p.user.id)) {
                     seenUsers.add(p.user.id);
                     const tag = document.createElement('span');
-                    const statusIcon = p.dutyStatus ? ` ${p.dutyStatus}` : '';
+                    const statusIcon = p.dutyStatus ? ` <span class="font-bold text-amber-300 ml-0.5">${p.dutyStatus}</span>` : '';
                     
                     if (p.distress) {
                         tag.className = 'bg-red-950/80 border border-red-500/50 text-red-400 px-1.5 py-0.5 rounded text-[7px] font-black uppercase flex items-center gap-1 animate-pulse';
@@ -9849,148 +9908,91 @@ function initializeTacticalDashboard2() {
         // SEND VAULT ITEM TO CHAT (called from viewer SEND button & CHATS button)
         // -----------------------------------------------------------------------
         window.sendVaultItemToChat = async function(itemId) {
-            let item = (window.vaultCache || []).find(i => i.id == itemId || (i.id && i.id.toString() === itemId.toString()));
-            if (!item && window.TRC_IDB) {
-                try {
-                    item = await window.TRC_IDB.get('intelVault', itemId.toString());
-                    if (!item) item = await window.TRC_IDB.get('intelVault', parseInt(itemId));
-                    if (!item) item = await window.TRC_IDB.get('workstationLibrary', itemId.toString());
-                    if (!item) item = await window.TRC_IDB.get('workstationLibrary', parseInt(itemId));
-                } catch(e) {}
-            }
-            if (!item) {
-                if (window.pushTacLog) window.pushTacLog('VAULT ITEM NOT FOUND IN IDB', 'ERROR');
-                return;
-            }
-
-            const isOfficerCard = item.type === 'officer_sitrep' || item.workstationData?.type === 'officer';
-            if (isOfficerCard) {
-                const cardObj = JSON.parse(JSON.stringify(item.workstationData || item));
-                const userObj = (typeof commsUser !== 'undefined' && commsUser && commsUser.callsign)
-                    ? commsUser
-                    : { callsign: 'OPERATOR', role: 'FIRST RESPONDER', team: 'ALPHA' };
-
-                // Compress sketch & photos so total payload stays under 15KB for network broadcast
-                const compressFn = window.compressBase64Image || (async (img, maxDim, q) => img);
-                if (cardObj.data) {
-                    if (cardObj.data.sketchImage) {
-                        cardObj.data.sketchImage = await compressFn(cardObj.data.sketchImage, 260, 0.4);
-                    }
-                    if (cardObj.data.scenePhotos && cardObj.data.scenePhotos.length > 0) {
-                        cardObj.data.scenePhotos = await Promise.all(
-                            cardObj.data.scenePhotos.map(p => compressFn(p, 180, 0.3))
-                        );
-                    }
+            try {
+                let item = (window.vaultCache || []).find(i => i && (i.id == itemId || (i.id && i.id.toString() === itemId.toString())));
+                if (!item && window.TRC_IDB) {
+                    try {
+                        item = await window.TRC_IDB.get('intelVault', itemId.toString());
+                        if (!item) item = await window.TRC_IDB.get('intelVault', parseInt(itemId));
+                        if (!item) item = await window.TRC_IDB.get('workstationLibrary', itemId.toString());
+                        if (!item) item = await window.TRC_IDB.get('workstationLibrary', parseInt(itemId));
+                    } catch(e) {}
                 }
-
-                const lightImage = cardObj.data?.sketchImage || (cardObj.data?.scenePhotos && cardObj.data.scenePhotos[0]) || '';
-
-                const payload = {
-                    type: 'officer_sitrep',
-                    label: item.label || `SITREP: ${cardObj.data?.unitCallsign || 'OFFICER'}`,
-                    workstationData: cardObj,
-                    image: lightImage
-                };
-
-                const messageText = `[ 🚓 ${item.label || 'OFFICER SITREP'} ] CAD: ${cardObj.data?.cadNumber || 'N/A'}`;
-
-                if (typeof TacticalCrypto !== 'undefined') {
-                    const encrypted = TacticalCrypto.encrypt({
-                        message: messageText,
-                        user: userObj,
-                        timestamp: Date.now(),
-                        image: lightImage,
-                        metadata: payload
-                    });
-                    const msgId = Math.random().toString(36).substring(2, 9);
-                    if (window.receivedMsgIds) window.receivedMsgIds.add(msgId);
-
-                    // Render locally in sender chat
-                    if (typeof renderChatMessage === 'function') {
-                        renderChatMessage(userObj, messageText, true, lightImage, null, payload);
-                    }
-
-                    // Send via WebRTC P2P DataChannels
-                    if (window.dataChannels) {
-                        Object.values(window.dataChannels).forEach(dc => {
-                            if (dc && dc.readyState === 'open') {
-                                try { dc.send(JSON.stringify({ event: 'chat', data: encrypted, msgId })); } catch(e){}
-                            }
-                        });
-                    }
-
-                    // Send via Supabase Broadcast Channel if connected
-                    if (typeof commsChannel !== 'undefined' && commsChannel) {
-                        try {
-                            commsChannel.send({ type: 'broadcast', event: 'chat', payload: { data: encrypted, msgId } });
-                        } catch(e) {}
-                    }
-
-                    if (window.pushTacLog) window.pushTacLog(`OFFICER SITREP CARD TRANSMITTED TO COMMS CHAT (${Math.round(encrypted.length / 1024)} KB)`, 'SUCCESS');
-                }
-                return;
-            }
-
-            const isVideo = item.image && item.image.startsWith('data:video');
-
-            if (isVideo) {
-                // Convert base64 data URL -> Blob, then encrypt and upload
-                window.pushTacLog("ENCRYPTING SECURE TAPE FOR TRANSMISSION...", "SYS");
-                try {
-                    const base64 = item.image.includes('base64,') ? item.image.split('base64,')[1] : item.image.substring(item.image.indexOf(',') + 1);
-                    const mimeType = item.image.split(';')[0].replace('data:', '') || 'video/webm';
-                    const byteChars = atob(base64);
-                    const byteNums = new Array(byteChars.length);
-                    for (let i = 0; i < byteChars.length; i++) byteNums[i] = byteChars.charCodeAt(i);
-                    const videoBlob = new Blob([new Uint8Array(byteNums)], { type: mimeType });
-
-                    window.TacticalBinaryCrypto.encryptBlob(videoBlob).then(encryptedBlob => {
-                        const fileName = `secure_tape_${Date.now()}_${Math.random().toString(36).substring(2,7)}.bin`;
-                        window.supabaseClient.storage.from('Tactical-media').upload(fileName, encryptedBlob, {
-                            cacheControl: '3600', upsert: false
-                        }).then(({ data, error }) => {
-                            if (error) { window.pushTacLog("TAPE UPLOAD FAILED: " + error.message, "ERROR"); return; }
-                            const publicUrl = window.supabaseClient.storage.from('Tactical-media').getPublicUrl(fileName).data.publicUrl;
-                            const metadataObj = Object.assign({}, item);
-                            delete metadataObj.image;
-                            const encryptedMessage = TacticalCrypto.encrypt({
-                                message: "[SECURE_TAPE_INCOMING]",
-                                tapeUrl: publicUrl,
-                                user: commsUser,
-                                metadata: Object.assign({}, metadataObj, { mimeType: mimeType })
-                            });
-                            const msgId = Math.random().toString(36).substring(2, 9);
-                            window.receivedMsgIds.add(msgId);
-                            if (window.dataChannels) {
-                                Object.values(window.dataChannels).forEach(dc => {
-                                    if (dc && dc.readyState === 'open') {
-                                        try { dc.send(JSON.stringify({ event: 'chat', data: encryptedMessage, msgId })); } catch(e2) {}
-                                    }
-                                });
-                            }
-                            if (commsChannel) {
-                                commsChannel.send({ type: 'broadcast', event: 'chat', payload: { data: encryptedMessage, msgId } });
-                            } else {
-                                window.pushTacLog("COMMS CHANNEL OFFLINE - TAPE SECURED BUT NOT BROADCASTED", "WARNING");
-                            }
-                            renderChatMessage(commsUser, `🎥 SECURE TAPE: ${item.label}`, true, null, publicUrl);
-                            window.pushTacLog("SECURE TAPE TRANSMITTED TO TEAM", "SUCCESS");
-                        });
-                    }).catch(err => window.pushTacLog("TAPE ENCRYPT FAILED: " + err.message, "ERROR"));
-                } catch(e) {
-                    window.pushTacLog("TAPE CONVERSION FAILED: " + e.message, "ERROR");
-                }
-            } else {
-                // Guard: if image is actually a video data URL, route it back through video path
-                if (item.image && item.image.startsWith('data:video')) {
-                    item.type = 'video'; // fix type mismatch
-                    window.sendVaultItemToChat(item.id);
+                if (!item) {
+                    if (window.pushTacLog) window.pushTacLog('VAULT ITEM NOT FOUND IN IDB', 'ERROR');
                     return;
                 }
+
+                const userObj = (typeof commsUser !== 'undefined' && commsUser && commsUser.callsign)
+                    ? commsUser
+                    : { callsign: item.author || 'OPERATOR', role: 'FIELD UNIT', team: 'ALPHA' };
+
+                const compressFn = window.compressBase64Image || (async (img) => img);
+
+                // Helper to safely get or compress image (supports HTTP URLs & Base64 with HD clarity)
+                const safeImage = async (imgSrc, maxDim = 1100, q = 0.88) => {
+                    if (!imgSrc || typeof imgSrc !== 'string') return '';
+                    if (imgSrc.startsWith('http://') || imgSrc.startsWith('https://')) return imgSrc;
+                    if (imgSrc.startsWith('data:image')) return await compressFn(imgSrc, maxDim, q);
+                    return '';
+                };
+
+                const isVideo = item.image && item.image.startsWith('data:video');
+
+                if (isVideo) {
+                    window.pushTacLog("ENCRYPTING SECURE TAPE FOR TRANSMISSION...", "SYS");
+                    try {
+                        const base64 = item.image.includes('base64,') ? item.image.split('base64,')[1] : item.image.substring(item.image.indexOf(',') + 1);
+                        const mimeType = item.image.split(';')[0].replace('data:', '') || 'video/webm';
+                        const byteChars = atob(base64);
+                        const byteNums = new Array(byteChars.length);
+                        for (let i = 0; i < byteChars.length; i++) byteNums[i] = byteChars.charCodeAt(i);
+                        const videoBlob = new Blob([new Uint8Array(byteNums)], { type: mimeType });
+
+                        if (window.TacticalBinaryCrypto && window.supabaseClient) {
+                            window.TacticalBinaryCrypto.encryptBlob(videoBlob).then(encryptedBlob => {
+                                const fileName = `secure_tape_${Date.now()}_${Math.random().toString(36).substring(2,7)}.bin`;
+                                window.supabaseClient.storage.from('Tactical-media').upload(fileName, encryptedBlob, {
+                                    cacheControl: '3600', upsert: false
+                                }).then(({ data, error }) => {
+                                    if (error) { window.pushTacLog("TAPE UPLOAD FAILED: " + error.message, "ERROR"); return; }
+                                    const publicUrl = window.supabaseClient.storage.from('Tactical-media').getPublicUrl(fileName).data.publicUrl;
+                                    const metadataObj = Object.assign({}, item);
+                                    delete metadataObj.image;
+                                    const encryptedMessage = TacticalCrypto.encrypt({
+                                        message: "[SECURE_TAPE_INCOMING]",
+                                        tapeUrl: publicUrl,
+                                        user: userObj,
+                                        metadata: Object.assign({}, metadataObj, { mimeType: mimeType })
+                                    });
+                                    const msgId = Math.random().toString(36).substring(2, 9);
+                                    if (window.receivedMsgIds) window.receivedMsgIds.add(msgId);
+                                    if (window.dataChannels) {
+                                        Object.values(window.dataChannels).forEach(dc => {
+                                            if (dc && dc.readyState === 'open') {
+                                                try { dc.send(JSON.stringify({ event: 'chat', data: encryptedMessage, msgId })); } catch(e2) {}
+                                            }
+                                        });
+                                    }
+                                    if (typeof commsChannel !== 'undefined' && commsChannel) {
+                                        try { commsChannel.send({ type: 'broadcast', event: 'chat', payload: { data: encryptedMessage, msgId } }).catch(e=>{}); } catch(e) {}
+                                    }
+                                    renderChatMessage(userObj, `🎥 SECURE TAPE: ${item.label || 'TAPE'}`, true, null, publicUrl);
+                                    window.pushTacLog("SECURE TAPE TRANSMITTED TO TEAM", "SUCCESS");
+                                });
+                            }).catch(err => window.pushTacLog("TAPE ENCRYPT FAILED: " + err.message, "ERROR"));
+                        }
+                    } catch(e) {
+                        window.pushTacLog("TAPE CONVERSION FAILED: " + e.message, "ERROR");
+                    }
+                    return;
+                }
+
+                // Business Card Handling
                 if (item.contact || item.type === 'contact' || (item.type === 'intel_report' && item.contact)) {
                     const c = item.contact || {};
-                    const trophyPhoto = (item.image && item.image !== c.cardImageUrl) ? item.image : null;
-                    const cardPhoto = c.cardImageUrl || (item.image === c.cardImageUrl ? item.image : null);
+                    const trophyPhoto = await safeImage((item.image && item.image !== c.cardImageUrl) ? item.image : null);
+                    const cardPhoto = await safeImage(c.cardImageUrl || (item.image === c.cardImageUrl ? item.image : null));
 
                     const cardImgHtml = cardPhoto ? `
 <div style="margin-top: 8px; max-height: 140px; background-color: #000000; border-radius: 6px; overflow: hidden; border: 1px solid #4b5563; text-align: center;">
@@ -10010,20 +10012,28 @@ ${cardImgHtml}
 </div>`;
 
                     try {
-                        const encrypted = TacticalCrypto.encrypt({ message: cardMsg, user: commsUser, image: trophyPhoto, timestamp: Date.now() });
-                        const msgId = Math.random().toString(36).substring(2, 9);
-                        if (typeof window.receivedMsgIds !== 'undefined') window.receivedMsgIds.add(msgId);
-                        if (window.dataChannels) {
-                            Object.values(window.dataChannels).forEach(dc => {
-                                if (dc && dc.readyState === 'open') {
-                                    try { dc.send(JSON.stringify({ event: 'chat', data: encrypted, msgId })); } catch (err) {}
-                                }
+                        if (typeof TacticalCrypto !== 'undefined') {
+                            const encrypted = TacticalCrypto.encrypt({
+                                message: cardMsg,
+                                user: userObj,
+                                image: trophyPhoto,
+                                timestamp: Date.now(),
+                                metadata: item
                             });
+                            const msgId = Math.random().toString(36).substring(2, 9);
+                            if (typeof window.receivedMsgIds !== 'undefined') window.receivedMsgIds.add(msgId);
+                            if (window.dataChannels) {
+                                Object.values(window.dataChannels).forEach(dc => {
+                                    if (dc && dc.readyState === 'open') {
+                                        try { dc.send(JSON.stringify({ event: 'chat', data: encrypted, msgId })); } catch (err) {}
+                                    }
+                                });
+                            }
+                            if (typeof commsChannel !== 'undefined' && commsChannel) {
+                                try { commsChannel.send({ type: 'broadcast', event: 'chat', payload: { data: encrypted, msgId } }).catch(e=>{}); } catch(e){}
+                            }
                         }
-                        if (commsChannel) {
-                            commsChannel.send({ type: 'broadcast', event: 'chat', payload: { data: encrypted, msgId } });
-                        }
-                        renderChatMessage(commsUser || { callsign: item.author || c.author || 'OPERATOR', role: c.unit || 'FIELD UNIT', team: 'ALPHA' }, cardMsg, true, trophyPhoto);
+                        renderChatMessage(userObj, cardMsg, true, trophyPhoto, null, item);
                         window.pushTacLog(`TRC BUSINESS CARD TRANSMITTED TO MISSION CHAT`, "SUCCESS");
                     } catch (e) {
                         window.pushTacLog("CARD TX ERROR: " + e.message, "ERROR");
@@ -10031,49 +10041,75 @@ ${cardImgHtml}
                     return;
                 }
 
-                // Image / Intel Card / Workstation Library Card broadcast
+                // General Intel / First Responder / Workstation / Blog Report Transmission
                 window.pushTacLog("SECURING INTEL FOR TRANSMISSION...", "SYS");
-                const userObj = (typeof commsUser !== 'undefined' && commsUser && commsUser.callsign)
-                    ? commsUser
-                    : { callsign: 'OPERATOR', role: 'FIELD UNIT', team: 'ALPHA' };
 
-                const compressFn = window.compressBase64Image || (async (img, maxDim, q) => img);
-                const compressedImg = await compressFn(item.image, 800, 0.78);
-                const itemLabel = item.label || (item.title ? `WORKSTATION: ${item.title}` : `INTEL CARD: ${item.type?.toUpperCase() || 'SNAPSHOT'}`);
+                const compressedImg = await safeImage(item.image, 1100, 0.88);
+                const itemLabel = item.name || item.label || (item.title ? `WORKSTATION: ${item.title}` : `INTEL REPORT: ${item.category || item.type?.toUpperCase() || 'SNAPSHOT'}`);
                 
+                // Build clean lightweight metadata payload
                 const payloadItem = JSON.parse(JSON.stringify(item));
                 payloadItem.image = compressedImg;
-                if (payloadItem.data && payloadItem.data.image) {
-                    payloadItem.data.image = await compressFn(payloadItem.data.image, 800, 0.78);
+
+                // Strip heavy nested base64 image duplicates to keep payload under 35KB for Supabase broadcast
+                if (payloadItem.data) {
+                    delete payloadItem.data.image;
+                    delete payloadItem.data.sketchImage;
+                    delete payloadItem.data.scenePhotos;
                 }
-                if (payloadItem.workstationData && payloadItem.workstationData.image) {
-                    payloadItem.workstationData.image = await compressFn(payloadItem.workstationData.image, 800, 0.78);
-                }
-                if (payloadItem.workstationData && payloadItem.workstationData.data && payloadItem.workstationData.data.image) {
-                    payloadItem.workstationData.data.image = await compressFn(payloadItem.workstationData.data.image, 800, 0.78);
+                if (payloadItem.workstationData) {
+                    delete payloadItem.workstationData.image;
+                    if (payloadItem.workstationData.data) {
+                        delete payloadItem.workstationData.data.image;
+                        delete payloadItem.workstationData.data.sketchImage;
+                        delete payloadItem.workstationData.data.scenePhotos;
+                    }
                 }
 
-                const encryptedImage = TacticalCrypto.encrypt({
-                    message: `[ ${itemLabel} ]`,
-                    image: compressedImg,
-                    user: userObj,
-                    metadata: payloadItem
-                });
-
-                const msgId = Math.random().toString(36).substring(2, 9);
-                if (window.receivedMsgIds) window.receivedMsgIds.add(msgId);
-                if (window.dataChannels) {
-                    Object.values(window.dataChannels).forEach(dc => {
-                        if (dc && dc.readyState === 'open') {
-                            try { dc.send(JSON.stringify({ event: 'chat', data: encryptedImage, msgId })); } catch(e2) {}
-                        }
+                let encryptedImage = "";
+                if (typeof TacticalCrypto !== 'undefined') {
+                    encryptedImage = TacticalCrypto.encrypt({
+                        message: `[ ${itemLabel} ]`,
+                        image: compressedImg,
+                        user: userObj,
+                        metadata: payloadItem
                     });
+
+                    const msgId = Math.random().toString(36).substring(2, 9);
+                    if (window.receivedMsgIds) window.receivedMsgIds.add(msgId);
+
+                    if (window.dataChannels) {
+                        Object.values(window.dataChannels).forEach(dc => {
+                            if (dc && dc.readyState === 'open') {
+                                try { dc.send(JSON.stringify({ event: 'chat', data: encryptedImage, msgId })); } catch(e2) {}
+                            }
+                        });
+                    }
+                    if (typeof commsChannel !== 'undefined' && commsChannel) {
+                        try {
+                            commsChannel.send({ type: 'broadcast', event: 'chat', payload: { data: encryptedImage, msgId } })
+                                .catch(err => console.warn("Broadcast send fallback warning:", err));
+                        } catch(e){}
+                    }
+                    if (window.supabase && typeof commsUser !== 'undefined' && commsUser && commsUser.callsign) {
+                        try {
+                            window.supabase.from('trc_chat').insert([{
+                                callsign: commsUser.callsign,
+                                flavor: window.flavor || 'blue',
+                                message: encryptedImage,
+                                is_vault_card: true,
+                                timestamp: new Date().toISOString()
+                            }]).catch(e => {});
+                        } catch(e){}
+                    }
                 }
-                if (commsChannel) {
-                    try { commsChannel.send({ type: 'broadcast', event: 'chat', payload: { data: encryptedImage, msgId } }); } catch(e){}
-                }
+
                 renderChatMessage(userObj, `[ ${itemLabel} ]`, true, compressedImg, null, payloadItem);
                 window.pushTacLog(`SECURE INTEL SENT TO COMMS`, "SUCCESS");
+
+            } catch (err) {
+                console.error("sendVaultItemToChat Error:", err);
+                if (window.pushTacLog) window.pushTacLog("TRANSMISSION ERROR: " + err.message, "ERROR");
             }
         };
 
@@ -12133,22 +12169,34 @@ document.addEventListener('DOMContentLoaded', () => {
     const c2CopyBtn = document.getElementById('c2-copy-coords-btn');
     if (c2CopyBtn) {
         c2CopyBtn.addEventListener('click', () => {
-            if (window.myLatestCoords) {
-                const coordStr = `${window.myLatestCoords.lat.toFixed(6)}, ${window.myLatestCoords.lng.toFixed(6)}`;
-                if (navigator.clipboard) {
-                    navigator.clipboard.writeText(coordStr).then(() => {
-                        if (window.pushTacLog) window.pushTacLog(`GPS COORDS COPIED TO CLIPBOARD`, 'SUCCESS');
-                    }).catch(err => {
-                        console.error('Clipboard error:', err);
-                        window.prompt("Copy to clipboard: Ctrl+C, Enter", coordStr);
-                    });
-                } else {
-                    window.prompt("Copy to clipboard: Ctrl+C, Enter", coordStr);
-                }
-            } else {
-                if (window.pushTacLog) window.pushTacLog(`NO GPS SIGNAL LOCK YET`, 'ERROR');
-                alert("Cannot copy coordinates: GPS signal not acquired yet.");
+            let lines = [];
+            const state = window.latestPresenceState;
+            if (state) {
+                Object.keys(state).forEach(userId => {
+                    const presences = state[userId];
+                    if (presences && presences.length > 0) {
+                        const p = presences[0];
+                        const cs = p.user?.callsign || 'OPERATOR';
+                        const role = p.user?.role || 'UNIT';
+                        const st = p.dutyStatus ? ` [${p.dutyStatus}]` : '';
+                        const locStr = p.location ? `${p.location.lat.toFixed(6)}, ${p.location.lng.toFixed(6)}` : (window.myLatestCoords ? `${window.myLatestCoords.lat.toFixed(6)}, ${window.myLatestCoords.lng.toFixed(6)}` : 'NO GPS FIX');
+                        lines.push(`${cs} [${role}]${st}: ${locStr}`);
+                    }
+                });
             }
+            if (lines.length === 0 && window.myLatestCoords) {
+                const callsign = (typeof commsUser !== 'undefined' && commsUser) ? commsUser.callsign : 'OPERATOR';
+                const st = window.myDutyStatus ? ` [${window.myDutyStatus}]` : '';
+                lines.push(`${callsign}${st}: ${window.myLatestCoords.lat.toFixed(6)}, ${window.myLatestCoords.lng.toFixed(6)}`);
+            }
+
+            const fullReport = lines.length > 0 ? lines.join('\n') : 'NO GPS SIGNAL ACQUIRED YET';
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(fullReport).then(() => {
+                    if (window.pushTacLog) window.pushTacLog(`TEAM GPS COORDS COPIED`, 'SUCCESS');
+                }).catch(e => {});
+            }
+            alert(`📍 TEAMMATES GPS COORDINATES:\n\n${fullReport}`);
         });
     }
 });

@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 
 <html lang="en">
 
@@ -22,49 +22,35 @@ try {
     <script>
 
         // Global Error Boundary for Play Store ANR/Crash Protection
-
         window.addEventListener('error', function(event) {
-
-            console.error("Global Error Caught:", event.error);
-
-            showFatalError("APP CRASH: " + (event.message || "Unknown Error"));
-
+            console.error("Global Error Caught:", event.error || event.message);
+            // Ignore generic browser cross-origin "Script error." and non-fatal runtime warnings
+            if (!event.message || event.message === 'Script error.' || event.message.includes('ResizeObserver') || event.message.includes('file:')) {
+                return;
+            }
+            if (window.pushTacLog) window.pushTacLog("RUNTIME WARNING: " + (event.message || "Script issue"), "WARNING");
         });
 
         window.addEventListener('unhandledrejection', function(event) {
-
-            console.error("Unhandled Promise Rejection:", event.reason);
-
-            showFatalError("PROMISE CRASH: " + (event.reason ? event.reason.message || event.reason : "Unknown"));
-
+            console.warn("Unhandled Promise Rejection:", event.reason);
+            const reasonStr = event.reason ? (event.reason.message || String(event.reason)) : "";
+            // Ignore network / supabase / audio / storage promise rejections so app never breaks
+            if (window.pushTacLog) window.pushTacLog("NETWORK/SYS REJECTION SUPPRESSED", "SYS");
         });
 
         function showFatalError(msg) {
-
             const renderError = () => {
-
                 let errorUI = document.getElementById('fatal-error-overlay');
-
                 if(!errorUI) {
-
                     errorUI = document.createElement('div');
-
                     errorUI.id = 'fatal-error-overlay';
-
                     errorUI.style.cssText = 'position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.98);color:#ef4444;z-index:999999;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:monospace;padding:20px;text-align:center;';
-
                     document.body.appendChild(errorUI);
-
                 }
-
                 errorUI.innerHTML = '<h1 style="font-size:24px;font-weight:bold;margin-bottom:10px;">FATAL SYSTEM ERROR</h1><p style="font-size:12px;color:#fca5a5;margin-bottom:30px;max-width:80%;word-wrap:break-word;">' + msg + '</p><button aria-label="Action Button" onclick="localStorage.clear(); sessionStorage.clear(); window.location.reload(true);" style="background:#dc2626;color:white;padding:15px 30px;border:none;border-radius:5px;font-weight:bold;font-size:16px;cursor:pointer;">FACTORY RESET & RESTART</button>';
-
             };
-
             if (document.body) renderError();
-
             else window.addEventListener('DOMContentLoaded', renderError);
-
         }
 
     </script>
@@ -149,7 +135,7 @@ try {
 
     <script src="lib/Sortable.min.js" defer></script>
 
-    <!-- tesseract: lazy-loaded on first OCR scan only â€” not needed at startup -->
+    <!-- tesseract: lazy-loaded on first OCR scan only Ã¢â‚¬â€ not needed at startup -->
 
 
 
@@ -205,7 +191,7 @@ try {
 
 
 
-        // html2canvas SHIM â€” loads the real library on first call, then steps aside.
+        // html2canvas SHIM Ã¢â‚¬â€ loads the real library on first call, then steps aside.
 
         // Every existing html2canvas() / window.html2canvas() call gets lazy-load
 
@@ -217,7 +203,7 @@ try {
 
             return window.loadScript('html2canvas.min.js').then(function() {
 
-                // Real library now loaded â€” window.html2canvas is the real function.
+                // Real library now loaded Ã¢â‚¬â€ window.html2canvas is the real function.
 
                 return window.html2canvas.apply(null, args);
 
@@ -447,7 +433,7 @@ try {
 
         textarea::placeholder {
 
-            color: #64748b !important; /* slate-500 â€” consistent grey across all inputs & textareas */
+            color: #64748b !important; /* slate-500 Ã¢â‚¬â€ consistent grey across all inputs & textareas */
 
             opacity: 0.7 !important;
 
@@ -672,7 +658,7 @@ try {
 
                                 <!-- Right Page -->
                                 <div id="blogBookRightPage" class="bg-slate-950 p-2 rounded-r flex flex-col justify-between relative overflow-hidden">
-                                    <div id="blogBookAuthorDate" class="text-[7.5px] font-mono text-slate-400 truncate border-b border-slate-800 pb-0.5">TRC SYSTEM â€¢ READY</div>
+                                    <div id="blogBookAuthorDate" class="text-[7.5px] font-mono text-slate-400 truncate border-b border-slate-800 pb-0.5">TRC SYSTEM Ã¢â‚¬Â¢ READY</div>
                                     <div id="blogBookSnippet" class="text-[8.5px] text-slate-300 leading-snug my-1 line-clamp-3 overflow-hidden italic">
                                         Tap to open full satellite wire transmissions and publish intel...
                                     </div>
@@ -1157,13 +1143,13 @@ try {
 
                     <div class="grid grid-cols-4 gap-1">
 
-                        <button class="bg-red-900/40 text-red-500 p-2 rounded text-xs font-bold" onclick="clearCalc()" aria-label="Action Button">C</button>
+                        <button class="bg-red-900/40 text-red-500 p-2 rounded text-xs font-bold" onclick="clearCalc()" aria-label="Clear calculator">C</button>
 
-                        <button class="bg-gray-800 p-2 rounded text-xs" onclick="appendCalc('/')" aria-label="Action Button">/</button>
+                        <button class="bg-gray-800 p-2 rounded text-xs" onclick="appendCalc('/')" aria-label="Divide">/</button>
 
-                        <button class="bg-gray-800 p-2 rounded text-xs" onclick="appendCalc('*')" aria-label="Action Button">Ã—</button>
+                        <button class="bg-gray-800 p-2 rounded text-xs" onclick="appendCalc('*')" aria-label="Multiply">&times;</button>
 
-                        <button class="bg-blue-900/40 text-blue-400 p-2 rounded text-[10px] font-bold" onclick="calcCos()" aria-label="Action Button">COS</button>
+                        <button class="bg-blue-900/40 text-blue-400 p-2 rounded text-[10px] font-bold" onclick="calcCos()" aria-label="Cosine">COS</button>
 
                         <button class="bg-gray-800 p-2 rounded text-sm" onclick="appendCalc('7')" aria-label="Action Button">7</button>
 
@@ -1237,113 +1223,113 @@ try {
 
                         <div class="grid grid-cols-5 gap-2 bg-black/40 p-2 rounded border border-gray-700" id="emoji-palette">
 
-                            <button class="emoji-btn p-2 rounded hover:bg-gray-800 text-lg transition-colors border border-transparent hover:border-neon-green" data-emoji="🎯" title="Target/Hostile" aria-label="Target/Hostile">🎯</button>
+                            <button class="emoji-btn p-2 rounded hover:bg-gray-800 text-lg transition-colors border border-transparent hover:border-neon-green" data-emoji="ðŸŽ¯" title="Target/Hostile" aria-label="Target/Hostile">ðŸŽ¯</button>
 
-                            <button class="emoji-btn p-2 rounded hover:bg-gray-800 text-lg transition-colors border border-transparent hover:border-neon-green" data-emoji="💀" title="Threat/Enemy" aria-label="Threat/Enemy">💀</button>
+                            <button class="emoji-btn p-2 rounded hover:bg-gray-800 text-lg transition-colors border border-transparent hover:border-neon-green" data-emoji="ðŸ’€" title="Threat/Enemy" aria-label="Threat/Enemy">ðŸ’€</button>
 
-                            <button class="emoji-btn p-2 rounded hover:bg-gray-800 text-lg transition-colors border border-transparent hover:border-neon-green" data-emoji="👥" title="Friendly Team" aria-label="Friendly Team">👥</button>
+                            <button class="emoji-btn p-2 rounded hover:bg-gray-800 text-lg transition-colors border border-transparent hover:border-neon-green" data-emoji="ðŸ‘¥" title="Friendly Team" aria-label="Friendly Team">ðŸ‘¥</button>
 
-                            <button class="emoji-btn p-2 rounded hover:bg-gray-800 text-lg transition-colors border border-transparent hover:border-neon-green" data-emoji="🚫" title="No-Shoot/Civilian" aria-label="No-Shoot/Civilian">🚫</button>
+                            <button class="emoji-btn p-2 rounded hover:bg-gray-800 text-lg transition-colors border border-transparent hover:border-neon-green" data-emoji="ðŸš«" title="No-Shoot/Civilian" aria-label="No-Shoot/Civilian">ðŸš«</button>
 
-                            <button class="emoji-btn p-2 rounded hover:bg-gray-800 text-lg transition-colors border border-transparent hover:border-neon-green" data-emoji="🚓" title="Police Vehicle" aria-label="Police Vehicle">🚓</button>
+                            <button class="emoji-btn p-2 rounded hover:bg-gray-800 text-lg transition-colors border border-transparent hover:border-neon-green" data-emoji="ðŸš“" title="Police Vehicle" aria-label="Police Vehicle">ðŸš“</button>
 
-                            <button class="emoji-btn p-2 rounded hover:bg-gray-800 text-lg transition-colors border border-transparent hover:border-neon-green" data-emoji="🚗" title="Car" aria-label="Car">🚗</button>
+                            <button class="emoji-btn p-2 rounded hover:bg-gray-800 text-lg transition-colors border border-transparent hover:border-neon-green" data-emoji="ðŸš—" title="Car" aria-label="Car">ðŸš—</button>
 
-                            <button class="emoji-btn p-2 rounded hover:bg-gray-800 text-lg transition-colors border border-transparent hover:border-neon-green" data-emoji="🏢" title="Building" aria-label="Building">🏢</button>
+                            <button class="emoji-btn p-2 rounded hover:bg-gray-800 text-lg transition-colors border border-transparent hover:border-neon-green" data-emoji="ðŸ¢" title="Building" aria-label="Building">ðŸ¢</button>
 
-                            <button class="emoji-btn p-2 rounded hover:bg-gray-800 text-lg transition-colors border border-transparent hover:border-neon-green" data-emoji="🚪" title="Entrance/Exit" aria-label="Entrance/Exit">🚪</button>
+                            <button class="emoji-btn p-2 rounded hover:bg-gray-800 text-lg transition-colors border border-transparent hover:border-neon-green" data-emoji="ðŸšª" title="Entrance/Exit" aria-label="Entrance/Exit">ðŸšª</button>
 
-                            <button class="emoji-btn p-2 rounded hover:bg-gray-800 text-lg transition-colors border border-transparent hover:border-neon-green" data-emoji="🌳" title="Tree/Foliage" aria-label="Tree/Foliage">🌳</button>
+                            <button class="emoji-btn p-2 rounded hover:bg-gray-800 text-lg transition-colors border border-transparent hover:border-neon-green" data-emoji="ðŸŒ³" title="Tree/Foliage" aria-label="Tree/Foliage">ðŸŒ³</button>
 
-                            <button class="emoji-btn p-2 rounded hover:bg-gray-800 text-lg transition-colors border border-transparent hover:border-neon-green" data-emoji="💼" title="Equipment" aria-label="Equipment">💼</button>
+                            <button class="emoji-btn p-2 rounded hover:bg-gray-800 text-lg transition-colors border border-transparent hover:border-neon-green" data-emoji="ðŸ’¼" title="Equipment" aria-label="Equipment">ðŸ’¼</button>
 
-                            <button class="emoji-btn p-2 rounded hover:bg-gray-800 text-lg transition-colors border border-transparent hover:border-neon-green" data-emoji="🚁" title="Drone/UAV" aria-label="Drone/UAV">🚁</button>
+                            <button class="emoji-btn p-2 rounded hover:bg-gray-800 text-lg transition-colors border border-transparent hover:border-neon-green" data-emoji="ðŸš" title="Drone/UAV" aria-label="Drone/UAV">ðŸš</button>
 
-                            <button class="emoji-btn p-2 rounded hover:bg-gray-800 text-lg transition-colors border border-transparent hover:border-neon-green" data-emoji="🚁" title="Helicopter" aria-label="Helicopter">🚁</button>
+                            <button class="emoji-btn p-2 rounded hover:bg-gray-800 text-lg transition-colors border border-transparent hover:border-neon-green" data-emoji="ðŸš" title="Helicopter" aria-label="Helicopter">ðŸš</button>
 
-                            <button class="emoji-btn p-2 rounded hover:bg-gray-800 text-lg transition-colors border border-transparent hover:border-neon-green" data-emoji="⛺" title="Camp/Base" aria-label="Camp/Base">⛺</button>
+                            <button class="emoji-btn p-2 rounded hover:bg-gray-800 text-lg transition-colors border border-transparent hover:border-neon-green" data-emoji="â›º" title="Camp/Base" aria-label="Camp/Base">â›º</button>
 
-                            <button class="emoji-btn p-2 rounded hover:bg-gray-800 text-lg transition-colors border border-transparent hover:border-neon-green" data-emoji="⚠️" title="Hazard" aria-label="Hazard">⚠️</button>
+                            <button class="emoji-btn p-2 rounded hover:bg-gray-800 text-lg transition-colors border border-transparent hover:border-neon-green" data-emoji="âš ï¸" title="Hazard" aria-label="Hazard">âš ï¸</button>
 
-                            <button class="emoji-btn p-2 rounded hover:bg-gray-800 text-lg transition-colors border border-transparent hover:border-neon-green" data-emoji="📡" title="Comms/Antenna" aria-label="Comms/Antenna">📡</button>
+                            <button class="emoji-btn p-2 rounded hover:bg-gray-800 text-lg transition-colors border border-transparent hover:border-neon-green" data-emoji="ðŸ“¡" title="Comms/Antenna" aria-label="Comms/Antenna">ðŸ“¡</button>
 
-                            <button class="emoji-btn p-2 rounded hover:bg-gray-800 text-lg transition-colors border border-transparent hover:border-neon-green" data-emoji="🔍" title="Recon/Search" aria-label="Recon/Search">🔍</button>
+                            <button class="emoji-btn p-2 rounded hover:bg-gray-800 text-lg transition-colors border border-transparent hover:border-neon-green" data-emoji="ðŸ”" title="Recon/Search" aria-label="Recon/Search">ðŸ”</button>
 
-                            <button class="emoji-btn p-2 rounded hover:bg-gray-800 text-lg transition-colors border border-transparent hover:border-neon-green" data-emoji="🏥" title="Medical/Medevac" aria-label="Medical/Medevac">🏥</button>
+                            <button class="emoji-btn p-2 rounded hover:bg-gray-800 text-lg transition-colors border border-transparent hover:border-neon-green" data-emoji="ðŸ¥" title="Medical/Medevac" aria-label="Medical/Medevac">ðŸ¥</button>
 
-                            <button class="emoji-btn p-2 rounded hover:bg-gray-800 text-lg transition-colors border border-transparent hover:border-neon-green" data-emoji="⛽" title="Fuel/Supply" aria-label="Fuel/Supply">⛽</button>
+                            <button class="emoji-btn p-2 rounded hover:bg-gray-800 text-lg transition-colors border border-transparent hover:border-neon-green" data-emoji="â›½" title="Fuel/Supply" aria-label="Fuel/Supply">â›½</button>
 
-                            <button class="emoji-btn p-2 rounded hover:bg-gray-800 text-lg transition-colors border border-transparent hover:border-neon-green" data-emoji="⚓" title="Port/Boat" aria-label="Port/Boat">⚓</button>
+                            <button class="emoji-btn p-2 rounded hover:bg-gray-800 text-lg transition-colors border border-transparent hover:border-neon-green" data-emoji="âš“" title="Port/Boat" aria-label="Port/Boat">âš“</button>
 
-                            <button class="emoji-btn p-2 rounded hover:bg-gray-800 text-lg transition-colors border border-transparent hover:border-neon-green" data-emoji="🚧" title="Obstacle" aria-label="Obstacle">🚧</button>
+                            <button class="emoji-btn p-2 rounded hover:bg-gray-800 text-lg transition-colors border border-transparent hover:border-neon-green" data-emoji="ðŸš§" title="Obstacle" aria-label="Obstacle">ðŸš§</button>
 
                             
 
                             <!-- NEW EXTENDED TACTICAL ASSETS -->
 
-                            <button class="emoji-btn p-2 rounded hover:bg-gray-800 text-lg transition-colors border border-transparent hover:border-neon-green" data-emoji="0️⃣" title="Num 0" aria-label="Num 0">0️⃣</button>
+                            <button class="emoji-btn p-2 rounded hover:bg-gray-800 text-lg transition-colors border border-transparent hover:border-neon-green" data-emoji="0ï¸âƒ£" title="Num 0" aria-label="Num 0">0ï¸âƒ£</button>
 
-                            <button class="emoji-btn p-2 rounded hover:bg-gray-800 text-lg transition-colors border border-transparent hover:border-neon-green" data-emoji="1️⃣" title="Num 1" aria-label="Num 1">1️⃣</button>
+                            <button class="emoji-btn p-2 rounded hover:bg-gray-800 text-lg transition-colors border border-transparent hover:border-neon-green" data-emoji="1ï¸âƒ£" title="Num 1" aria-label="Num 1">1ï¸âƒ£</button>
 
-                            <button class="emoji-btn p-2 rounded hover:bg-gray-800 text-lg transition-colors border border-transparent hover:border-neon-green" data-emoji="2️⃣" title="Num 2" aria-label="Num 2">2️⃣</button>
+                            <button class="emoji-btn p-2 rounded hover:bg-gray-800 text-lg transition-colors border border-transparent hover:border-neon-green" data-emoji="2ï¸âƒ£" title="Num 2" aria-label="Num 2">2ï¸âƒ£</button>
 
-                            <button class="emoji-btn p-2 rounded hover:bg-gray-800 text-lg transition-colors border border-transparent hover:border-neon-green" data-emoji="3️⃣" title="Num 3" aria-label="Num 3">3️⃣</button>
+                            <button class="emoji-btn p-2 rounded hover:bg-gray-800 text-lg transition-colors border border-transparent hover:border-neon-green" data-emoji="3ï¸âƒ£" title="Num 3" aria-label="Num 3">3ï¸âƒ£</button>
 
-                            <button class="emoji-btn p-2 rounded hover:bg-gray-800 text-lg transition-colors border border-transparent hover:border-neon-green" data-emoji="4️⃣" title="Num 4" aria-label="Num 4">4️⃣</button>
+                            <button class="emoji-btn p-2 rounded hover:bg-gray-800 text-lg transition-colors border border-transparent hover:border-neon-green" data-emoji="4ï¸âƒ£" title="Num 4" aria-label="Num 4">4ï¸âƒ£</button>
 
-                            <button class="emoji-btn p-2 rounded hover:bg-gray-800 text-lg transition-colors border border-transparent hover:border-neon-green" data-emoji="5️⃣" title="Num 5" aria-label="Num 5">5️⃣</button>
+                            <button class="emoji-btn p-2 rounded hover:bg-gray-800 text-lg transition-colors border border-transparent hover:border-neon-green" data-emoji="5ï¸âƒ£" title="Num 5" aria-label="Num 5">5ï¸âƒ£</button>
 
-                            <button class="emoji-btn p-2 rounded hover:bg-gray-800 text-lg transition-colors border border-transparent hover:border-neon-green" data-emoji="6️⃣" title="Num 6" aria-label="Num 6">6️⃣</button>
+                            <button class="emoji-btn p-2 rounded hover:bg-gray-800 text-lg transition-colors border border-transparent hover:border-neon-green" data-emoji="6ï¸âƒ£" title="Num 6" aria-label="Num 6">6ï¸âƒ£</button>
 
-                            <button class="emoji-btn p-2 rounded hover:bg-gray-800 text-lg transition-colors border border-transparent hover:border-neon-green" data-emoji="7️⃣" title="Num 7" aria-label="Num 7">7️⃣</button>
+                            <button class="emoji-btn p-2 rounded hover:bg-gray-800 text-lg transition-colors border border-transparent hover:border-neon-green" data-emoji="7ï¸âƒ£" title="Num 7" aria-label="Num 7">7ï¸âƒ£</button>
 
-                            <button class="emoji-btn p-2 rounded hover:bg-gray-800 text-lg transition-colors border border-transparent hover:border-neon-green" data-emoji="8️⃣" title="Num 8" aria-label="Num 8">8️⃣</button>
+                            <button class="emoji-btn p-2 rounded hover:bg-gray-800 text-lg transition-colors border border-transparent hover:border-neon-green" data-emoji="8ï¸âƒ£" title="Num 8" aria-label="Num 8">8ï¸âƒ£</button>
 
-                            <button class="emoji-btn p-2 rounded hover:bg-gray-800 text-lg transition-colors border border-transparent hover:border-neon-green" data-emoji="9️⃣" title="Num 9" aria-label="Num 9">9️⃣</button>
+                            <button class="emoji-btn p-2 rounded hover:bg-gray-800 text-lg transition-colors border border-transparent hover:border-neon-green" data-emoji="9ï¸âƒ£" title="Num 9" aria-label="Num 9">9ï¸âƒ£</button>
 
-                            <button class="emoji-btn p-2 rounded hover:bg-gray-800 text-lg transition-colors border border-transparent hover:border-neon-green" data-emoji="🔟" title="Num 10" aria-label="Num 10">🔟</button>
-
-                            
-
-                            <button class="emoji-btn p-2 rounded hover:bg-gray-800 text-lg transition-colors border border-transparent hover:border-neon-green" data-emoji="🛣️" title="Road" aria-label="Road">🛣️</button>
-
-                            <button class="emoji-btn p-2 rounded hover:bg-gray-800 text-lg transition-colors border border-transparent hover:border-neon-green" data-emoji="⚔️" title="Rifle" aria-label="Rifle">⚔️</button>
-
-                            <button class="emoji-btn p-2 rounded hover:bg-gray-800 text-lg transition-colors border border-transparent hover:border-neon-green" data-emoji="🔫" title="Pistol" aria-label="Pistol">🔫</button>
-
-                            <button class="emoji-btn p-2 rounded hover:bg-gray-800 text-lg transition-colors border border-transparent hover:border-neon-green" data-emoji="🌊" title="Lake" aria-label="Lake">🌊</button>
-
-                            <button class="emoji-btn p-2 rounded hover:bg-gray-800 text-lg transition-colors border border-transparent hover:border-neon-green" data-emoji="🏁" title="Pole" aria-label="Pole">🏁</button>
-
-                            <button class="emoji-btn p-2 rounded hover:bg-gray-800 text-lg transition-colors border border-transparent hover:border-neon-green" data-emoji="👜" title="Black Duffle" aria-label="Black Duffle">👜</button>
-
-                            <button class="emoji-btn p-2 rounded hover:bg-gray-800 text-lg transition-colors border border-transparent hover:border-neon-green" data-emoji="🔭" title="Binoculars" aria-label="Binoculars">🔭</button>
-
-                            <button class="emoji-btn p-2 rounded hover:bg-gray-800 text-lg transition-colors border border-transparent hover:border-neon-green" data-emoji="🚚" title="Truck" aria-label="Truck">🚚</button>
-
-                            <button class="emoji-btn p-2 rounded hover:bg-gray-800 text-lg transition-colors border border-transparent hover:border-neon-green" data-emoji="🚒" title="Fire Truck" aria-label="Fire Truck">🚒</button>
-
-                            <button class="emoji-btn p-2 rounded hover:bg-gray-800 text-lg transition-colors border border-transparent hover:border-neon-green" data-emoji="🚑" title="Ambulance" aria-label="Ambulance">🚑</button>
-
-                            <button class="emoji-btn p-2 rounded hover:bg-gray-800 text-lg transition-colors border border-transparent hover:border-neon-green" data-emoji="✈️" title="Airplane" aria-label="Airplane">✈️</button>
-
-                            <button class="emoji-btn p-2 rounded hover:bg-gray-800 text-lg transition-colors border border-transparent hover:border-neon-green" data-emoji="🛤️" title="RailRoad" aria-label="RailRoad">🛤️</button>
+                            <button class="emoji-btn p-2 rounded hover:bg-gray-800 text-lg transition-colors border border-transparent hover:border-neon-green" data-emoji="ðŸ”Ÿ" title="Num 10" aria-label="Num 10">ðŸ”Ÿ</button>
 
                             
 
-                            <button class="emoji-btn p-2 rounded hover:bg-gray-800 text-lg transition-colors border border-transparent hover:border-neon-green" data-emoji="🔣" title="North" aria-label="North">🔣</button>
+                            <button class="emoji-btn p-2 rounded hover:bg-gray-800 text-lg transition-colors border border-transparent hover:border-neon-green" data-emoji="ðŸ›£ï¸" title="Road" aria-label="Road">ðŸ›£ï¸</button>
 
-                            <button class="emoji-btn p-2 rounded hover:bg-gray-800 text-lg transition-colors border border-transparent hover:border-neon-green" data-emoji="🔺" title="East" aria-label="East">🔺</button>
+                            <button class="emoji-btn p-2 rounded hover:bg-gray-800 text-lg transition-colors border border-transparent hover:border-neon-green" data-emoji="âš”ï¸" title="Rifle" aria-label="Rifle">âš”ï¸</button>
 
-                            <button class="emoji-btn p-2 rounded hover:bg-gray-800 text-lg transition-colors border border-transparent hover:border-neon-green" data-emoji="🔈" title="South" aria-label="South">🔈</button>
+                            <button class="emoji-btn p-2 rounded hover:bg-gray-800 text-lg transition-colors border border-transparent hover:border-neon-green" data-emoji="ðŸ”«" title="Pistol" aria-label="Pistol">ðŸ”«</button>
 
-                            <button class="emoji-btn p-2 rounded hover:bg-gray-800 text-lg transition-colors border border-transparent hover:border-neon-green" data-emoji="🔌" title="West" aria-label="West">🔌</button>
+                            <button class="emoji-btn p-2 rounded hover:bg-gray-800 text-lg transition-colors border border-transparent hover:border-neon-green" data-emoji="ðŸŒŠ" title="Lake" aria-label="Lake">ðŸŒŠ</button>
 
-                            <button class="emoji-btn p-2 rounded hover:bg-gray-800 text-lg transition-colors border border-transparent hover:border-neon-green" data-emoji="🚲" title="Bike" aria-label="Bike">🚲</button>
+                            <button class="emoji-btn p-2 rounded hover:bg-gray-800 text-lg transition-colors border border-transparent hover:border-neon-green" data-emoji="ðŸ" title="Pole" aria-label="Pole">ðŸ</button>
 
-                            <button class="emoji-btn p-2 rounded hover:bg-gray-800 text-lg transition-colors border border-transparent hover:border-neon-green" data-emoji="🪖" title="Infantry/Hostiles" aria-label="Infantry/Hostiles">🪖</button>
+                            <button class="emoji-btn p-2 rounded hover:bg-gray-800 text-lg transition-colors border border-transparent hover:border-neon-green" data-emoji="ðŸ‘œ" title="Black Duffle" aria-label="Black Duffle">ðŸ‘œ</button>
 
-                            <button class="emoji-btn p-2 rounded hover:bg-gray-800 text-lg transition-colors border border-transparent hover:border-neon-green" data-emoji="📏" title="Ruler" aria-label="Ruler">📏</button>
+                            <button class="emoji-btn p-2 rounded hover:bg-gray-800 text-lg transition-colors border border-transparent hover:border-neon-green" data-emoji="ðŸ”­" title="Binoculars" aria-label="Binoculars">ðŸ”­</button>
+
+                            <button class="emoji-btn p-2 rounded hover:bg-gray-800 text-lg transition-colors border border-transparent hover:border-neon-green" data-emoji="ðŸšš" title="Truck" aria-label="Truck">ðŸšš</button>
+
+                            <button class="emoji-btn p-2 rounded hover:bg-gray-800 text-lg transition-colors border border-transparent hover:border-neon-green" data-emoji="ðŸš’" title="Fire Truck" aria-label="Fire Truck">ðŸš’</button>
+
+                            <button class="emoji-btn p-2 rounded hover:bg-gray-800 text-lg transition-colors border border-transparent hover:border-neon-green" data-emoji="ðŸš‘" title="Ambulance" aria-label="Ambulance">ðŸš‘</button>
+
+                            <button class="emoji-btn p-2 rounded hover:bg-gray-800 text-lg transition-colors border border-transparent hover:border-neon-green" data-emoji="âœˆï¸" title="Airplane" aria-label="Airplane">âœˆï¸</button>
+
+                            <button class="emoji-btn p-2 rounded hover:bg-gray-800 text-lg transition-colors border border-transparent hover:border-neon-green" data-emoji="ðŸ›¤ï¸" title="RailRoad" aria-label="RailRoad">ðŸ›¤ï¸</button>
+
+                            
+
+                            <button class="emoji-btn p-2 rounded hover:bg-gray-800 text-lg transition-colors border border-transparent hover:border-neon-green" data-emoji="ðŸ”£" title="North" aria-label="North">ðŸ”£</button>
+
+                            <button class="emoji-btn p-2 rounded hover:bg-gray-800 text-lg transition-colors border border-transparent hover:border-neon-green" data-emoji="ðŸ”º" title="East" aria-label="East">ðŸ”º</button>
+
+                            <button class="emoji-btn p-2 rounded hover:bg-gray-800 text-lg transition-colors border border-transparent hover:border-neon-green" data-emoji="ðŸ”ˆ" title="South" aria-label="South">ðŸ”ˆ</button>
+
+                            <button class="emoji-btn p-2 rounded hover:bg-gray-800 text-lg transition-colors border border-transparent hover:border-neon-green" data-emoji="ðŸ”Œ" title="West" aria-label="West">ðŸ”Œ</button>
+
+                            <button class="emoji-btn p-2 rounded hover:bg-gray-800 text-lg transition-colors border border-transparent hover:border-neon-green" data-emoji="ðŸš²" title="Bike" aria-label="Bike">ðŸš²</button>
+
+                            <button class="emoji-btn p-2 rounded hover:bg-gray-800 text-lg transition-colors border border-transparent hover:border-neon-green" data-emoji="ðŸª–" title="Infantry/Hostiles" aria-label="Infantry/Hostiles">ðŸª–</button>
+
+                            <button class="emoji-btn p-2 rounded hover:bg-gray-800 text-lg transition-colors border border-transparent hover:border-neon-green" data-emoji="ðŸ“" title="Ruler" aria-label="Ruler">ðŸ“</button>
 
                         </div>
 
@@ -1357,13 +1343,13 @@ try {
 
                                 <label for="recon-pencil-toggle" class="sr-only">Input field</div><input type="checkbox" id="recon-pencil-toggle" class="form-checkbox h-3 w-3 text-neon-green rounded bg-gray-900 border-gray-700 focus:ring-0 focus:ring-offset-0" aria-label="Input field">
 
-                                <span>✒️ DRAW PATH</span>
+                                <span>âœ’ï¸ DRAW PATH</span>
 
                             </label>
 
-                            <button id="clear-recon-drawings" class="bg-red-950/20 border border-red-900 rounded p-2 text-xs font-bold text-red-500 hover:bg-red-900/40" aria-label="Action Button">🧹 CLEAR WORKSPACE</button>
+                            <button id="clear-recon-drawings" class="bg-red-950/20 border border-red-900 rounded p-2 text-xs font-bold text-red-500 hover:bg-red-900/40" aria-label="Action Button">ðŸ§¹ CLEAR WORKSPACE</button>
 
-                            <button id="clear-recon-pencil" class="bg-gray-800 border border-gray-600 rounded p-2 text-xs font-bold text-gray-300 hover:bg-gray-700 transition-colors" aria-label="Action Button">✏️ CLEAR PENCIL ONLY</button>
+                            <button id="clear-recon-pencil" class="bg-gray-800 border border-gray-600 rounded p-2 text-xs font-bold text-gray-300 hover:bg-gray-700 transition-colors" aria-label="Action Button">âœï¸ CLEAR PENCIL ONLY</button>
 
                         </div>
 
@@ -1455,7 +1441,7 @@ try {
 
                     <div class="bg-white text-black p-2 rounded shadow-lg border-2 border-emerald-500 relative">
 
-                        <p class="text-[10px] font-extrabold text-black uppercase tracking-wider mb-2 text-center">🗺️ INTERACTIVE MISSION WORKSPACE</p>
+                        <p class="text-[10px] font-extrabold text-black uppercase tracking-wider mb-2 text-center">ðŸ—ºï¸ INTERACTIVE MISSION WORKSPACE</p>
 
                         <div id="mobile-recon-workspace-portal" class="w-full aspect-[4/3] border border-black overflow-hidden relative bg-gray-100">
 
@@ -2291,7 +2277,7 @@ try {
 
                         
 
-                        <!-- ══ TYPE TOGGLE ══ -->
+                        <!-- â•â• TYPE TOGGLE â•â• -->
 
                         <div class="flex bg-black rounded-lg p-1 border border-gray-700 gap-1">
 
@@ -2299,7 +2285,7 @@ try {
 
                                 style="flex:1;padding:8px 4px;font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:3px;border-radius:4px;border:2px solid #ef4444;background:#7f1d1d;color:#fca5a5;transition:all 0.2s;">
 
-                                🚨 PERSON
+                                ðŸš¨ PERSON
 
                             </button>
 
@@ -2307,7 +2293,7 @@ try {
 
                                 style="flex:1;padding:8px 4px;font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:3px;border-radius:4px;border:2px solid #374151;background:transparent;color:#6b7280;transition:all 0.2s;">
 
-                                🐾 ANIMAL
+                                ðŸ¾ ANIMAL
 
                             </button>
 
@@ -2361,7 +2347,7 @@ try {
 
 
 
-                        <!-- ══ PERSON FIELDS ══ -->
+                        <!-- â•â• PERSON FIELDS â•â• -->
 
                         <div id="bolo-person-fields">
 
@@ -2377,15 +2363,15 @@ try {
 
                                 <button aria-label="bolo sex btn male" id="bolo-sex-btn-male"    onclick="setBoloSex('male')"
 
-                                    style="flex:1;padding:7px 4px;font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:2px;border-radius:4px;border:2px solid #374151;background:transparent;color:#6b7280;transition:all 0.2s;">♂ MALE</button>
+                                    style="flex:1;padding:7px 4px;font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:2px;border-radius:4px;border:2px solid #374151;background:transparent;color:#6b7280;transition:all 0.2s;">â™‚ MALE</button>
 
                                 <button aria-label="bolo sex btn female" id="bolo-sex-btn-female"  onclick="setBoloSex('female')"
 
-                                    style="flex:1;padding:7px 4px;font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:2px;border-radius:4px;border:2px solid #374151;background:transparent;color:#6b7280;transition:all 0.2s;">♀ FEMALE</button>
+                                    style="flex:1;padding:7px 4px;font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:2px;border-radius:4px;border:2px solid #374151;background:transparent;color:#6b7280;transition:all 0.2s;">â™€ FEMALE</button>
 
                                 <button aria-label="bolo sex btn unknown" id="bolo-sex-btn-unknown" onclick="setBoloSex('unknown')"
 
-                                    style="flex:1;padding:7px 4px;font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:2px;border-radius:4px;border:2px solid #9ca3af;background:#374151;color:#d1d5db;transition:all 0.2s;">— UNKNOWN</button>
+                                    style="flex:1;padding:7px 4px;font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:2px;border-radius:4px;border:2px solid #9ca3af;background:#374151;color:#d1d5db;transition:all 0.2s;">â€” UNKNOWN</button>
 
                             </div>
 
@@ -2431,7 +2417,7 @@ try {
 
                                     class="py-2.5 px-1 rounded border-2 text-[10px] font-black uppercase tracking-wider transition-all border-amber-500 bg-amber-900/40 text-amber-400 shadow-[0_0_8px_rgba(245,158,11,0.3)]">
 
-                                    🟡 PERSON OF<br>INTEREST
+                                    ðŸŸ¡ PERSON OF<br>INTEREST
 
                                 </button>
 
@@ -2439,7 +2425,7 @@ try {
 
                                     class="py-2.5 px-1 rounded border-2 text-[10px] font-black uppercase tracking-wider transition-all border-gray-700 bg-gray-900 text-gray-500">
 
-                                    🟠 FUGITIVE /<br>AT LARGE
+                                    ðŸŸ  FUGITIVE /<br>AT LARGE
 
                                 </button>
 
@@ -2447,7 +2433,7 @@ try {
 
                                     class="py-2.5 px-1 rounded border-2 text-[10px] font-black uppercase tracking-wider transition-all border-gray-700 bg-gray-900 text-gray-500">
 
-                                    🔴 ARMED &amp;<br>DANGEROUS
+                                    ðŸ”´ ARMED &amp;<br>DANGEROUS
 
                                 </button>
 
@@ -2571,7 +2557,7 @@ try {
 
 
 
-                        <!-- ══ ANIMAL FIELDS ══ -->
+                        <!-- â•â• ANIMAL FIELDS â•â• -->
 
                         <div id="bolo-animal-fields" style="display:none;">
 
@@ -2597,15 +2583,15 @@ try {
 
                                     <button aria-label="bolo animal sex btn male" id="bolo-animal-sex-btn-male" onclick="setBoloSex('male')"
 
-                                        style="flex:1;padding:7px 4px;font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:2px;border-radius:4px;border:2px solid #374151;background:transparent;color:#6b7280;transition:all 0.2s;">♂ MALE</button>
+                                        style="flex:1;padding:7px 4px;font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:2px;border-radius:4px;border:2px solid #374151;background:transparent;color:#6b7280;transition:all 0.2s;">â™‚ MALE</button>
 
                                     <button aria-label="bolo animal sex btn female" id="bolo-animal-sex-btn-female" onclick="setBoloSex('female')"
 
-                                        style="flex:1;padding:7px 4px;font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:2px;border-radius:4px;border:2px solid #374151;background:transparent;color:#6b7280;transition:all 0.2s;">♀ FEMALE</button>
+                                        style="flex:1;padding:7px 4px;font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:2px;border-radius:4px;border:2px solid #374151;background:transparent;color:#6b7280;transition:all 0.2s;">â™€ FEMALE</button>
 
                                     <button aria-label="bolo animal sex btn unknown" id="bolo-animal-sex-btn-unknown" onclick="setBoloSex('unknown')"
 
-                                        style="flex:1;padding:7px 4px;font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:2px;border-radius:4px;border:2px solid #9ca3af;background:#374151;color:#d1d5db;transition:all 0.2s;">— UNK</button>
+                                        style="flex:1;padding:7px 4px;font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:2px;border-radius:4px;border:2px solid #9ca3af;background:#374151;color:#d1d5db;transition:all 0.2s;">â€” UNK</button>
 
                                 </div>
 
@@ -2627,7 +2613,7 @@ try {
 
                                     style="padding:10px 4px;font-size:10px;font-weight:900;text-transform:uppercase;border-radius:4px;border:2px solid #b45309;background:rgba(180,83,9,0.35);color:#fbbf24;">
 
-                                    🐾 NUISANCE
+                                    ðŸ¾ NUISANCE
 
                                 </button>
 
@@ -2635,7 +2621,7 @@ try {
 
                                     style="padding:10px 4px;font-size:10px;font-weight:900;text-transform:uppercase;border-radius:4px;border:2px solid #374151;background:transparent;color:#6b7280;">
 
-                                    ☠️ DANGEROUS
+                                    â˜ ï¸ DANGEROUS
 
                                 </button>
 
@@ -2643,7 +2629,7 @@ try {
 
                                     style="padding:10px 4px;font-size:10px;font-weight:900;text-transform:uppercase;border-radius:4px;border:2px solid #374151;background:transparent;color:#6b7280;">
 
-                                    🏆 TROPHY
+                                    ðŸ† TROPHY
 
                                 </button>
 
@@ -2697,7 +2683,7 @@ try {
 
                                 <div class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Reward / Action</div>
 
-                                <label for="bolo-input-animal-reward" class="sr-only">e.g. $500 â€” Dead or Alive</label><input aria-label="e.g. $500 â€” Dead or Alive" type="text" id="bolo-input-animal-reward" class="w-full bg-black border border-gray-700 rounded p-2 text-white font-bold" placeholder='e.g. $500 â€” Dead or Alive'>
+                                <label for="bolo-input-animal-reward" class="sr-only">e.g. $500 Ã¢â‚¬â€ Dead or Alive</label><input aria-label="e.g. $500 Ã¢â‚¬â€ Dead or Alive" type="text" id="bolo-input-animal-reward" class="w-full bg-black border border-gray-700 rounded p-2 text-white font-bold" placeholder='e.g. $500 Ã¢â‚¬â€ Dead or Alive'>
 
                             </div>
 
@@ -2799,7 +2785,7 @@ try {
 
 
 
-        <!-- â• â•  TOP AGENCY STRIP â• â•  -->
+        <!-- Ã¢â€¢ Ã¢â€¢  TOP AGENCY STRIP Ã¢â€¢ Ã¢â€¢  -->
 
         <div style="background: #111111; border-bottom: 3px solid #cc0000; padding: 12px 24px; display: flex; justify-content: space-between; align-items: center;">
 
@@ -2811,7 +2797,7 @@ try {
 
 
 
-        <!-- â• â•  WANTED HEADER â• â•  -->
+        <!-- Ã¢â€¢ Ã¢â€¢  WANTED HEADER Ã¢â€¢ Ã¢â€¢  -->
 
         <div style="text-align: center; padding: 10px 0 6px; background: #080808;">
 
@@ -2829,7 +2815,7 @@ try {
 
 
 
-        <!-- â• â•  MUGSHOT + DESCRIPTION â• â•  -->
+        <!-- Ã¢â€¢ Ã¢â€¢  MUGSHOT + DESCRIPTION Ã¢â€¢ Ã¢â€¢  -->
 
         <div style="display: grid; grid-template-columns: 305px 247px; gap: 0; margin: 10px 24px 0;">
 
@@ -2868,7 +2854,7 @@ try {
 
                 <div style="padding: 10px 14px; font-size: 10.5px; line-height: 1.7; flex: 1; overflow: hidden;">
 
-                    <div><b>Sex:</b>&nbsp;<span id="bolo-render-sex" style="color:#444;">â€” UNKNOWN</span></div>
+                    <div><b>Sex:</b>&nbsp;<span id="bolo-render-sex" style="color:#444;">Ã¢â‚¬â€ UNKNOWN</span></div>
 
                                     <div><b>D.O.B / Age:</b>&nbsp;<span id="bolo-render-dob" style="color:#444;"></span></div>
 
@@ -2898,7 +2884,7 @@ try {
 
 
 
-        <!-- â• â•  LAST SEEN â• â•  -->
+        <!-- Ã¢â€¢ Ã¢â€¢  LAST SEEN Ã¢â€¢ Ã¢â€¢  -->
 
         <div style="margin: 10px 24px 8px; background: #111111; border-left: 4px solid #cc0000; padding: 9px 14px;">
 
@@ -2910,7 +2896,7 @@ try {
 
 
 
-        <!-- â• â•  NOTES (shown only when present) â• â•  -->
+        <!-- Ã¢â€¢ Ã¢â€¢  NOTES (shown only when present) Ã¢â€¢ Ã¢â€¢  -->
 
         <div id="bolo-render-notes-section" style="margin: 0 24px 8px; background: #0d0d0d; border-left: 4px solid #555555; padding: 7px 14px; display: none;">
 
@@ -2922,7 +2908,7 @@ try {
 
 
 
-        <!-- â• â•  REWARD + WARNING â• â•  -->
+        <!-- Ã¢â€¢ Ã¢â€¢  REWARD + WARNING Ã¢â€¢ Ã¢â€¢  -->
 
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 0 24px 8px;">
 
@@ -2946,7 +2932,7 @@ try {
 
 
 
-        <!-- â• â•  DANGER BANNER â• â•  -->
+        <!-- Ã¢â€¢ Ã¢â€¢  DANGER BANNER Ã¢â€¢ Ã¢â€¢  -->
 
         <div id="bolo-render-threat-banner" style="margin: 0 24px 10px; background: #cc0000; padding: 10px 0; text-align: center;">
 
@@ -2956,7 +2942,7 @@ try {
 
 
 
-        <!-- â• â•  CONTACT FOOTER â• â•  -->
+        <!-- Ã¢â€¢ Ã¢â€¢  CONTACT FOOTER Ã¢â€¢ Ã¢â€¢  -->
 
         <div style="margin: 0 24px 8px; border-top: 2px solid #cc0000; padding: 10px 0; display: flex; justify-content: space-between; align-items: center;">
 
@@ -2968,7 +2954,7 @@ try {
 
 
 
-        <!-- â• â•  BOTTOM SEAL â• â•  -->
+        <!-- Ã¢â€¢ Ã¢â€¢  BOTTOM SEAL Ã¢â€¢ Ã¢â€¢  -->
 
         <div style="margin: 0 24px; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #333; padding-top: 7px;">
 
@@ -2986,7 +2972,7 @@ try {
 
 
 
-    <!-- â• â•  ANIMAL BOLO RENDER ZONE (grey theme) â• â•  -->
+    <!-- Ã¢â€¢ Ã¢â€¢  ANIMAL BOLO RENDER ZONE (grey theme) Ã¢â€¢ Ã¢â€¢  -->
 
     <div id="bolo-animal-render-zone" style="position:fixed;top:-9999px;left:-9999px;z-index:-9999;width:600px;height:850px;background:#1a1a1a;font-family:Arial,sans-serif;overflow:hidden;">
 
@@ -3034,7 +3020,7 @@ try {
 
                 <div id="bolo-animal-render-placeholder" style="text-align:center;padding:20px;">
 
-                    <div style="color:#2e2e2e;font-size:64px;line-height:1;">🐾</div>
+                    <div style="color:#2e2e2e;font-size:64px;line-height:1;">ðŸ¾</div>
 
                     <div style="color:#333;font-size:11px;font-weight:900;letter-spacing:4px;margin-top:10px;">NO PHOTO</div>
 
@@ -3059,7 +3045,7 @@ try {
 
                 <div style="padding:10px 14px;font-size:10.5px;line-height:1.75;flex:1;overflow:hidden;">
 
-                    <div><b>Sex / Class:</b>&nbsp;<span id="bolo-animal-render-sex" style="color:#444;">â€” Unknown</span></div>
+                    <div><b>Sex / Class:</b>&nbsp;<span id="bolo-animal-render-sex" style="color:#444;">Ã¢â‚¬â€ Unknown</span></div>
 
                     <div><b>Est. Weight:</b>&nbsp;<span id="bolo-animal-render-weight" style="color:#444;"></span></div>
 
@@ -3503,13 +3489,13 @@ try {
 
                         <div class="flex bg-black rounded-lg p-1 border border-gray-700 gap-1">
 
-                            <button aria-label="license type hunting" id="license-type-hunting" onclick="setLicenseType('hunting')" class="flex-1 py-2 text-[10px] font-black uppercase tracking-widest rounded border transition-all">🦌 HUNTING</button>
+                            <button aria-label="license type hunting" id="license-type-hunting" onclick="setLicenseType('hunting')" class="flex-1 py-2 text-[10px] font-black uppercase tracking-widest rounded border transition-all">ðŸ¦Œ HUNTING</button>
 
-                            <button aria-label="license type fishing" id="license-type-fishing" onclick="setLicenseType('fishing')" class="flex-1 py-2 text-[10px] font-black uppercase tracking-widest rounded border transition-all">🎣 FISHING</button>
+                            <button aria-label="license type fishing" id="license-type-fishing" onclick="setLicenseType('fishing')" class="flex-1 py-2 text-[10px] font-black uppercase tracking-widest rounded border transition-all">ðŸŽ£ FISHING</button>
 
                             <button aria-label="license type both" id="license-type-both"    onclick="setLicenseType('both')"    class="flex-1 py-2 text-[10px] font-black uppercase tracking-widest rounded border transition-all">BOTH</button>
 
-                            <button aria-label="license type id" id="license-type-id"      onclick="setLicenseType('id')"      class="flex-1 py-2 text-[10px] font-black uppercase tracking-widest rounded border transition-all">🪪 ID</button>
+                            <button aria-label="license type id" id="license-type-id"      onclick="setLicenseType('id')"      class="flex-1 py-2 text-[10px] font-black uppercase tracking-widest rounded border transition-all">ðŸªª ID</button>
 
                         </div>
 
@@ -3667,7 +3653,7 @@ try {
 
 
 
-        <!-- â•â• HEADER BAR â•â• -->
+        <!-- Ã¢â€¢ÂÃ¢â€¢Â HEADER BAR Ã¢â€¢ÂÃ¢â€¢Â -->
 
         <div style="background: linear-gradient(135deg, #1a3d14, #245c1c); padding: 9px 18px; display: flex; align-items: center; justify-content: space-between; border-bottom: 3px solid rgba(34,197,94,0.4); flex-shrink: 0;">
 
@@ -3675,7 +3661,7 @@ try {
 
                 <div style="width: 9px; height: 9px; border-radius: 50%; background: #4ade80; box-shadow: 0 0 6px rgba(74,222,128,0.7);"></div>
 
-                <div style="font-size: 8px; color: rgba(255,255,255,0.45); letter-spacing: 0.3em; font-weight: bold; text-transform: uppercase;">OFFICIAL DOCUMENT â€” TACTICAL RANGE CARD</div>
+                <div style="font-size: 8px; color: rgba(255,255,255,0.45); letter-spacing: 0.3em; font-weight: bold; text-transform: uppercase;">OFFICIAL DOCUMENT Ã¢â‚¬â€ TACTICAL RANGE CARD</div>
 
             </div>
 
@@ -3691,13 +3677,13 @@ try {
 
 
 
-        <!-- â•â• BODY: INFO LEFT | PHOTO RIGHT â•â• -->
+        <!-- Ã¢â€¢ÂÃ¢â€¢Â BODY: INFO LEFT | PHOTO RIGHT Ã¢â€¢ÂÃ¢â€¢Â -->
 
         <div style="display: flex; flex: 1; min-height: 0;">
 
 
 
-            <!-- LEFT â€” Info panel (text from form) -->
+            <!-- LEFT Ã¢â‚¬â€ Info panel (text from form) -->
 
             <div style="width: 300px; flex-shrink: 0; padding: 16px 18px; display: flex; flex-direction: column; justify-content: space-between; border-right: 2px solid rgba(34,197,94,0.2); background: rgba(0,0,0,0.3);">
 
@@ -3747,7 +3733,7 @@ try {
 
                         <div style="font-size: 8px; color: rgba(34,197,94,0.65); letter-spacing: 0.25em; text-transform: uppercase; margin-bottom: 5px;">NOTES / SPECIES / ZONES</div>
 
-                        <div id="license-render-notes" style="font-size: 10px; color: rgba(255,255,255,0.7); line-height: 1.65; background: rgba(0,0,0,0.25); border-left: 3px solid rgba(34,197,94,0.3); padding: 8px 10px; border-radius: 1px;">â€”</div>
+                        <div id="license-render-notes" style="font-size: 10px; color: rgba(255,255,255,0.7); line-height: 1.65; background: rgba(0,0,0,0.25); border-left: 3px solid rgba(34,197,94,0.3); padding: 8px 10px; border-radius: 1px;">Ã¢â‚¬â€</div>
 
                     </div>
 
@@ -3771,7 +3757,7 @@ try {
 
 
 
-            <!-- RIGHT â€” Big photo area (license / ID scan) -->
+            <!-- RIGHT Ã¢â‚¬â€ Big photo area (license / ID scan) -->
 
             <div style="flex: 1; background: #060f06; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; overflow: hidden;">
 
@@ -3785,7 +3771,7 @@ try {
 
                 </div>
 
-                <!-- Actual photo â€” fills the full area, shown when present -->
+                <!-- Actual photo Ã¢â‚¬â€ fills the full area, shown when present -->
 
                 <img id="license-render-photo" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; display: none; background: #060f06;">
 
@@ -3817,7 +3803,7 @@ try {
 
 
 
-        <!-- â•â• HEADER STRIP â•â• -->
+        <!-- Ã¢â€¢ÂÃ¢â€¢Â HEADER STRIP Ã¢â€¢ÂÃ¢â€¢Â -->
 
         <div id="gametag-render-header-strip" style="background:#1a2314; padding:8px 16px; display:flex; justify-content:space-between; align-items:center; border-bottom:3px solid #4a6030; flex-shrink:0;">
 
@@ -3835,19 +3821,19 @@ try {
 
 
 
-        <!-- â•â• TITLE BAR â•â• -->
+        <!-- Ã¢â€¢ÂÃ¢â€¢Â TITLE BAR Ã¢â€¢ÂÃ¢â€¢Â -->
 
         <div id="gametag-render-title-bar" style="background:#1e2d18; padding:10px 16px 8px; flex-shrink:0; border-bottom:2px solid #3a4a2a;">
 
             <div style="color:#ffffff; font-size:28px; font-weight:900; letter-spacing:8px; text-transform:uppercase; line-height:1;" id="gametag-render-type-label">OFFICIAL HARVEST RECORD</div>
 
-            <div id="gametag-render-subtitle" style="color:#8ab040; font-size:9px; letter-spacing:5px; margin-top:3px; text-transform:uppercase; font-weight:700;">FIELD TAG â€” WILDLIFE DOCUMENTATION</div>
+            <div id="gametag-render-subtitle" style="color:#8ab040; font-size:9px; letter-spacing:5px; margin-top:3px; text-transform:uppercase; font-weight:700;">FIELD TAG Ã¢â‚¬â€ WILDLIFE DOCUMENTATION</div>
 
         </div>
 
 
 
-        <!-- â•â• LARGE PHOTO AREA â•â• -->
+        <!-- Ã¢â€¢ÂÃ¢â€¢Â LARGE PHOTO AREA Ã¢â€¢ÂÃ¢â€¢Â -->
 
         <div style="position:relative; flex:0 0 270px; background:#111a0c; overflow:hidden; border-bottom:4px solid #1a2314;">
 
@@ -3887,7 +3873,7 @@ try {
 
 
 
-        <!-- â•â• INFO GRID â•â• -->
+        <!-- Ã¢â€¢ÂÃ¢â€¢Â INFO GRID Ã¢â€¢ÂÃ¢â€¢Â -->
 
         <div style="flex:1; padding:7px 12px 6px; display:grid; grid-template-columns:1fr 1fr 1fr; gap:6px; min-height:0;">
 
@@ -3927,7 +3913,7 @@ try {
 
 
 
-            <!-- Field Notes â€” spans full width -->
+            <!-- Field Notes Ã¢â‚¬â€ spans full width -->
 
             <div style="grid-column:1/-1; background:rgba(0,0,0,0.45); border:1px solid rgba(203,213,225,0.12); border-left:3px solid #94a3b8; padding:8px 10px; border-radius:2px;">
 
@@ -3943,7 +3929,7 @@ try {
 
 
 
-        <!-- â•â• FOOTER â•â• -->
+        <!-- Ã¢â€¢ÂÃ¢â€¢Â FOOTER Ã¢â€¢ÂÃ¢â€¢Â -->
 
         <div style="background:#111a0c; padding:7px 16px; border-top:2px solid #1a2314; display:flex; justify-content:space-between; align-items:center; flex-shrink:0;">
 
@@ -3953,9 +3939,9 @@ try {
 
             <div style="text-align:center;">
 
-                <div style="color:#4b5563; font-size:7px; font-weight:900; letter-spacing:2px; text-transform:uppercase;">TEMPORARY FIELD RECORD ONLY â€” NOT A LEGAL STATE E-TAG</div>
+                <div style="color:#4b5563; font-size:7px; font-weight:900; letter-spacing:2px; text-transform:uppercase;">TEMPORARY FIELD RECORD ONLY Ã¢â‚¬â€ NOT A LEGAL STATE E-TAG</div>
 
-                <div style="color:#3a4a2a; font-size:7px; letter-spacing:2px; text-transform:uppercase; margin-top:2px;">FOR TACTICAL RANGE CARD LOGGING â€” UNOFFICIAL DOCUMENT</div>
+                <div style="color:#3a4a2a; font-size:7px; letter-spacing:2px; text-transform:uppercase; margin-top:2px;">FOR TACTICAL RANGE CARD LOGGING Ã¢â‚¬â€ UNOFFICIAL DOCUMENT</div>
 
             </div>
 
@@ -4220,16 +4206,16 @@ try {
             #dash-bottom-row { order: 4; height: auto !important; }
 
             .dash-panel { height: 280px !important; display: flex !important; flex-direction: column !important; }
-            #panel-workstation { height: auto !important; min-height: 480px !important; max-height: 85vh !important; }
+            #panel-workstation { height: 100% !important; min-height: 480px !important; max-height: 85vh !important; }
             #panel-workstation #workstation-container { flex: 1 !important; overflow-y: auto !important; }
 
-            .dash-panel.is-maximized { position: fixed !important; top: 3.5rem !important; left: 0.5rem !important; right: 0.5rem !important; bottom: 2rem !important; width: auto !important; height: auto !important; z-index: 99999 !important; border-radius: 0.5rem !important; border: 2px solid #10b981 !important; box-sizing: border-box !important; max-width: calc(100vw - 1rem) !important; overflow: hidden !important; }
+            .dash-panel.is-maximized { position: fixed !important; top: 3.5rem !important; left: 0.5rem !important; right: 0.5rem !important; bottom: 2rem !important; width: auto !important; z-index: 99999 !important; border-radius: 0.5rem !important; border: 2px solid #10b981 !important; box-sizing: border-box !important; max-width: calc(100vw - 1rem) !important; overflow: hidden !important; }
 
         }
 
 
 
-        /* SOS Distress Beacon Tooltip â€” clean white, red text only. No red background box. */
+        /* SOS Distress Beacon Tooltip Ã¢â‚¬â€ clean white, red text only. No red background box. */
 
         .distress-tooltip {
 
@@ -4803,7 +4789,7 @@ try {
 
                                         </div>
 
-                                        <div id="bal-wind-dir-indicator" class="text-[5px] text-emerald-500 font-bold mt-1 tracking-wider leading-none">FROM R â¬…</div>
+                                        <div id="bal-wind-dir-indicator" class="text-[5px] text-emerald-500 font-bold mt-1 tracking-wider leading-none">FROM R Ã¢Â¬â€¦</div>
 
                                     </div>
 
@@ -5778,13 +5764,13 @@ try {
 
                                                     <!-- Degree Text -->
 
-                                                    <text x="500" y="140" font-family="Courier, monospace" font-weight="bold" font-size="30" fill="#93c5fd" text-anchor="middle">0°</text>
+                                                    <text x="500" y="140" font-family="Courier, monospace" font-weight="bold" font-size="30" fill="#93c5fd" text-anchor="middle">0Â°</text>
 
-                                                    <text x="500" y="880" font-family="Courier, monospace" font-weight="bold" font-size="30" fill="#93c5fd" text-anchor="middle">180°</text>
+                                                    <text x="500" y="880" font-family="Courier, monospace" font-weight="bold" font-size="30" fill="#93c5fd" text-anchor="middle">180Â°</text>
 
-                                                    <text x="860" y="510" font-family="Courier, monospace" font-weight="bold" font-size="30" fill="#93c5fd" text-anchor="middle">90°</text>
+                                                    <text x="860" y="510" font-family="Courier, monospace" font-weight="bold" font-size="30" fill="#93c5fd" text-anchor="middle">90Â°</text>
 
-                                                    <text x="140" y="510" font-family="Courier, monospace" font-weight="bold" font-size="30" fill="#93c5fd" text-anchor="middle">270°</text>
+                                                    <text x="140" y="510" font-family="Courier, monospace" font-weight="bold" font-size="30" fill="#93c5fd" text-anchor="middle">270Â°</text>
 
                                                 </g>
 
@@ -6020,7 +6006,7 @@ try {
 
                                 <label for="comms-passcode" class="sr-only">MIN 10: 5L+2N+3S</label><input type="password" id="comms-passcode" class="w-full bg-black border border-emerald-500/50 rounded px-2 py-2 text-[10px] text-emerald-400 focus:border-emerald-400 outline-none uppercase placeholder-gray-800 text-center font-black tracking-widest" placeholder="MIN 10: 5L+2N+3S" aria-label="MIN 10: 5L+2N+3S">
 
-                                <span class="text-[6px] text-gray-600 font-mono uppercase tracking-wider block text-center mt-0.5">5 letters Â· 2 numbers Â· 3 special chars</span>
+                                <span class="text-[6px] text-gray-600 font-mono uppercase tracking-wider block text-center mt-0.5">5 letters Ã‚Â· 2 numbers Ã‚Â· 3 special chars</span>
 
                             </div>
 
@@ -6109,19 +6095,21 @@ try {
         </div>
         <div class="flex flex-col gap-1">
             <label class="text-[7px] text-gray-500 uppercase font-bold tracking-widest">Duty Status</label>
+            <label for="c2-duty-status" class="sr-only">Duty Status</label>
             <select id="c2-duty-status" class="w-full bg-gray-950 border border-gray-700 text-gray-300 text-[10px] p-1.5 rounded focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 outline-none transition-colors appearance-none cursor-pointer">
                 <option value="">-- NO STATUS --</option>
-                <option value="🚶">🚶 Walking</option>
-                <option value="🛑">🛑 Stopped</option>
-                <option value="⚙️">⚙️ Busy</option>
-                <option value="🎒">🎒 Packing</option>
-                <option value="🕵️">🕵️ Scouting</option>
-                <option value="🛌">🛌 Resting</option>
-                <option value="🚚">🚚 En Route</option>
-                <option value="✅">✅ Arrived</option>
-                <option value="⛺">⛺ Hideout</option>
-                <option value="🔒">🔒 Private</option>
-                <option value="⚔️">⚔️ On Mission</option></select>
+                <option value="&#128694; Walking">&#128694; Walking</option>
+                <option value="&#128721; Stopped">&#128721; Stopped</option>
+                <option value="&#9881;&#65039; Busy">&#9881;&#65039; Busy</option>
+                <option value="&#127890; Packing">&#127890; Packing</option>
+                <option value="&#128373;&#65039; Scouting">&#128373;&#65039; Scouting</option>
+                <option value="&#128716; Resting">&#128716; Resting</option>
+                <option value="&#128698; En Route">&#128698; En Route</option>
+                <option value="&#9989; Arrived">&#9989; Arrived</option>
+                <option value="&#9978; Hideout">&#9978; Hideout</option>
+                <option value="&#128274; Private">&#128274; Private</option>
+                <option value="&#9876;&#65039; On Mission">&#9876;&#65039; On Mission</option>
+            </select>
         </div>
     </div>
 </div>
@@ -6183,9 +6171,13 @@ try {
                             <div class="p-2 border-b border-gray-800 flex items-center justify-between bg-black/40 z-10 relative">
 
                                 <span class="text-[8px] font-black text-orange-400 uppercase tracking-widest flex items-center gap-1"><i data-lucide="map-pin" class="w-2.5 h-2.5"></i> Team Tracker</span>
-                                <button id="comms-icons-btn" class="text-[6px] bg-gray-800 border border-gray-700 text-gray-300 px-1 rounded font-bold uppercase flex items-center gap-1 hover:bg-gray-700 ml-2" aria-label="Action Button"><i data-lucide="smile" class="w-2.5 h-2.5"></i> Icons</button>
-
-                                <button id="comms-map-sync" class="text-[6px] bg-orange-950 border border-orange-900 text-orange-400 px-1 rounded font-bold uppercase" aria-label="Action Button">Sync</button>
+                                <div class="flex items-center gap-1">
+                                    <button id="c2-copy-coords-btn" class="text-[6px] bg-emerald-950 border border-emerald-700 text-emerald-300 px-1.5 py-0.5 rounded font-bold uppercase flex items-center gap-1 hover:bg-emerald-900 transition-all cursor-pointer" title="Copy Teammates GPS Coords" aria-label="Copy Coords">
+                                        <i data-lucide="crosshair" class="w-2.5 h-2.5"></i> COORDS
+                                    </button>
+                                    <button id="comms-icons-btn" class="text-[6px] bg-gray-800 border border-gray-700 text-gray-300 px-1 rounded font-bold uppercase flex items-center gap-1 hover:bg-gray-700" aria-label="Action Button"><i data-lucide="smile" class="w-2.5 h-2.5"></i> Icons</button>
+                                    <button id="comms-map-sync" class="text-[6px] bg-orange-950 border border-orange-900 text-orange-400 px-1 rounded font-bold uppercase" aria-label="Action Button">Sync</button>
+                                </div>
 
                             </div>
 
@@ -6329,7 +6321,7 @@ try {
 
     <!-- MAIN SCRIPT -->
 
-    <script src="./trc_core.js?v=8.0.33" defer></script>
+    <script src="./trc_core.js?v=7.27.38" defer></script>
 
     <script src="./workstation_logic.js?v=1.0" defer></script>
 
@@ -6340,6 +6332,8 @@ try {
     <script src="./bolo_logic.js?v=1.9" defer></script>
 
     <script src="./license_logic.js?v=1.11" defer></script>
+
+    <script src="./master_op_card_logic.js?v=7.27.38" defer></script>
 
     
 
@@ -6379,7 +6373,7 @@ try {
 
     <script>
 
-        window.APP_VERSION = 'v7.27.37';
+        window.APP_VERSION = 'v7.27.42';
 
         if(document.getElementById('header-version-display')) {
 
@@ -7948,6 +7942,10 @@ try {
                         <button style="background-color: #ef4444 !important; color: #ffffff !important;" class="font-black text-xs px-4 py-1.5 rounded-full border-2 border-black uppercase whitespace-nowrap shrink-0 hover:brightness-125 transition-all">WARNINGS</button>
                         <button style="background-color: #3b82f6 !important; color: #ffffff !important;" class="font-black text-xs px-4 py-1.5 rounded-full border-2 border-black uppercase whitespace-nowrap shrink-0 hover:brightness-125 transition-all">GENERAL</button>
                         <button style="background-color: #9333ea !important; color: #ffffff !important;" class="font-black text-xs px-4 py-1.5 rounded-full border-2 border-black uppercase whitespace-nowrap shrink-0 hover:brightness-125 transition-all">CONTACTS</button>
+                        <button style="background-color: #eab308 !important; color: #000000 !important;" class="font-black text-xs px-4 py-1.5 rounded-full border-2 border-black uppercase whitespace-nowrap shrink-0 hover:brightness-125 transition-all">LISTING</button>
+                        <button style="background-color: #84cc16 !important; color: #000000 !important;" class="font-black text-xs px-4 py-1.5 rounded-full border-2 border-black uppercase whitespace-nowrap shrink-0 hover:brightness-125 transition-all">HUNTING</button>
+                        <button style="background-color: #06b6d4 !important; color: #000000 !important;" class="font-black text-xs px-4 py-1.5 rounded-full border-2 border-black uppercase whitespace-nowrap shrink-0 hover:brightness-125 transition-all">FISHING</button>
+                        <button style="background-color: #6b7280 !important; color: #ffffff !important;" class="font-black text-xs px-4 py-1.5 rounded-full border-2 border-black uppercase whitespace-nowrap shrink-0 hover:brightness-125 transition-all">MISC</button>
                     </div>
                 </div>
 
@@ -8012,6 +8010,7 @@ try {
                 <div class="flex gap-3">
                     <div class="flex-1">
                         <label class="block text-[11px] font-black uppercase tracking-widest mb-1.5 text-emerald-400">Callsign / Handle</label>
+                        <label for="post-author" class="sr-only">Callsign / Handle</label>
                         <input type="text" id="post-author" class="w-full bg-slate-950 border-2 border-slate-700 rounded p-2.5 text-sm font-mono text-white font-bold uppercase placeholder:text-slate-500 placeholder:italic focus:outline-none focus:border-emerald-400 transition-colors" placeholder="e.g. GHOST_01">
                     </div>
                     <div class="w-2/5">
@@ -8022,6 +8021,10 @@ try {
                             <option value="TROPHIES" class="bg-slate-900 text-emerald-400">TROPHIES</option>
                             <option value="WARNINGS" class="bg-slate-900 text-red-400">WARNINGS</option>
                             <option value="CONTACT" class="bg-slate-900 text-purple-400">CONTACT</option>
+                            <option value="LISTINGS" class="bg-slate-900 text-yellow-400">LISTING</option>
+                            <option value="HUNTING" class="bg-slate-900 text-lime-400">HUNTING</option>
+                            <option value="FISHING" class="bg-slate-900 text-cyan-400">FISHING</option>
+                            <option value="MISC" class="bg-slate-900 text-gray-400">MISC</option>
                         </select>
                     </div>
                 </div>
@@ -8031,6 +8034,7 @@ try {
                         <label class="block text-[11px] font-black uppercase tracking-widest text-emerald-400">Intel Transmission Details</label>
                         <span id="post-char-count" class="text-[10px] font-mono font-bold text-slate-400">0/500</span>
                     </div>
+                    <label for="post-content" class="sr-only">Intel Transmission Details</label>
                     <textarea id="post-content" maxlength="500" class="w-full bg-slate-950 border-2 border-slate-700 rounded p-3 text-sm font-mono text-white min-h-[110px] placeholder:text-slate-400 placeholder:italic focus:outline-none focus:border-emerald-400 resize-y transition-colors" placeholder="Enter sitrep, range observations, or mission notes..."></textarea>
                 </div>
                 
@@ -8103,26 +8107,26 @@ try {
                         
                         <!-- Digital Business Card Fields -->
                         <div>
-                            <label class="block text-[10px] font-black uppercase text-purple-400 tracking-wider mb-1">Business / Company Name</label>
+                            <label for="post-contact-bizname" class="block text-[10px] font-black uppercase text-purple-400 tracking-wider mb-1">Business / Company Name</label>
                             <input type="text" id="post-contact-bizname" placeholder="e.g. Apex Precision Armory & Outfitters" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-xs text-white placeholder:text-slate-400 focus:outline-none focus:border-purple-400">
                         </div>
                         <div class="grid grid-cols-2 gap-2.5 mt-2">
                             <div>
-                                <label class="block text-[10px] font-black uppercase text-slate-300 mb-1">Company / Unit</label>
+                                <label for="post-contact-unit" class="block text-[10px] font-black uppercase text-slate-300 mb-1">Company / Unit</label>
                                 <input type="text" id="post-contact-unit" placeholder="e.g. Special Operations Div" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-xs text-white placeholder:text-slate-400 focus:outline-none focus:border-purple-400">
                             </div>
                             <div>
-                                <label class="block text-[10px] font-black uppercase text-slate-300 mb-1">Direct Phone #</label>
+                                <label for="post-contact-phone" class="block text-[10px] font-black uppercase text-slate-300 mb-1">Direct Phone #</label>
                                 <input type="tel" id="post-contact-phone" placeholder="e.g. (555) 019-2831" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-xs text-white placeholder:text-slate-400 focus:outline-none focus:border-purple-400">
                             </div>
                         </div>
                         <div class="grid grid-cols-2 gap-2.5 mt-2">
                             <div>
-                                <label class="block text-[10px] font-black uppercase text-slate-300 mb-1">Comms / Frequency</label>
+                                <label for="post-contact-comms" class="block text-[10px] font-black uppercase text-slate-300 mb-1">Comms / Frequency</label>
                                 <input type="text" id="post-contact-comms" placeholder="e.g. VHF 144.390 / Ch 4" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-xs text-white placeholder:text-slate-400 focus:outline-none focus:border-purple-400">
                             </div>
                             <div>
-                                <label class="block text-[10px] font-black uppercase text-slate-300 mb-1">Website / Link</label>
+                                <label for="post-contact-web" class="block text-[10px] font-black uppercase text-slate-300 mb-1">Website / Link</label>
                                 <input type="text" id="post-contact-web" placeholder="e.g. tacticalrange.com" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-xs text-white placeholder:text-slate-400 focus:outline-none focus:border-purple-400">
                             </div>
                         </div>
@@ -8188,9 +8192,7 @@ try {
         </div>
     </div>
 
-    <!-- Supabase SDK -->
-    <!-- Supabase SDK -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="lib/supabase.min.js"></script>
     <!-- Include Blog Logic -->
     <script src="blog_logic.js" defer></script>
 
@@ -8229,8 +8231,10 @@ try {
             <!-- Comments injected here -->
         </div>
         <div class="bg-slate-900/60 border-t p-3 shrink-0 flex flex-col gap-2" style="border-color: rgba(var(--accent-rgb), 0.5);">
+            <label for="comm-link-author" class="sr-only">Callsign</label>
             <input type="text" id="comm-link-author" class="w-full bg-black/60 border-2 rounded p-2 text-xs font-mono font-bold focus:outline-none uppercase transition-all" style="border-color: rgba(var(--accent-rgb), 0.5); color: var(--accent-color); box-shadow: 0 0 0 rgba(var(--accent-rgb), 0.3);" onfocus="this.style.boxShadow='0 0 10px rgba(var(--accent-rgb), 0.3)'" onblur="this.style.boxShadow='none'" placeholder="CALLSIGN">
             <div class="flex gap-2">
+                <label for="comm-link-input" class="sr-only">Message</label>
                 <input type="text" id="comm-link-input" class="flex-1 bg-black/60 border-2 rounded p-2 text-xs font-mono focus:outline-none transition-all" style="border-color: rgba(var(--accent-rgb), 0.5); color: var(--accent-color); box-shadow: 0 0 0 rgba(var(--accent-rgb), 0.3);" onfocus="this.style.boxShadow='0 0 10px rgba(var(--accent-rgb), 0.3)'" onblur="this.style.boxShadow='none'" placeholder="Type a message..." onkeypress="if(event.key === 'Enter') window.submitCommLinkMessage()">
                 <button id="comm-link-clear-btn" onclick="if(window.clearCommLinkFeed) window.clearCommLinkFeed()" class="bg-slate-800 p-2 rounded border border-slate-700 hover:text-red-400 hover:border-red-500/50 transition-colors flex items-center justify-center shrink-0" style="color: rgba(var(--accent-rgb), 0.7);" title="Clear Local Feed">
                     <i data-lucide="trash-2" class="w-4 h-4"></i>

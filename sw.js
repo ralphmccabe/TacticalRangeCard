@@ -1,24 +1,26 @@
-/* TRC-VERSION - v7.27.37 */
-const CACHE_NAME = 'trc-v7.27.37';
+﻿/* TRC-VERSION - v7.27.42 */
+const CACHE_NAME = 'trc-v7.27.42';
 const ASSETS = [
     './',
-    './index.html?v=7.27.35',
-    './style.css?v=1.7',
-    './trc_core.js?v=7.27.35',
-    './blog_logic.js',
+    './index.html?v=7.27.37',
+    './style.css?v=117',
+    './trc_core.js?v=7.27.37',
+    './blog_logic.js?v=7.27.37',
     './manifest.json',
     './icon-512.png',
     './icon-192.png',
     './splash-page.jpg',
-    './workstation_logic.js?v=7.27.35',
-    './officer_card_logic.js?v=7.27.35',
-    './gametag_logic.js?v=1.4',
-    './bolo_logic.js?v=1.3',
-    './license_logic.js?v=1.5',
-    './tailwind.css',
+    './workstation_logic.js?v=7.27.37',
+    './officer_card_logic.js?v=7.27.37',
+    './gametag_logic.js?v=7.27.37',
+    './bolo_logic.js?v=7.27.37',
+    './license_logic.js?v=7.27.37',
+    './tailwind.css?v=1.1',
     './lucide.min.js?v=1.5',
     './html2canvas.min.js?v=1.5',
-    './idb_helper.js?v=1.5'
+    './idb_helper.js?v=1.6',
+    './lib/supabase.min.js',
+    './master_op_card_logic.js?v=7.27.38'
 ];
 
 self.addEventListener('install', event => {
@@ -56,8 +58,18 @@ self.addEventListener('activate', event => {
 
 // Dynamic Offline Caching Strategy
 self.addEventListener('fetch', event => {
-    // Bypass cache completely for version history to ensure live updates
-    if (event.request.url.includes('VERSION_HISTORY.txt') || event.request.url.includes('api.open-meteo.com')) {
+    // Bypass cache for these â€” large data files / live APIs that must never be stored
+    const bypassPatterns = [
+        'VERSION_HISTORY.txt',
+        'api.open-meteo.com',
+        'supabase.co',              // live Supabase API calls
+        'us-states.js',
+        'us-states.json',
+        'colorado_2026.json',       // large data files â€” never cache
+        'arcgisonline.com',         // map tiles â€” browser handles its own cache
+        'qrserver.com'
+    ];
+    if (bypassPatterns.some(p => event.request.url.includes(p))) {
         event.respondWith(fetch(event.request));
         return;
     }
@@ -102,6 +114,7 @@ self.addEventListener('fetch', event => {
         })
     );
 });
+
 
 
 
