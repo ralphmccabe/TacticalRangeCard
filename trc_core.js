@@ -8044,7 +8044,7 @@ function initializeTacticalDashboard2() {
 
                 // Track presence
                 if (commsChannel) {
-                    commsChannel.track({ online_at: new Date().toISOString(), user: commsUser, distress: window.isDistressActive }).catch(e => console.warn("Initial track failed:", e));
+                    commsChannel.track({ online_at: new Date().toISOString(), user: commsUser, distress: window.isDistressActive, dutyStatus: window.myDutyStatus || '' }).catch(e => console.warn("Initial track failed:", e));
                 }
             }
         });
@@ -8585,7 +8585,7 @@ function initializeTacticalDashboard2() {
         let hasCentered = false;
 
         // Start tracking my own location
-        if (navigator.geolocation && commsMapInstance) {
+            if (navigator.geolocation && commsMapInstance) {
             if (geoWatchId) navigator.geolocation.clearWatch(geoWatchId);
             let lastTrackTime = 0;
             const fallbackIpGeo = async () => {
@@ -8608,7 +8608,7 @@ function initializeTacticalDashboard2() {
                                     location: window.myLatestCoords,
                                     user: commsUser,
                                     distress: window.isDistressActive,
-                                    dutyStatus: window.myDutyStatus || null
+                                    dutyStatus: window.myDutyStatus || ''
                                 }).catch(e => {});
                             }
                             window.pushTacLog(`IP-GEOLOCATION SECURED: [${data.city || 'NETWORK'}, ${data.region_code || ''}]`, "SUCCESS");
@@ -8640,7 +8640,7 @@ function initializeTacticalDashboard2() {
                                 location: { lat: latitude, lng: longitude },
                                 user: commsUser,
                                 distress: window.isDistressActive,
-                                dutyStatus: window.myDutyStatus || null
+                                dutyStatus: window.myDutyStatus || ''
                             }).catch(e => console.warn("Track rate limit:", e));
                         }
                     }
@@ -8841,16 +8841,28 @@ function initializeTacticalDashboard2() {
                     });
 
                     // Tooltip above unit: plain callsign text. Distress shown via banner, not on map.
-                    const tooltipText = `${p.user.callsign} [${p.user.role}]`;
+                    const dutyStr = p.dutyStatus ? ` '${p.dutyStatus}'` : '';
+                    const tooltipText = `${p.user.callsign} [${p.user.role}]${dutyStr}`;
                     const tooltipClass = 'tactical-tooltip'; // Distress shown via banner ONLY, not on map.
+                    
+                    const latStr = p.location.lat.toFixed(5);
+                    const lngStr = p.location.lng.toFixed(5);
+                    const popupHtml = `
+                        <div class="text-[10px] font-mono text-center bg-slate-900 text-white p-1 rounded border border-slate-700">
+                            <b>${p.user.callsign}</b><br>
+                            <button onclick="alert('GPS: ${latStr}, ${lngStr}')" class="mt-1 bg-blue-900 hover:bg-blue-700 text-blue-200 px-2 py-0.5 rounded border border-blue-500 cursor-pointer">SHOW GPS</button>
+                        </div>
+                    `;
 
                     if (!teamMarkers[p.user.id]) {
                         teamMarkers[p.user.id] = L.marker([p.location.lat, p.location.lng], { icon: icon }).addTo(commsMapInstance);
                         teamMarkers[p.user.id].bindTooltip(tooltipText, { permanent: true, direction: 'top', className: tooltipClass, interactive: false });
+                        teamMarkers[p.user.id].bindPopup(popupHtml);
                     } else {
                         teamMarkers[p.user.id].setLatLng([p.location.lat, p.location.lng]);
                         // Update tooltip if needed
                         teamMarkers[p.user.id].setTooltipContent(tooltipText);
+                        teamMarkers[p.user.id].setPopupContent(popupHtml);
                     }
                 }
             }
@@ -10044,25 +10056,33 @@ ${cardImgHtml}
                 // General Intel / First Responder / Workstation / Blog Report Transmission
                 window.pushTacLog("SECURING INTEL FOR TRANSMISSION...", "SYS");
 
-                const compressedImg = await safeImage(item.image, 1100, 0.88);
+                const compressedImg = await safeImage(item.image, 400, 0.50);
                 const itemLabel = item.name || item.label || (item.title ? `WORKSTATION: ${item.title}` : `INTEL REPORT: ${item.category || item.type?.toUpperCase() || 'SNAPSHOT'}`);
                 
                 // Build clean lightweight metadata payload
                 const payloadItem = JSON.parse(JSON.stringify(item));
                 payloadItem.image = compressedImg;
 
-                // Strip heavy nested base64 image duplicates to keep payload under 35KB for Supabase broadcast
+                // Compress heavy nested base64 image duplicates to keep payload under limits for broadcast, but DO NOT delete them!
                 if (payloadItem.data) {
-                    delete payloadItem.data.image;
-                    delete payloadItem.data.sketchImage;
-                    delete payloadItem.data.scenePhotos;
+                    delete payloadItem.data.image; // this one is a duplicate of top-level image
+                    if (payloadItem.data.sketchImage) {
+                        payloadItem.data.sketchImage = await safeImage(payloadItem.data.sketchImage, 750, 0.72);
+                    }
+                    if (payloadItem.data.scenePhotos && payloadItem.data.scenePhotos.length > 0) {
+                        payloadItem.data.scenePhotos = await Promise.all(payloadItem.data.scenePhotos.map(p => safeImage(p, 700, 0.70)));
+                    }
                 }
                 if (payloadItem.workstationData) {
-                    delete payloadItem.workstationData.image;
+                    delete payloadItem.workstationData.image; // duplicate
                     if (payloadItem.workstationData.data) {
-                        delete payloadItem.workstationData.data.image;
-                        delete payloadItem.workstationData.data.sketchImage;
-                        delete payloadItem.workstationData.data.scenePhotos;
+                        delete payloadItem.workstationData.data.image; // duplicate
+                        if (payloadItem.workstationData.data.sketchImage) {
+                            payloadItem.workstationData.data.sketchImage = await safeImage(payloadItem.workstationData.data.sketchImage, 750, 0.72);
+                        }
+                        if (payloadItem.workstationData.data.scenePhotos && payloadItem.workstationData.data.scenePhotos.length > 0) {
+                            payloadItem.workstationData.data.scenePhotos = await Promise.all(payloadItem.workstationData.data.scenePhotos.map(p => safeImage(p, 700, 0.70)));
+                        }
                     }
                 }
 
@@ -12148,6 +12168,7 @@ window.myDutyStatus = null;
 document.addEventListener('DOMContentLoaded', () => {
     const c2DutyStatus = document.getElementById('c2-duty-status');
     if (c2DutyStatus) {
+        window.myDutyStatus = c2DutyStatus.value || null;
         c2DutyStatus.addEventListener('change', (e) => {
             window.myDutyStatus = e.target.value;
             // Force immediate track update

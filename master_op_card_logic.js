@@ -49,12 +49,12 @@ window.openMasterOpForm = function(cardData = null) {
     container.innerHTML = `
         <div class="h-full flex flex-col w-full max-w-4xl mx-auto relative overflow-hidden bg-slate-950">
             <div class="flex items-center justify-between mb-2 pb-2 border-b border-gray-800 shrink-0 flex-wrap gap-1 sticky top-0 z-30 pt-1 bg-slate-950/95 backdrop-blur">
-                <button onclick="renderWorkstationMenu()" style="color: var(--accent-color, #38bdf8);" class="hover:brightness-150 flex items-center gap-1 text-[10px] uppercase font-bold transition-all cursor-pointer">
+                <button onclick="renderWorkstationMenu()" style="color: var(--accent-color); border: 1px solid var(--accent-color); background-color: rgba(var(--accent-rgb), 0.15); box-shadow: 0 0 10px rgba(var(--accent-rgb), 0.15);" class="hover:brightness-125 px-2 py-1 rounded text-[10px] font-black uppercase tracking-wider flex items-center gap-1 transition-all cursor-pointer">
                     <i data-lucide="chevron-left" class="w-4 h-4"></i> BACK
                 </button>
                 <div class="flex items-center gap-1.5">
                     <span class="text-xs font-black uppercase text-white tracking-widest flex items-center gap-1.5">
-                        <i data-lucide="map" class="w-4 h-4" style="color: var(--accent-color, #38bdf8);"></i> MISSION COMMAND (MASTER OP-PLAN)
+                        <i data-lucide="map" class="w-4 h-4 text-white"></i> MISSION COMMAND (MASTER OP-PLAN)
                     </span>
                 </div>
             </div>
@@ -471,7 +471,7 @@ window.blogMasterOpToWire = async function(id) {
     // Compress the image before broadcast to ensure it's under payload limits
     let compressedImage = savedCard.image;
     if (window.compressBase64Image) {
-        compressedImage = await window.compressBase64Image(savedCard.image, 1100, 0.88);
+        compressedImage = await window.compressBase64Image(savedCard.image, 750, 0.72);
     }
 
     const payloadItem = {
@@ -490,18 +490,45 @@ window.blogMasterOpToWire = async function(id) {
 
     // 1. Broadcast over Encrypted Comms Chat (P2P + Supabase)
     if (typeof commsUser !== 'undefined' && commsUser && commsUser.callsign && typeof TacticalCrypto !== 'undefined') {
-        const messageStr = JSON.stringify(payload);
-        let ciphertext = messageStr; // Fallback
-        if (typeof TacticalCrypto.encryptMessage === 'function') {
-            ciphertext = await TacticalCrypto.encryptMessage(messageStr);
+        const messageText = payload.message;
+        const encrypted = TacticalCrypto.encrypt({
+            message: messageText,
+            user: commsUser,
+            timestamp: Date.now(),
+            image: compressedImage,
+            metadata: payload
+        });
+        const msgId = Math.random().toString(36).substring(2, 9);
+        if (window.receivedMsgIds) window.receivedMsgIds.add(msgId);
+
+        // Render locally in sender chat
+        if (typeof renderChatMessage === 'function') {
+            renderChatMessage(commsUser, messageText, true, compressedImage, null, payload);
         }
-        
+
+        // Send over WebRTC P2P DataChannels
+        if (window.dataChannels) {
+            Object.values(window.dataChannels).forEach(dc => {
+                if (dc && dc.readyState === 'open') {
+                    try { dc.send(JSON.stringify({ event: 'chat', data: encrypted, msgId })); } catch(e){}
+                }
+            });
+        }
+
+        // Send over Supabase Broadcast channel
+        if (typeof commsChannel !== 'undefined' && commsChannel) {
+            try {
+                commsChannel.send({ type: 'broadcast', event: 'chat', payload: { data: encrypted, msgId } });
+            } catch(e) {}
+        }
+
+        // Fallback insert to trc_chat
         if (window.supabase) {
             try {
                 await window.supabase.from('trc_chat').insert([{
                     callsign: commsUser.callsign,
                     flavor: window.flavor || 'blue',
-                    message: ciphertext,
+                    message: encrypted,
                     is_vault_card: true,
                     timestamp: new Date().toISOString()
                 }]);

@@ -944,13 +944,15 @@ window.blogOfficerCardToWire = async function(id) {
 
     // Deep clone card data and compress images so broadcast payload stays under 40KB
     const cardData = JSON.parse(JSON.stringify(rawCardData));
+    let compressedCardImage = '';
     if (cardData.data) {
         if (cardData.data.sketchImage) {
-            cardData.data.sketchImage = await window.compressBase64Image(cardData.data.sketchImage, 750, 0.75);
+            compressedCardImage = await window.compressBase64Image(cardData.data.sketchImage, 750, 0.72);
+            cardData.data.sketchImage = compressedCardImage;
         }
         if (cardData.data.scenePhotos && cardData.data.scenePhotos.length > 0) {
             cardData.data.scenePhotos = await Promise.all(
-                cardData.data.scenePhotos.map(p => window.compressBase64Image(p, 600, 0.72))
+                cardData.data.scenePhotos.map(p => window.compressBase64Image(p, 700, 0.70))
             );
         }
     }
@@ -1080,9 +1082,6 @@ window.generateOfficerCardHTML = function(card) {
                 </div>
                 <div class="flex items-center gap-2">
                     ${statusBadge}
-                    <button type="button" onclick="if(window.closeSurveillanceReview) window.closeSurveillanceReview();" class="bg-red-600 hover:bg-red-500 text-white font-black text-xs px-2.5 py-1 rounded uppercase tracking-wider flex items-center gap-1 shadow border border-red-400 cursor-pointer shrink-0 z-50">
-                        <i data-lucide="x" class="w-3.5 h-3.5"></i> CLOSE
-                    </button>
                 </div>
             </div>
 

@@ -55,6 +55,9 @@ window.reworkBusinessCard = function(itemData) {
     const commsInput = document.getElementById('post-contact-comms');
     const webInput = document.getElementById('post-contact-web');
     const detailsInput = document.getElementById('post-contact-details');
+    const facebookInput = document.getElementById('post-contact-facebook');
+    const twitterInput = document.getElementById('post-contact-twitter');
+    const youtubeInput = document.getElementById('post-contact-youtube');
     const contentInput = document.getElementById('post-content');
 
     const contactContainer = document.getElementById('contact-fields-container');
@@ -302,6 +305,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const commsInput = document.getElementById('post-contact-comms');
     const webInput = document.getElementById('post-contact-web');
     const detailsInput = document.getElementById('post-contact-details');
+    const facebookInput = document.getElementById('post-contact-facebook');
+    const twitterInput = document.getElementById('post-contact-twitter');
+    const youtubeInput = document.getElementById('post-contact-youtube');
 
     const prevBizname = document.getElementById('preview-card-bizname');
     const prevAuthor = document.getElementById('preview-card-author');
@@ -549,7 +555,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if(window.clearBizCardPhoto) window.clearBizCardPhoto();
         
         // Clear card fields
-        const fields = ['bizname', 'unit', 'phone', 'comms', 'web', 'details'];
+        const fields = ['bizname', 'unit', 'phone', 'comms', 'web', 'details', 'facebook', 'twitter', 'youtube'];
         fields.forEach(f => {
             const el = document.getElementById('post-contact-' + f);
             if(el) el.value = '';
@@ -728,11 +734,14 @@ document.addEventListener('DOMContentLoaded', () => {
             const phone = phoneInput ? phoneInput.value.trim() : '';
             const comms = commsInput ? commsInput.value.trim() : '';
             const web = webInput ? webInput.value.trim() : '';
-            const details = detailsInput ? detailsInput.value.trim() : '';
+            let details = detailsInput ? detailsInput.value.trim() : '';
+            let facebook = facebookInput ? facebookInput.value.trim() : '';
+            let twitter = twitterInput ? twitterInput.value.trim() : '';
+            let youtube = youtubeInput ? youtubeInput.value.trim() : '';
             const bizFile = bizcardUpload && bizcardUpload.files ? bizcardUpload.files[0] : null;
 
             const isStandaloneCard = (currentPostMode === 'STANDALONE_CARD');
-            const hasContactFields = !!(bizname || unit || phone || comms || web || details || bizFile);
+            const hasContactFields = !!(bizname || unit || phone || comms || web || details || facebook || twitter || youtube || bizFile);
             const isAttachingContact = isStandaloneCard || (isContactFormOpen && hasContactFields);
 
             if (!intelText && !isAttachingContact) {
@@ -811,6 +820,9 @@ document.addEventListener('DOMContentLoaded', () => {
                             comms: comms,
                             web: web,
                             details: details,
+                            facebook: facebook,
+                            twitter: twitter,
+                            youtube: youtube,
                             cardImageUrl: bizcardImageUrl
                         }
                     };
@@ -854,6 +866,9 @@ document.addEventListener('DOMContentLoaded', () => {
                         comms: comms,
                         web: web,
                         details: details,
+                        facebook: facebook,
+                        twitter: twitter,
+                        youtube: youtube,
                         cardImageUrl: bizcardImageUrl
                     } : null
                 };
@@ -1110,7 +1125,14 @@ try {
                             <div><span style="color: #9ca3af;" class="font-bold">COMMS:</span> <span style="color: #34d399;" class="font-bold">${contactData.comms || '--'}</span></div>
                             <div><span style="color: #9ca3af;" class="font-bold">WEB:</span> <a href="${contactData.web && contactData.web.startsWith('http') ? contactData.web : 'https://' + (contactData.web || '#')}" target="_blank" style="color: #60a5fa;" class="font-bold underline">${contactData.web || '--'}</a></div>
                         </div>
-                        ${contactData.details ? `<div style="color: #d8b4fe; border-top: 1px solid rgba(255,255,255,0.1);" class="mt-2.5 text-xs italic pt-2">Specialties: "${contactData.details}"</div>` : ''}
+                        ${(contactData.facebook || contactData.twitter || contactData.youtube) ? `
+                        <div style="border-top: 1px solid rgba(255,255,255,0.1);" class="flex gap-4 pt-3 mt-2 text-xs">
+                            ${contactData.facebook ? `<a href="${contactData.facebook.startsWith('http') ? contactData.facebook : 'https://' + contactData.facebook}" target="_blank" class="flex items-center gap-1 text-blue-400 hover:text-blue-300 font-bold"><i data-lucide="facebook" class="w-3.5 h-3.5"></i> FB</a>` : ''}
+                            ${contactData.twitter ? `<a href="${contactData.twitter.startsWith('http') ? contactData.twitter : 'https://' + contactData.twitter}" target="_blank" class="flex items-center gap-1 text-slate-300 hover:text-white font-bold"><i data-lucide="twitter" class="w-3.5 h-3.5"></i> X (TWITTER)</a>` : ''}
+                            ${contactData.youtube ? `<a href="${contactData.youtube.startsWith('http') ? contactData.youtube : 'https://' + contactData.youtube}" target="_blank" class="flex items-center gap-1 text-red-500 hover:text-red-400 font-bold"><i data-lucide="youtube" class="w-3.5 h-3.5"></i> YT</a>` : ''}
+                        </div>
+                        ` : ''}
+                        ${contactData.details ? `<div style="color: #d8b4fe; border-top: 1px solid rgba(255,255,255,0.1);" class="mt-2 text-xs italic pt-2">Specialties: "${contactData.details}"</div>` : ''}
                     </div>
                     ` : ''}
 
