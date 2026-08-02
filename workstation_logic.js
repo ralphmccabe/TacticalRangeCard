@@ -103,7 +103,7 @@ window.renderWorkstationMenu = async function() {
                                 </button>
                             </div>
                         </div>
-                        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5 p-1 pb-20">`;
+                        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5 p-1 pb-4 ">`;
                 
                 cardArray.forEach(card => {
                     let icon = 'monitor';
@@ -148,7 +148,7 @@ window.renderWorkstationMenu = async function() {
         <div class="w-full flex flex-col max-w-4xl mx-auto p-1 pb-16">
             <!-- STATIONARY TOP ACTION AREA -->
             <div id="ws-top-action-area" class="w-full shrink-0">
-                <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2 w-full mt-1">
+                <div class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-8 gap-2 w-full mt-1">
                     <!-- 1. MEDEVAC / INCIDENT -->
                     <button onclick="openWorkstationForm('medevac')" class="bg-slate-900/90 border border-red-500/50 rounded-lg p-2.5 flex flex-col items-center justify-center gap-1.5 hover:bg-slate-800 hover:border-red-500 transition-all group">
                         <i data-lucide="activity" class="w-5 h-5 text-red-500 group-hover:scale-110 transition-transform"></i>
@@ -202,6 +202,24 @@ window.renderWorkstationMenu = async function() {
                             <div class="text-[6.5px] font-bold text-cyan-400/80 uppercase tracking-wider mt-0.5">First Responder</div>
                         </div>
                     </button>
+
+                    <!-- 7. TACTICAL JOURNAL -->
+                    <button onclick="openWorkstationForm('journal')" style="border-color: var(--accent-color, #6366f1); box-shadow: 0 0 15px rgba(0,0,0,0.3);" onmouseover="this.style.boxShadow='0 0 15px var(--accent-color, #6366f1)';" onmouseout="this.style.boxShadow='0 0 15px rgba(0,0,0,0.3)';" class="bg-slate-900/90 border-2 rounded-lg p-2.5 flex flex-col items-center justify-center gap-1.5 hover:bg-slate-800 transition-all group">
+                        <i data-lucide="book-open" style="color: var(--accent-color, #6366f1);" class="w-5 h-5 group-hover:scale-110 transition-transform"></i>
+                        <div class="text-center">
+                            <div class="text-[9px] font-black uppercase leading-tight" style="color: var(--accent-color, #6366f1);">TACTICAL JOURNAL</div>
+                            <div class="text-[6.5px] text-slate-400 uppercase mt-0.5">Daily / Weekly Log</div>
+                        </div>
+                    </button>
+
+                    <!-- 8. MASTER OP-PLAN -->
+                    <button onclick="window.openMasterOpForm ? window.openMasterOpForm() : alert('Master Op-Plan module not loaded.')" class="bg-amber-950/80 border-2 border-amber-500 rounded-lg p-2.5 flex flex-col items-center justify-center gap-1.5 hover:bg-amber-900/90 hover:border-amber-400 transition-all group shadow-[0_0_15px_rgba(245,158,11,0.3)]">
+                        <i data-lucide="map" class="w-5 h-5 text-amber-500 group-hover:scale-110 transition-transform animate-pulse"></i>
+                        <div class="text-center">
+                            <div class="text-[9px] font-black text-amber-400 uppercase leading-tight">OP-PLAN</div>
+                            <div class="text-[6.5px] font-bold text-amber-500/80 uppercase tracking-wider mt-0.5">Mission Command</div>
+                        </div>
+                    </button>
                 </div>
             </div>
 
@@ -221,9 +239,21 @@ window.openWorkstationForm = function(type, rawCardData = null) {
     // Normalize cardData unwrapping if passed from vaultCache / intelVault wrapper
     const cardData = (rawCardData && rawCardData.workstationData) ? rawCardData.workstationData : rawCardData;
 
-    if (type === 'officer') {
+    if (type === 'officer' || type === 'first_responder' || type === 'sitrep') {
         if (typeof window.renderOfficerForm === 'function') {
             window.renderOfficerForm(cardData);
+            return;
+        }
+    }
+    if (type === 'master_op' || type === 'master_op_card' || type === 'op_plan') {
+        if (typeof window.openMasterOpForm === 'function') {
+            window.openMasterOpForm(cardData);
+            return;
+        }
+    }
+    if (type === 'blog' || type === 'intel_report' || type === 'contact') {
+        if (typeof window.reworkBusinessCard === 'function') {
+            window.reworkBusinessCard(cardData);
             return;
         }
     }
@@ -238,10 +268,10 @@ window.openWorkstationForm = function(type, rawCardData = null) {
         headerIcon = 'activity'; headerColor = 'text-red-500'; headerTitle = '9-LINE MEDEVAC / INCIDENT REPORT';
         formFields = `
             <div class="grid grid-cols-2 gap-4">
-                <div><label class="text-[10px] text-gray-500">LINE 1: Location</label><input type="text" id="ws-loc" value="${cardData?.data?.loc || ''}" class="w-full bg-black border border-gray-700 text-white text-xs p-2 rounded"></div>
-                <div><label class="text-[10px] text-gray-500">LINE 2: Frequency/Callsign</label><input type="text" id="ws-freq" value="${cardData?.data?.freq || ''}" class="w-full bg-black border border-gray-700 text-white text-xs p-2 rounded"></div>
-                <div><label class="text-[10px] text-gray-500">LINE 3: Patients by Precedence</label><input type="text" id="ws-prec" value="${cardData?.data?.prec || ''}" class="w-full bg-black border border-gray-700 text-white text-xs p-2 rounded"></div>
-                <div><label class="text-[10px] text-gray-500">LINE 4: Special Equipment</label><input type="text" id="ws-equip" value="${cardData?.data?.equip || ''}" class="w-full bg-black border border-gray-700 text-white text-xs p-2 rounded"></div>
+                <div><label class="text-[10px] text-gray-500">Location</label><input type="text" id="ws-loc" value="${cardData?.data?.loc || ''}" class="w-full bg-black border border-gray-700 text-white text-xs p-2 rounded"></div>
+                <div><label class="text-[10px] text-gray-500">Frequency/Callsign</label><input type="text" id="ws-freq" value="${cardData?.data?.freq || ''}" class="w-full bg-black border border-gray-700 text-white text-xs p-2 rounded"></div>
+                <div><label class="text-[10px] text-gray-500">Patients by Precedence</label><input type="text" id="ws-prec" value="${cardData?.data?.prec || ''}" class="w-full bg-black border border-gray-700 text-white text-xs p-2 rounded"></div>
+                <div><label class="text-[10px] text-gray-500">Special Equipment</label><input type="text" id="ws-equip" value="${cardData?.data?.equip || ''}" class="w-full bg-black border border-gray-700 text-white text-xs p-2 rounded"></div>
                 <div class="col-span-2"><label class="text-[10px] text-gray-500">Incident Details</label><textarea id="ws-details" class="w-full bg-black border border-gray-700 text-white text-xs p-2 rounded h-20">${cardData?.data?.details || ''}</textarea></div>
             </div>`;
     } else if (type === 'scorecard') {
@@ -277,12 +307,32 @@ window.openWorkstationForm = function(type, rawCardData = null) {
                 <div><label class="text-[10px] text-gray-500">Event / Achievement</label><input type="text" id="ws-event" value="${cardData?.data?.event || ''}" class="w-full bg-black border border-gray-700 text-white text-xs p-2 rounded"></div>
                 <div><label class="text-[10px] text-gray-500">Trophy / Summary</label><textarea id="ws-summary" class="w-full bg-black border border-gray-700 text-white text-xs p-2 rounded h-24 placeholder-gray-700" placeholder="1000 yard impact on first round cold bore...">${cardData?.data?.summary || ''}</textarea></div>
             </div>`;
+    } else if (type === 'journal') {
+        headerIcon = 'book-open'; headerColor = 'text-indigo-500'; headerTitle = 'TACTICAL JOURNAL';
+        const dNow = new Date().toLocaleString();
+        formFields = `
+            <div class="grid grid-cols-2 gap-4">
+                <div><label class="text-[10px] text-gray-500">Date & Time</label><input type="text" id="ws-j-date" value="${cardData?.data?.date || dNow}" class="w-full bg-black border border-gray-700 text-white text-xs p-2 rounded"></div>
+                <div>
+                    <label class="text-[10px] text-gray-500">Entry Type</label>
+                    <select id="ws-j-type" class="w-full bg-black border border-gray-700 text-white text-xs p-2 rounded">
+                        <option value="DAILY" ${cardData?.data?.type === 'DAILY' ? 'selected' : ''}>DAILY LOG</option>
+                        <option value="WEEKLY" ${cardData?.data?.type === 'WEEKLY' ? 'selected' : ''}>WEEKLY WRAP-UP</option>
+                        <option value="MONTHLY" ${cardData?.data?.type === 'MONTHLY' ? 'selected' : ''}>MONTHLY REPORT</option>
+                        <option value="AD-HOC" ${cardData?.data?.type === 'AD-HOC' ? 'selected' : ''}>AD-HOC ENTRY</option>
+                    </select>
+                </div>
+                <div class="col-span-2"><label class="text-[10px] text-gray-500">Subject / Title</label><input type="text" id="ws-j-subject" value="${cardData?.data?.subject || ''}" class="w-full bg-black border border-gray-700 text-white text-xs p-2 rounded"></div>
+                <div class="col-span-2"><label class="text-[10px] text-gray-500">Summary (Short)</label><input type="text" id="ws-j-summary" value="${cardData?.data?.summary || ''}" class="w-full bg-black border border-gray-700 text-white text-xs p-2 rounded"></div>
+                <div class="col-span-2"><label class="text-[10px] text-gray-500">Full Entry</label><textarea id="ws-j-entry" class="w-full bg-black border border-gray-700 text-white text-xs p-2 rounded h-32">${cardData?.data?.entry || ''}</textarea></div>
+                <div class="col-span-2"><label class="text-[10px] text-gray-500">Action Items / Follow-ups</label><textarea id="ws-j-action" class="w-full bg-black border border-gray-700 text-white text-xs p-2 rounded h-16">${cardData?.data?.action || ''}</textarea></div>
+            </div>`;
     }
 
     container.innerHTML = `
         <div class="h-full flex flex-col w-full max-w-4xl mx-auto relative overflow-hidden">
             <div class="flex items-center justify-between mb-3 pb-2 border-b border-gray-800 shrink-0 flex-wrap gap-1 bg-slate-950/95 sticky top-0 z-30 pt-1">
-                <button onclick="renderWorkstationMenu()" class="text-gray-400 hover:text-white flex items-center gap-1 text-[10px] uppercase font-bold transition-colors">
+                <button onclick="renderWorkstationMenu()" style="color: var(--accent-color, #38bdf8);" class="hover:brightness-150 flex items-center gap-1 text-[10px] uppercase font-bold transition-all">
                     <i data-lucide="chevron-left" class="w-4 h-4"></i> BACK
                 </button>
                 <div class="flex items-center gap-1.5">
@@ -571,6 +621,7 @@ window.generateWorkstationCompositeCard = async function(type, title, data, atta
             else if (type === 'logistics') accentColor = '#10b981';
             else if (type === 'roster') accentColor = '#3b82f6';
             else if (type === 'bragboard') accentColor = '#a855f7';
+            else if (type === 'journal') accentColor = '#6366f1';
 
             // Background & Border
             ctx.fillStyle = '#090d16';
@@ -618,10 +669,10 @@ window.generateWorkstationCompositeCard = async function(type, title, data, atta
             };
 
             if (type === 'medevac') {
-                drawField('Line 1: Location', data.loc);
-                drawField('Line 2: Freq / Callsign', data.freq);
-                drawField('Line 3: Patients by Precedence', data.prec);
-                drawField('Line 4: Special Equipment', data.equip);
+                drawField('Location', data.loc);
+                drawField('Freq / Callsign', data.freq);
+                drawField('Patients by Precedence', data.prec);
+                drawField('Special Equipment', data.equip);
                 drawField('Incident Details', data.details);
             } else if (type === 'scorecard') {
                 drawField('Match / Stage Name', data.match);
@@ -640,6 +691,13 @@ window.generateWorkstationCompositeCard = async function(type, title, data, atta
             } else if (type === 'bragboard') {
                 drawField('Event / Achievement', data.event);
                 drawField('Trophy Summary', data.summary);
+            } else if (type === 'journal') {
+                drawField('Date & Time', data.date);
+                drawField('Entry Type', data.type);
+                drawField('Subject / Title', data.subject);
+                drawField('Summary', data.summary);
+                drawField('Full Entry', data.entry);
+                drawField('Action Items', data.action);
             }
 
             if (type === 'bragboard') {
@@ -785,6 +843,16 @@ window.saveWorkstationCard = async function(type, id) {
             slot4: document.getElementById('brag-slot-4-data')?.value || ''
         };
         title = "BRAG BOARD: " + (data.event || 'UNTITLED');
+    } else if (type === 'journal') {
+        data = {
+            date: document.getElementById('ws-j-date')?.value || '',
+            type: document.getElementById('ws-j-type')?.value || 'DAILY',
+            subject: document.getElementById('ws-j-subject')?.value || '',
+            summary: document.getElementById('ws-j-summary')?.value || '',
+            entry: document.getElementById('ws-j-entry')?.value || '',
+            action: document.getElementById('ws-j-action')?.value || ''
+        };
+        title = "JOURNAL (" + data.type + "): " + (data.subject || 'UNTITLED');
     }
 
     // Generate full high-contrast composite visual Range Card snapshot combining text fields AND attached photo
@@ -867,13 +935,16 @@ window.deleteWorkstationCard = async function(id) {
     if (!confirm('Are you sure you want to permanently delete this card?')) return;
     
     if (window.TRC_IDB) {
+        // Try deleting as number AND string to cover all bases
         await window.TRC_IDB.delete('workstationLibrary', parseInt(id));
+        await window.TRC_IDB.delete('workstationLibrary', id.toString());
         
         // Also remove from Vault if it exists
         if (typeof vaultCache !== 'undefined') {
             const vaultIdx = vaultCache.findIndex(v => v.type === 'workstation' && v.id == id);
             if (vaultIdx !== -1) {
                 vaultCache.splice(vaultIdx, 1);
+                await window.TRC_IDB.delete('intelVault', parseInt(id));
                 await window.TRC_IDB.delete('intelVault', id.toString());
                 if (typeof refreshVaultGrid === 'function') refreshVaultGrid();
             }

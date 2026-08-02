@@ -1,0 +1,6 @@
+TACTICAL RANGE CARD - ARCHIVE RECIPE
+=======================================
+Version:      v7.27.33
+Timestamp:    2026-07-12 12:36:08
+Source Path:  C:\Users\RalphMccabe\.gemini\antigravity\scratch\TacticalRangeCard-Sandbox
+

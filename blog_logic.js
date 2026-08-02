@@ -164,6 +164,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // Default filter to ALL POSTS when opened
             currentWireCategoryFilter = 'ALL';
             highlightActiveFilterButton('ALL POSTS');
+            if (window._startWireSubscription) window._startWireSubscription();
             await fetchWirePosts();
         });
     }
@@ -176,6 +177,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (mutation.attributeName === 'class') {
                     const isHidden = wirePanel.classList.contains('hidden');
                     if (!isHidden) {
+                        if (window._startWireSubscription) window._startWireSubscription();
                         fetchWirePosts();
                     }
                 }
@@ -205,11 +207,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 const filterText = btn.textContent.trim().toUpperCase();
                 highlightActiveFilterButton(filterText);
                 
-                if (filterText.includes('HOTSPOT')) currentWireCategoryFilter = 'HOTSPOT';
-                else if (filterText.includes('TROPHY')) currentWireCategoryFilter = 'TROPHY';
-                else if (filterText.includes('WARNING')) currentWireCategoryFilter = 'WARNING';
+                if (filterText.includes('HOTSPOT')) currentWireCategoryFilter = 'HOTSPOTS';
+                else if (filterText.includes('TROPHY')) currentWireCategoryFilter = 'TROPHIES';
+                else if (filterText.includes('WARNING')) currentWireCategoryFilter = 'WARNINGS';
                 else if (filterText.includes('GENERAL')) currentWireCategoryFilter = 'GENERAL';
-                else if (filterText.includes('CONTACT')) currentWireCategoryFilter = 'CONTACT';
+                else if (filterText.includes('CONTACT')) currentWireCategoryFilter = 'CONTACTS';
+                else if (filterText.includes('LISTING')) currentWireCategoryFilter = 'LISTINGS';
+                else if (filterText.includes('HUNTING')) currentWireCategoryFilter = 'HUNTING';
+                else if (filterText.includes('FISHING')) currentWireCategoryFilter = 'FISHING';
+                else if (filterText.includes('BUSINESS')) currentWireCategoryFilter = 'BUSINESS';
+                else if (filterText.includes('MISC')) currentWireCategoryFilter = 'MISC';
                 else currentWireCategoryFilter = 'ALL';
 
                 fetchWirePosts();
@@ -217,33 +224,38 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Initial fetch on DOMContentLoaded
-    fetchWirePosts();
-    
-    // Global Wire Realtime Feed Subscription
-    setTimeout(() => {
+
+    // DEFERRED: Initial wire fetch now only runs when panel is opened by the user.
+    // The MutationObserver above (lines 172-185) handles fetching when panel becomes visible.
+    // This prevents the 262KB Supabase call from firing on every page load.
+
+    // Global Wire Realtime Feed Subscription — only start when panel first opens
+    let _wireSubStarted = false;
+    function _startWireSubscription() {
+        if (_wireSubStarted || window.globalWireSubscription) return;
+        _wireSubStarted = true;
         const client = typeof getSupabaseClient === 'function' ? getSupabaseClient() : window.supabaseClient;
-        if (client && !window.globalWireSubscription) {
-            window.globalWireSubscription = client
-                .channel('global-wire-channel')
-                .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'global_wire' }, payload => {
-                    // Update main feed if open
-                    const panel = document.getElementById('panel-global-wire');
-                    if (panel && !panel.classList.contains('hidden') && window.fetchWirePosts) {
-                        window.fetchWirePosts();
+        if (!client) return;
+        window.globalWireSubscription = client
+            .channel('global-wire-channel')
+            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'global_wire' }, payload => {
+                // Update main feed if open
+                const panel = document.getElementById('panel-global-wire');
+                if (panel && !panel.classList.contains('hidden') && window.fetchWirePosts) {
+                    window.fetchWirePosts();
+                }
+                // Also update comm link (live comments) if open
+                if (payload.new && payload.new.category === 'COMM_CHAT' && window.fetchCommLinkFeed) {
+                    const sidebar = document.getElementById('comm-link-sidebar');
+                    if (sidebar && sidebar.style.transform === 'translateX(0px)') {
+                        window.fetchCommLinkFeed();
                     }
-                    
-                    // Also update comm link (live comments) if open
-                    if (payload.new && payload.new.category === 'COMM_CHAT' && window.fetchCommLinkFeed) {
-                        const sidebar = document.getElementById('comm-link-sidebar');
-                        if (sidebar && sidebar.style.transform === 'translateX(0px)') {
-                            window.fetchCommLinkFeed();
-                        }
-                    }
-                })
-                .subscribe();
-        }
-    }, 1000);
+                }
+            })
+            .subscribe();
+    }
+    // Expose so the panel open handlers can trigger the subscription lazily
+    window._startWireSubscription = _startWireSubscription;
 
     // --- 3. Mode Switch (INTEL SITREP vs STANDALONE TRC BUSINESS CARD) ---
     const modeBtnSitrep = document.getElementById('mode-btn-sitrep');
@@ -805,7 +817,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     finalContent = JSON.stringify(payload);
                 }
 
-                const insertedCategory = isStandaloneCard ? 'CONTACT' : (category || 'GENERAL');
+                const insertedCategory = isStandaloneCard ? 'CONTACTS' : (category || 'GENERAL');
 
                 // 4. Insert into Database
                 const { data: insertedData, error: insertError } = await client
@@ -847,7 +859,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 };
 
                 if (!window.vaultCache) window.vaultCache = [];
-                window.vaultCache = window.vaultCache.filter(v => v.id.toString() !== vaultEntry.id.toString());
+                window.vaultCache = window.vaultCache.filter(v => v && v.id && v.id.toString() !== vaultEntry.id.toString() && !(v.content && vaultEntry.content && v.content === vaultEntry.content && v.author === vaultEntry.author));
                 window.vaultCache.unshift(vaultEntry);
 
                 if (window.TRC_IDB) {
@@ -936,10 +948,14 @@ try {
             .order('created_at', { ascending: false })
             .limit(50);
 
-        if (currentWireCategoryFilter === 'CONTACT') {
-            query = query.or('category.ilike.%CONTACT%,content.ilike.%contact%');
-        } else if (currentWireCategoryFilter && currentWireCategoryFilter !== 'ALL') {
-            query = query.ilike('category', `%${currentWireCategoryFilter}%`);
+        if (currentWireCategoryFilter && currentWireCategoryFilter !== 'ALL') {
+            // CONTACTS filter: match both CONTACTS and CONTACT (legacy) posts
+            if (currentWireCategoryFilter === 'CONTACTS') {
+                query = query.or('category.eq.CONTACTS,category.eq.CONTACT');
+            } else {
+                // Use ilike to catch both singular/plural variants in DB (HOTSPOT or HOTSPOTS)
+                query = query.ilike('category', `%${currentWireCategoryFilter.replace(/S$/, '')}%`);
+            }
         }
 
         const { data: posts, error } = await query;
@@ -1142,7 +1158,7 @@ try {
 
                     try {
                         if (!window.vaultCache) window.vaultCache = [];
-                        window.vaultCache = window.vaultCache.filter(v => v.id.toString() !== vaultEntry.id.toString());
+                        window.vaultCache = window.vaultCache.filter(v => v && v.id && v.id.toString() !== vaultEntry.id.toString() && !(v.content && vaultEntry.content && v.content === vaultEntry.content && v.author === vaultEntry.author));
                         window.vaultCache.unshift(vaultEntry);
 
                         if (window.TRC_IDB) {
@@ -1303,7 +1319,7 @@ try {
 let currentBlogBookIndex = 0;
 
 window.updateBlogBookDisplay = function() {
-    const posts = window.fetchedWirePosts || window.vaultCache || [];
+    const posts = window.fetchedWirePosts || [];
     const spreadEl = document.getElementById('blogBookSpread');
     const badgeEl = document.getElementById('blogBookPageBadge');
     const categoryEl = document.getElementById('blogBookCategory');
@@ -1397,7 +1413,7 @@ window.updateBlogBookDisplay = function() {
 };
 
 window.nextBlogBookPage = function() {
-    const posts = window.fetchedWirePosts || window.vaultCache || [];
+    const posts = window.fetchedWirePosts || [];
     if (posts.length === 0) return;
     
     const spreadEl = document.getElementById('blogBookSpread');
@@ -1418,7 +1434,7 @@ window.nextBlogBookPage = function() {
 };
 
 window.prevBlogBookPage = function() {
-    const posts = window.fetchedWirePosts || window.vaultCache || [];
+    const posts = window.fetchedWirePosts || [];
     if (posts.length === 0) return;
     
     const spreadEl = document.getElementById('blogBookSpread');
@@ -1439,7 +1455,7 @@ window.prevBlogBookPage = function() {
 };
 
 window.openBlogWireToActivePost = async function() {
-    const posts = window.fetchedWirePosts || window.vaultCache || [];
+    const posts = window.fetchedWirePosts || [];
     if (!posts || posts.length === 0) {
         const panel = document.getElementById('panel-global-wire');
         if (panel) panel.classList.remove('hidden');

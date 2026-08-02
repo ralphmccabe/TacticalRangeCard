@@ -29,13 +29,6 @@
       "type": "image/jpeg",
       "form_factor": "narrow",
       "label": "Mobile Range Card"
-    },
-    {
-      "src": "Screenshot_13-2-2026_35249_.jpeg",
-      "sizes": "1920x1080",
-      "type": "image/jpeg",
-      "form_factor": "wide",
-      "label": "Desktop Range Card"
     }
   ]
 }
