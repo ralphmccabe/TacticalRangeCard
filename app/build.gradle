@@ -50,7 +50,21 @@ def twaManifest = [
     orientation: 'portrait',
 ]
 
+def localProperties = new Properties()
+def localPropertiesFile = rootProject.file('local.properties')
+if (localPropertiesFile.exists()) {
+    localProperties.load(new FileInputStream(localPropertiesFile))
+}
+
 android {
+    signingConfigs {
+        release {
+            storeFile file("tactical-release-key.keystore")
+            storePassword localProperties['KEYSTORE_PASSWORD']
+            keyAlias "tactical_key"
+            keyPassword localProperties['KEYSTORE_PASSWORD']
+        }
+    }
     compileSdkVersion 36
     namespace "tacticleRangeCardv.io"
     defaultConfig {
@@ -153,6 +167,7 @@ android {
     buildTypes {
         release {
             minifyEnabled true
+            signingConfig signingConfigs.release
         }
     }
     compileOptions {
