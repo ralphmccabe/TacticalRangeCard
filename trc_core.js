@@ -1,4 +1,4 @@
-let geoDistanceUnit = 'YDS';
+﻿let geoDistanceUnit = 'YDS';
 /* 
     TACTICAL RANGE CARD PRO - PRODUCTION CORE v2.1
     SECURITY: AES-256 ENCRYPTED COMMS
@@ -117,7 +117,7 @@ function initializeTacticalDashboard1() {
         return new Promise((resolve, reject) => {
             if (window.html2canvas) { resolve(); return; }
             if (!window.loadScript) { reject(new Error('loadScript not available')); return; }
-            window.loadScript('html2canvas.min.js?v=1.5').then(resolve).catch(reject);
+            window.loadScript('html2canvas.min.js?v=7.27.47').then(resolve).catch(reject);
         });
     };
     window.ensureSupabase = function() {
@@ -4583,7 +4583,7 @@ function initializeTacticalDashboard2() {
                 console.error("Geo Matrix Save Error:", err);
                 try {
                     const fb = buildTacticalGeoCanvas();
-                    const dataUri = fb.toDataURL('image/jpeg', 0.85);
+                    const dataUri = fb.toDataURL('image/jpeg', 0.95);
                     await window.saveIntelSnapshot(label, dataUri, meta);
                     mapSnapBtn.innerHTML = `<i data-lucide="check" class="w-3 h-3 inline-block mr-1"></i> SENT TO VAULT`;
                     if (window.pushTacLog) window.pushTacLog(`GEO INTEL [${label}] SAVED TO VAULT (FALLBACK)`, "SUCCESS");
@@ -5991,7 +5991,7 @@ function initializeTacticalDashboard2() {
             // --- END BURN-IN ---
             
             // Get Base64
-            const shotData = canvas.toDataURL('image/jpeg', 0.85);
+            const shotData = canvas.toDataURL('image/jpeg', 0.95);
             
             // Flash HUD for visceral feedback
             hud.classList.add('bg-white/40');
@@ -7514,6 +7514,8 @@ function initializeTacticalDashboard2() {
         commsChannel = window.supabaseClient.channel(missionId, {
             config: { presence: { key: commsUser.id } }
         });
+        window.commsChannel = commsChannel;
+        window.commsUser = commsUser;
 
           // 1.5 Handle RALLY and SOS
           commsChannel.on('broadcast', { event: 'rally' }, (payload) => {
@@ -8506,7 +8508,7 @@ function initializeTacticalDashboard2() {
                         const canvas = document.createElement('canvas');
                         let width = img.width;
                         let height = img.height;
-                        const MAX_SIZE = 400;
+                        const MAX_SIZE = 1000;
                         if (width > height && width > MAX_SIZE) {
                             height *= MAX_SIZE / width;
                             width = MAX_SIZE;
@@ -8518,10 +8520,30 @@ function initializeTacticalDashboard2() {
                         canvas.height = height;
                         const ctx = canvas.getContext('2d');
                         ctx.drawImage(img, 0, 0, width, height);
-                        const finalBase64 = canvas.toDataURL('image/jpeg', 0.85);
-                        const payloadSize = new Blob([finalBase64]).size;
-                        if (payloadSize > 900000) {
-                            window.pushTacLog("IMAGE ERROR: FILE TOO LARGE AFTER COMPRESSION", "ERROR");
+                        
+                        let quality = 0.85;
+                        let currentWidth = width;
+                        let currentHeight = height;
+                        
+                        let finalBase64 = canvas.toDataURL('image/jpeg', quality);
+                        let payloadSize = new Blob([finalBase64]).size;
+                        
+                        while (payloadSize > 120000 && currentWidth > 300) {
+                            quality -= 0.15;
+                            if (quality < 0.4) {
+                                currentWidth *= 0.8;
+                                currentHeight *= 0.8;
+                                canvas.width = currentWidth;
+                                canvas.height = currentHeight;
+                                ctx.drawImage(img, 0, 0, currentWidth, currentHeight);
+                                quality = 0.75; // reset quality for smaller size
+                            }
+                            finalBase64 = canvas.toDataURL('image/jpeg', quality);
+                            payloadSize = new Blob([finalBase64]).size;
+                        }
+                        
+                        if (payloadSize > 160000) {
+                            window.pushTacLog("IMAGE ERROR: " + Math.round(payloadSize/1024) + "KB EXCEEDS ENCRYPTION LIMIT.", "ERROR");
                             return;
                         }
                         
@@ -9647,7 +9669,7 @@ function initializeTacticalDashboard2() {
                     
                     const canvas = await html2canvas(targetEl, {
                         backgroundColor: '#0f172a', // slate-900
-                        scale: 1.5,
+                        scale: Math.max(window.devicePixelRatio || 2, 2),
                         logging: false,
                         onclone: (clonedDoc) => {
                             // Safely copy all textarea values
@@ -9692,7 +9714,7 @@ function initializeTacticalDashboard2() {
                     targetEl.style.overflow = '';
                     targetEl.classList.add('overflow-y-auto');
                     
-                    const imgData = canvas.toDataURL('image/jpeg', 0.85);
+                    const imgData = canvas.toDataURL('image/jpeg', 0.95);
                     const timestamp = Date.now();
                     const newItem = {
                         id: timestamp,
@@ -10056,12 +10078,15 @@ ${cardImgHtml}
                 // General Intel / First Responder / Workstation / Blog Report Transmission
                 window.pushTacLog("SECURING INTEL FOR TRANSMISSION...", "SYS");
 
-                const compressedImg = await safeImage(item.image, 400, 0.50);
+                const compressedImg = await safeImage(item.image, 1000, 0.80);
                 const itemLabel = item.name || item.label || (item.title ? `WORKSTATION: ${item.title}` : `INTEL REPORT: ${item.category || item.type?.toUpperCase() || 'SNAPSHOT'}`);
                 
                 // Build clean lightweight metadata payload
                 const payloadItem = JSON.parse(JSON.stringify(item));
-                payloadItem.image = compressedImg;
+                delete payloadItem.image; // DO NOT DUPLICATE MAIN IMAGE IN METADATA!
+                if (payloadItem.snapshot) delete payloadItem.snapshot; // Strip duplicate dope card image
+                if (payloadItem.gametagData) delete payloadItem.gametagData.image; // Strip duplicate gametag image
+                if (payloadItem.officerCardData) delete payloadItem.officerCardData.image;
 
                 // Compress heavy nested base64 image duplicates to keep payload under limits for broadcast, but DO NOT delete them!
                 if (payloadItem.data) {
@@ -10088,12 +10113,41 @@ ${cardImgHtml}
 
                 let encryptedImage = "";
                 if (typeof TacticalCrypto !== 'undefined') {
-                    encryptedImage = TacticalCrypto.encrypt({
+                    let cryptoPayload = {
                         message: `[ ${itemLabel} ]`,
                         image: compressedImg,
                         user: userObj,
                         metadata: payloadItem
-                    });
+                    };
+                    encryptedImage = TacticalCrypto.encrypt(cryptoPayload);
+
+                    if (new Blob([encryptedImage]).size > 220000) {
+                        if (payloadItem.data) delete payloadItem.data.scenePhotos;
+                        if (payloadItem.workstationData && payloadItem.workstationData.data) {
+                            delete payloadItem.workstationData.data.scenePhotos;
+                        }
+                        encryptedImage = TacticalCrypto.encrypt(cryptoPayload);
+                    }
+                    
+                    if (new Blob([encryptedImage]).size > 220000) {
+                        if (payloadItem.data) delete payloadItem.data.sketchImage;
+                        if (payloadItem.workstationData && payloadItem.workstationData.data) {
+                            delete payloadItem.workstationData.data.sketchImage;
+                        }
+                        encryptedImage = TacticalCrypto.encrypt(cryptoPayload);
+                    }
+                    
+                    // Emergency main-image shrink if it's STILL too huge
+                    if (new Blob([encryptedImage]).size > 220000) {
+                        const emergencyCompressed = await safeImage(compressedImg, 600, 0.6);
+                        cryptoPayload.image = emergencyCompressed;
+                        encryptedImage = TacticalCrypto.encrypt(cryptoPayload);
+                    }
+                    
+                    if (new Blob([encryptedImage]).size > 250000) {
+                        window.pushTacLog("VAULT CARD ERROR: ENCRYPTED SIZE (" + Math.round(new Blob([encryptedImage]).size/1024) + "KB) EXCEEDS 250KB LIMIT.", "ERROR");
+                        return;
+                    }
 
                     const msgId = Math.random().toString(36).substring(2, 9);
                     if (window.receivedMsgIds) window.receivedMsgIds.add(msgId);
@@ -10816,7 +10870,7 @@ document.getElementById('btn-matrix-to-vault').addEventListener('click', async (
         multiColContainer.remove();
         origTable.style.display = origDisplay;
         
-        const imgData = canvas.toDataURL('image/jpeg', 0.85);
+        const imgData = canvas.toDataURL('image/jpeg', 0.95);
         
         // Formulate a clean intel record name
         const now = new Date();
@@ -10870,7 +10924,7 @@ document.getElementById('btn-weather-to-vault').addEventListener('click', async 
                 }
             }
         });
-        const imgData = canvas.toDataURL('image/jpeg', 0.85);
+        const imgData = canvas.toDataURL('image/jpeg', 0.95);
         
         const now = new Date();
         const mm = String(now.getMonth() + 1).padStart(2, '0');
@@ -10958,7 +11012,7 @@ if (btnBallisticToVault) {
                 }
             });
             
-            const imgData = canvas.toDataURL('image/jpeg', 0.85);
+            const imgData = canvas.toDataURL('image/jpeg', 0.95);
             
             const now = new Date();
             const mm = String(now.getMonth() + 1).padStart(2, '0');
@@ -11103,7 +11157,7 @@ setTimeout(() => {
                         ignoreElements: (element) => element.id === 'geo-toolkit-bar'
                     });
                     
-                    const imgData = canvas.toDataURL('image/jpeg', 0.85);
+                    const imgData = canvas.toDataURL('image/jpeg', 0.95);
                     const now = new Date();
                     const timeStr = `${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}-${String(now.getHours()).padStart(2,'0')}${String(now.getMinutes()).padStart(2,'0')}`;
                     
@@ -11791,7 +11845,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Restore scroll
                 if (scrollParent) scrollParent.scrollTop = originalScrollTop;
                 
-                const imgData = canvas.toDataURL('image/jpeg', 0.85);
+                const imgData = canvas.toDataURL('image/jpeg', 0.95);
                 const timestamp = Date.now();
                 const monthName = monthYearDisplay.innerText;
                 
@@ -12172,11 +12226,11 @@ document.addEventListener('DOMContentLoaded', () => {
         c2DutyStatus.addEventListener('change', (e) => {
             window.myDutyStatus = e.target.value;
             // Force immediate track update
-            if (typeof commsChannel !== 'undefined' && commsChannel && typeof commsUser !== 'undefined') {
-                commsChannel.track({
+            if (window.commsChannel && window.commsUser) {
+                window.commsChannel.track({
                     online_at: new Date().toISOString(),
+                    user: window.commsUser,
                     location: window.myLatestCoords || null,
-                    user: commsUser,
                     distress: window.isDistressActive || false,
                     dutyStatus: window.myDutyStatus
                 }).catch(err => console.warn("C2 status track update failed:", err));
