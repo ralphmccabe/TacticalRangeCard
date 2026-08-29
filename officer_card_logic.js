@@ -105,11 +105,11 @@ window.renderOfficerForm = function(cardData = null) {
             <div class="bg-slate-900/90 border border-slate-800 rounded-lg p-2.5 sm:p-3 mb-3 grid grid-cols-1 sm:grid-cols-4 gap-2.5">
                 <div>
                     <label class="block text-[9px] font-black uppercase text-cyan-400 tracking-wider mb-1">Unit / Callsign</label>
-                    <input type="text" id="officer-unit-callsign" maxlength="20" value="${unitCallsign}" placeholder="OFFICER-104" class="w-full bg-slate-950 border border-slate-700 rounded p-1.5 text-xs text-white uppercase font-bold focus:border-cyan-400 focus:outline-none">
+                    <input type="text" maxlength="20" id="officer-unit-callsign" value="${unitCallsign}" placeholder="OFFICER-104" class="w-full bg-slate-950 border border-slate-700 rounded p-1.5 text-xs text-white uppercase font-bold focus:border-cyan-400 focus:outline-none">
                 </div>
                 <div>
                     <label class="block text-[9px] font-black uppercase text-cyan-400 tracking-wider mb-1">CAD / Incident #</label>
-                    <input type="text" id="officer-cad-number" maxlength="20" value="${cadNumber}" placeholder="e.g. CAD-2026-8912" class="w-full bg-slate-950 border border-slate-700 rounded p-1.5 text-xs text-white uppercase font-mono focus:border-cyan-400 focus:outline-none">
+                    <input type="text" maxlength="20" id="officer-cad-number" value="${cadNumber}" placeholder="e.g. CAD-2026-8912" class="w-full bg-slate-950 border border-slate-700 rounded p-1.5 text-xs text-white uppercase font-mono focus:border-cyan-400 focus:outline-none">
                 </div>
                 <div>
                     <label class="block text-[9px] font-black uppercase text-amber-400 tracking-wider mb-1">Scene Threat Status</label>
@@ -214,15 +214,15 @@ window.renderOfficerForm = function(cardData = null) {
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5 mb-3">
                 <div>
                     <label class="block text-[9px] font-black uppercase text-cyan-400 tracking-wider mb-1">TAC Comms Radio Channel</label>
-                    <input type="text" id="officer-tac-comms" value="${tacComms}" placeholder="LAW TAC 3 / 155.370 MHz" class="w-full bg-slate-900 border border-slate-700 rounded p-1.5 text-xs text-white font-mono focus:border-cyan-400 focus:outline-none">
+                    <input type="text" maxlength="20" id="officer-tac-comms" value="${tacComms}" placeholder="LAW TAC 3 / 155.370 MHz" class="w-full bg-slate-900 border border-slate-700 rounded p-1.5 text-xs text-white font-mono focus:border-cyan-400 focus:outline-none">
                 </div>
                 <div>
                     <label class="block text-[9px] font-black uppercase text-cyan-400 tracking-wider mb-1">Backup Units on Scene</label>
-                    <input type="text" id="officer-backup-units" value="${backupUnits}" placeholder="e.g. K9-2, ENGINE 14, EMS 03" class="w-full bg-slate-900 border border-slate-700 rounded p-1.5 text-xs text-white uppercase focus:border-cyan-400 focus:outline-none">
+                    <input type="text" maxlength="20" id="officer-backup-units" value="${backupUnits}" placeholder="e.g. K9-2, ENGINE 14, EMS 03" class="w-full bg-slate-900 border border-slate-700 rounded p-1.5 text-xs text-white uppercase focus:border-cyan-400 focus:outline-none">
                 </div>
                 <div>
                     <label class="block text-[9px] font-black uppercase text-cyan-400 tracking-wider mb-1">Hospital / EMS Transport</label>
-                    <input type="text" id="officer-ems-hospital" value="${emsHospital}" placeholder="e.g. MEMORIAL ER - UNIT 3" class="w-full bg-slate-900 border border-slate-700 rounded p-1.5 text-xs text-white uppercase focus:border-cyan-400 focus:outline-none">
+                    <input type="text" maxlength="20" id="officer-ems-hospital" value="${emsHospital}" placeholder="e.g. MEMORIAL ER - UNIT 3" class="w-full bg-slate-900 border border-slate-700 rounded p-1.5 text-xs text-white uppercase focus:border-cyan-400 focus:outline-none">
                 </div>
             </div>
 
@@ -231,7 +231,7 @@ window.renderOfficerForm = function(cardData = null) {
                     <label class="block text-[9px] font-black uppercase text-cyan-400 tracking-wider">Master SITREP Summary & Observations</label>
                     <span id="officer-incident-notes-counter" class="text-[9px] font-mono text-slate-500">${incidentNotes.length} / 1000</span>
                 </div>
-                <textarea id="officer-incident-notes" maxlength="1000" oninput="document.getElementById('officer-incident-notes-counter').textContent = this.value.length + ' / 1000'" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-xs text-slate-100 placeholder:text-slate-500 h-16 focus:border-cyan-400 focus:outline-none custom-scrollbar" placeholder="Enter incident summary, suspect flight path, witness remarks, or initial investigation findings...">${incidentNotes}</textarea>
+                <textarea maxlength="1000" id="officer-incident-notes" oninput="document.getElementById('officer-incident-notes-counter').textContent = this.value.length + ' / 1000'" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-xs text-slate-100 placeholder:text-slate-500 h-16 focus:border-cyan-400 focus:outline-none custom-scrollbar" placeholder="Enter incident summary, suspect flight path, witness remarks, or initial investigation findings...">${incidentNotes}</textarea>
             </div>
 
             <!-- ACTION PIPELINE BUTTONS -->
@@ -356,22 +356,22 @@ window.renderOfficerPartyRows = function() {
 
             <div>
                 <span class="text-[8px] text-slate-400 font-bold uppercase block">Full Name / Alias</span>
-                <input type="text" maxlength="20" value="${p.name || ''}" onchange="window.updateOfficerParty(${idx}, 'name', this.value)" placeholder="Name" class="w-full bg-slate-900 border border-slate-700 rounded p-1 text-[10px] text-white uppercase">
+                <input type="text" id="off-pty-name-${idx}" name="off-pty-name-${idx}" aria-label="Party Name" maxlength="20" value="${p.name || ''}" onchange="window.updateOfficerParty(${idx}, 'name', this.value)" placeholder="Name" class="w-full bg-slate-900 border border-slate-700 rounded p-1 text-[10px] text-white uppercase">
             </div>
 
             <div>
                 <span class="text-[8px] text-slate-400 font-bold uppercase block">Phone / Contact</span>
-                <input type="text" maxlength="20" value="${p.phone || ''}" onchange="window.updateOfficerParty(${idx}, 'phone', this.value)" placeholder="Phone" class="w-full bg-slate-900 border border-slate-700 rounded p-1 text-[10px] text-white">
+                <input type="text" id="off-pty-phone-${idx}" name="off-pty-phone-${idx}" aria-label="Party Phone" maxlength="20" value="${p.phone || ''}" onchange="window.updateOfficerParty(${idx}, 'phone', this.value)" placeholder="Phone" class="w-full bg-slate-900 border border-slate-700 rounded p-1 text-[10px] text-white">
             </div>
 
             <div>
                 <span class="text-[8px] text-slate-400 font-bold uppercase block">DL # / State</span>
-                <input type="text" maxlength="20" value="${p.license || ''}" onchange="window.updateOfficerParty(${idx}, 'license', this.value)" placeholder="DL Number" class="w-full bg-slate-900 border border-slate-700 rounded p-1 text-[10px] text-white uppercase font-mono">
+                <input type="text" id="off-pty-license-${idx}" name="off-pty-license-${idx}" aria-label="Party DL Number" maxlength="20" value="${p.license || ''}" onchange="window.updateOfficerParty(${idx}, 'license', this.value)" placeholder="DL Number" class="w-full bg-slate-900 border border-slate-700 rounded p-1 text-[10px] text-white uppercase font-mono">
             </div>
 
             <div>
                 <span class="text-[8px] text-slate-400 font-bold uppercase block">Vehicle & Plate</span>
-                <input type="text" maxlength="20" value="${p.vehicle || ''}" onchange="window.updateOfficerParty(${idx}, 'vehicle', this.value)" placeholder="Make/Model/Plate" class="w-full bg-slate-900 border border-slate-700 rounded p-1 text-[10px] text-white uppercase">
+                <input type="text" id="off-pty-vehicle-${idx}" name="off-pty-vehicle-${idx}" aria-label="Party Vehicle" maxlength="20" value="${p.vehicle || ''}" onchange="window.updateOfficerParty(${idx}, 'vehicle', this.value)" placeholder="Make/Model/Plate" class="w-full bg-slate-900 border border-slate-700 rounded p-1 text-[10px] text-white uppercase">
             </div>
 
             <div class="flex items-center justify-between gap-1">
@@ -440,15 +440,15 @@ window.renderOfficerFirstAidRows = function() {
             </div>
             <div>
                 <label class="block text-[8px] font-black uppercase text-pink-400/80 tracking-wider mb-0.5">Patient Name / Tag ID</label>
-                <input type="text" value="${p.faName}" onchange="window.updateOfficerFirstAid(${idx}, 'faName', this.value)" placeholder="e.g. Officer Smith" class="w-full bg-slate-900 border border-slate-700 rounded p-1 text-[10px] text-white font-mono">
+                <input type="text" id="off-fa-name-${idx}" name="off-fa-name-${idx}" aria-label="First Aid Provider Name" maxlength="20" value="${p.faName}" onchange="window.updateOfficerFirstAid(${idx}, 'faName', this.value)" placeholder="e.g. Officer Smith" class="w-full bg-slate-900 border border-slate-700 rounded p-1 text-[10px] text-white font-mono">
             </div>
             <div class="sm:col-span-2">
                 <label class="block text-[8px] font-black uppercase text-pink-400/80 tracking-wider mb-0.5">Chief Complaint & Vitals (HR/RR/Temp)</label>
-                <input type="text" value="${p.faVitals}" onchange="window.updateOfficerFirstAid(${idx}, 'faVitals', this.value)" placeholder="e.g. GSW Right Leg" class="w-full bg-slate-900 border border-slate-700 rounded p-1 text-[10px] text-white">
+                <input type="text" id="off-fa-vitals-${idx}" name="off-fa-vitals-${idx}" aria-label="First Aid Injury Details" maxlength="20" value="${p.faVitals}" onchange="window.updateOfficerFirstAid(${idx}, 'faVitals', this.value)" placeholder="e.g. GSW Right Leg" class="w-full bg-slate-900 border border-slate-700 rounded p-1 text-[10px] text-white">
             </div>
             <div class="sm:col-span-2">
                 <label class="block text-[8px] font-black uppercase text-pink-400/80 tracking-wider mb-0.5">Treatment / Meds Given / Tourniquet</label>
-                <textarea onchange="window.updateOfficerFirstAid(${idx}, 'faTreatment', this.value)" class="w-full bg-slate-900 border border-slate-700 rounded p-1 text-[10px] text-white h-12 custom-scrollbar">${p.faTreatment}</textarea>
+                <textarea maxlength="1000" onchange="window.updateOfficerFirstAid(${idx}, 'faTreatment', this.value)" class="w-full bg-slate-900 border border-slate-700 rounded p-1 text-[10px] text-white h-12 custom-scrollbar">${p.faTreatment}</textarea>
             </div>
             <div class="sm:col-span-2">
                 <label class="block text-[8px] font-black uppercase text-pink-400/80 tracking-wider mb-0.5">Evacuation Status</label>
@@ -1176,3 +1176,5 @@ window.generateOfficerCardHTML = function(card) {
         </div>
     `;
 };
+
+

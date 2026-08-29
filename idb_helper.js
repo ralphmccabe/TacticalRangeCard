@@ -5,7 +5,7 @@
  */
 
 const DB_NAME = 'TRC_PRO_UPGRADE_DB';
-const DB_VERSION = 9; // v9: Added workstationLibrary store
+const DB_VERSION = 10; // v10: Ensure workstationLibrary store is created for all users
 const STORES = {
     PROFILES: 'rangeCardProfiles',
     VAULT: 'intelVault',

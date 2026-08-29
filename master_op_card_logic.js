@@ -66,15 +66,15 @@ window.openMasterOpForm = function(cardData = null) {
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
                         <div class="sm:col-span-2">
                             <label class="block text-[9px] font-black uppercase text-amber-500/80 tracking-wider mb-1">Operation / Mission Name</label>
-                            <input type="text" id="mop-opname" value="${opName}" placeholder="e.g. Operation Trident or Saturday Hunt" class="w-full bg-slate-950 border border-slate-700 rounded p-1.5 text-xs text-white uppercase font-bold focus:border-amber-500 focus:outline-none">
+                            <input type="text" maxlength="20" id="mop-opname" value="${opName}" placeholder="e.g. Operation Trident or Saturday Hunt" class="w-full bg-slate-950 border border-slate-700 rounded p-1.5 text-xs text-white uppercase font-bold focus:border-amber-500 focus:outline-none">
                         </div>
                         <div>
                             <label class="block text-[9px] font-black uppercase text-amber-500/80 tracking-wider mb-1">Date & Time</label>
-                            <input type="text" id="mop-date" value="${dateStr}" class="w-full bg-slate-950 border border-slate-700 rounded p-1.5 text-xs text-white font-mono focus:border-amber-500 focus:outline-none">
+                            <input type="text" maxlength="20" id="mop-date" value="${dateStr}" class="w-full bg-slate-950 border border-slate-700 rounded p-1.5 text-xs text-white font-mono focus:border-amber-500 focus:outline-none">
                         </div>
                         <div class="sm:col-span-3">
                             <label class="block text-[9px] font-black uppercase text-amber-500/80 tracking-wider mb-1">Area of Operations (Location)</label>
-                            <input type="text" id="mop-location" value="${location}" placeholder="e.g. Sector 4 / Grid 123456" class="w-full bg-slate-950 border border-slate-700 rounded p-1.5 text-xs text-white uppercase focus:border-amber-500 focus:outline-none">
+                            <input type="text" maxlength="20" id="mop-location" value="${location}" placeholder="e.g. Sector 4 / Grid 123456" class="w-full bg-slate-950 border border-slate-700 rounded p-1.5 text-xs text-white uppercase focus:border-amber-500 focus:outline-none">
                         </div>
                     </div>
                 </div>
@@ -88,11 +88,11 @@ window.openMasterOpForm = function(cardData = null) {
                         <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400"></i>
                     </button>
                     <div id="mop-sec-opord" class="p-3 space-y-3 ${isNew ? '' : 'hidden'}">
-                        <div><label class="block text-[9px] font-black uppercase text-emerald-400/80 tracking-wider mb-1">Situation (Weather/Tide/Suspects)</label><textarea id="mop-sit" class="w-full bg-slate-950 border border-slate-700 rounded p-1.5 text-xs text-white h-12 custom-scrollbar focus:border-emerald-500 focus:outline-none">${sit}</textarea></div>
-                        <div><label class="block text-[9px] font-black uppercase text-emerald-400/80 tracking-wider mb-1">Mission (Target Species/Objective)</label><textarea id="mop-mis" class="w-full bg-slate-950 border border-slate-700 rounded p-1.5 text-xs text-white h-12 custom-scrollbar focus:border-emerald-500 focus:outline-none">${mis}</textarea></div>
-                        <div><label class="block text-[9px] font-black uppercase text-emerald-400/80 tracking-wider mb-1">Execution (Plan of Action)</label><textarea id="mop-exe" class="w-full bg-slate-950 border border-slate-700 rounded p-1.5 text-xs text-white h-12 custom-scrollbar focus:border-emerald-500 focus:outline-none">${exe}</textarea></div>
-                        <div><label class="block text-[9px] font-black uppercase text-emerald-400/80 tracking-wider mb-1">Administration & Logistics (Gear/Food)</label><textarea id="mop-adm" class="w-full bg-slate-950 border border-slate-700 rounded p-1.5 text-xs text-white h-12 custom-scrollbar focus:border-emerald-500 focus:outline-none">${adm}</textarea></div>
-                        <div><label class="block text-[9px] font-black uppercase text-emerald-400/80 tracking-wider mb-1">Command & Signal (Leadership)</label><textarea id="mop-cmd" class="w-full bg-slate-950 border border-slate-700 rounded p-1.5 text-xs text-white h-12 custom-scrollbar focus:border-emerald-500 focus:outline-none">${cmd}</textarea></div>
+                        <div><div class="flex justify-between w-full mb-1"><label class="block text-[9px] font-black uppercase text-emerald-400/80 tracking-wider mb-1" style="margin-bottom:0">Situation (Weather/Tide/Suspects)</label><span class="text-[8px] font-mono text-white/50" id="mop-sit-counter">0 / 1000</span></div><textarea maxlength="1000" id="mop-sit" oninput="document.getElementById('mop-sit-counter').textContent = this.value.length + ' / 1000'" class="w-full bg-slate-950 border border-slate-700 rounded p-1.5 text-xs text-white h-12 custom-scrollbar focus:border-emerald-500 focus:outline-none">${sit}</textarea></div>
+                        <div><div class="flex justify-between w-full mb-1"><label class="block text-[9px] font-black uppercase text-emerald-400/80 tracking-wider mb-1" style="margin-bottom:0">Mission (Target Species/Objective)</label><span class="text-[8px] font-mono text-white/50" id="mop-mis-counter">0 / 1000</span></div><textarea maxlength="1000" id="mop-mis" oninput="document.getElementById('mop-mis-counter').textContent = this.value.length + ' / 1000'" class="w-full bg-slate-950 border border-slate-700 rounded p-1.5 text-xs text-white h-12 custom-scrollbar focus:border-emerald-500 focus:outline-none">${mis}</textarea></div>
+                        <div><div class="flex justify-between w-full mb-1"><label class="block text-[9px] font-black uppercase text-emerald-400/80 tracking-wider mb-1" style="margin-bottom:0">Execution (Plan of Action)</label><span class="text-[8px] font-mono text-white/50" id="mop-exe-counter">0 / 1000</span></div><textarea maxlength="1000" id="mop-exe" oninput="document.getElementById('mop-exe-counter').textContent = this.value.length + ' / 1000'" class="w-full bg-slate-950 border border-slate-700 rounded p-1.5 text-xs text-white h-12 custom-scrollbar focus:border-emerald-500 focus:outline-none">${exe}</textarea></div>
+                        <div><div class="flex justify-between w-full mb-1"><label class="block text-[9px] font-black uppercase text-emerald-400/80 tracking-wider mb-1" style="margin-bottom:0">Administration & Logistics (Gear/Food)</label><span class="text-[8px] font-mono text-white/50" id="mop-adm-counter">0 / 1000</span></div><textarea maxlength="1000" id="mop-adm" oninput="document.getElementById('mop-adm-counter').textContent = this.value.length + ' / 1000'" class="w-full bg-slate-950 border border-slate-700 rounded p-1.5 text-xs text-white h-12 custom-scrollbar focus:border-emerald-500 focus:outline-none">${adm}</textarea></div>
+                        <div><div class="flex justify-between w-full mb-1"><label class="block text-[9px] font-black uppercase text-emerald-400/80 tracking-wider mb-1" style="margin-bottom:0">Command & Signal (Leadership)</label><span class="text-[8px] font-mono text-white/50" id="mop-cmd-counter">0 / 1000</span></div><textarea maxlength="1000" id="mop-cmd" oninput="document.getElementById('mop-cmd-counter').textContent = this.value.length + ' / 1000'" class="w-full bg-slate-950 border border-slate-700 rounded p-1.5 text-xs text-white h-12 custom-scrollbar focus:border-emerald-500 focus:outline-none">${cmd}</textarea></div>
                     </div>
                 </div>
 
@@ -105,10 +105,10 @@ window.openMasterOpForm = function(cardData = null) {
                         <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400"></i>
                     </button>
                     <div id="mop-sec-pace" class="p-3 grid grid-cols-1 sm:grid-cols-2 gap-3 hidden">
-                        <div><label class="block text-[9px] font-black uppercase text-blue-400/80 tracking-wider mb-1">Primary (P)</label><input type="text" id="mop-pace-pri" value="${pacePri}" class="w-full bg-slate-950 border border-slate-700 rounded p-1.5 text-xs text-white font-mono focus:border-blue-500 focus:outline-none" placeholder="VHF Ch 1"></div>
-                        <div><label class="block text-[9px] font-black uppercase text-blue-400/80 tracking-wider mb-1">Alternate (A)</label><input type="text" id="mop-pace-alt" value="${paceAlt}" class="w-full bg-slate-950 border border-slate-700 rounded p-1.5 text-xs text-white font-mono focus:border-blue-500 focus:outline-none" placeholder="UHF Ch 3"></div>
-                        <div><label class="block text-[9px] font-black uppercase text-blue-400/80 tracking-wider mb-1">Contingency (C)</label><input type="text" id="mop-pace-con" value="${paceCon}" class="w-full bg-slate-950 border border-slate-700 rounded p-1.5 text-xs text-white font-mono focus:border-blue-500 focus:outline-none" placeholder="Cell Phone"></div>
-                        <div><label class="block text-[9px] font-black uppercase text-blue-400/80 tracking-wider mb-1">Emergency (E)</label><input type="text" id="mop-pace-emg" value="${paceEmg}" class="w-full bg-slate-950 border border-slate-700 rounded p-1.5 text-xs text-white font-mono focus:border-blue-500 focus:outline-none" placeholder="Sat Phone / Flare"></div>
+                        <div><label class="block text-[9px] font-black uppercase text-blue-400/80 tracking-wider mb-1">Primary (P)</label><input type="text" maxlength="20" id="mop-pace-pri" value="${pacePri}" class="w-full bg-slate-950 border border-slate-700 rounded p-1.5 text-xs text-white font-mono focus:border-blue-500 focus:outline-none" placeholder="VHF Ch 1"></div>
+                        <div><label class="block text-[9px] font-black uppercase text-blue-400/80 tracking-wider mb-1">Alternate (A)</label><input type="text" maxlength="20" id="mop-pace-alt" value="${paceAlt}" class="w-full bg-slate-950 border border-slate-700 rounded p-1.5 text-xs text-white font-mono focus:border-blue-500 focus:outline-none" placeholder="UHF Ch 3"></div>
+                        <div><label class="block text-[9px] font-black uppercase text-blue-400/80 tracking-wider mb-1">Contingency (C)</label><input type="text" maxlength="20" id="mop-pace-con" value="${paceCon}" class="w-full bg-slate-950 border border-slate-700 rounded p-1.5 text-xs text-white font-mono focus:border-blue-500 focus:outline-none" placeholder="Cell Phone"></div>
+                        <div><label class="block text-[9px] font-black uppercase text-blue-400/80 tracking-wider mb-1">Emergency (E)</label><input type="text" maxlength="20" id="mop-pace-emg" value="${paceEmg}" class="w-full bg-slate-950 border border-slate-700 rounded p-1.5 text-xs text-white font-mono focus:border-blue-500 focus:outline-none" placeholder="Sat Phone / Flare"></div>
                     </div>
                 </div>
 
@@ -121,9 +121,9 @@ window.openMasterOpForm = function(cardData = null) {
                         <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400"></i>
                     </button>
                     <div id="mop-sec-range" class="p-3 grid grid-cols-1 sm:grid-cols-2 gap-3 hidden">
-                        <div class="sm:col-span-2"><label class="block text-[9px] font-black uppercase text-red-500/80 tracking-wider mb-1">Left / Right Limits of Fire</label><input type="text" id="mop-rc-limits" value="${rcLimits}" class="w-full bg-slate-950 border border-slate-700 rounded p-1.5 text-xs text-white focus:border-red-500 focus:outline-none" placeholder="Left: Big Oak, Right: Creek"></div>
-                        <div class="sm:col-span-2"><label class="block text-[9px] font-black uppercase text-red-500/80 tracking-wider mb-1">Target Reference Points (TRPs / Distances)</label><textarea id="mop-rc-trps" class="w-full bg-slate-950 border border-slate-700 rounded p-1.5 text-xs text-white h-12 custom-scrollbar focus:border-red-500 focus:outline-none" placeholder="TRP1: 400yds (Bunker), TRP2: 800yds (Hill)">${rcTrps}</textarea></div>
-                        <div class="sm:col-span-2"><label class="block text-[9px] font-black uppercase text-red-500/80 tracking-wider mb-1">Windage / Elevation Notes</label><input type="text" id="mop-rc-notes" value="${rcNotes}" class="w-full bg-slate-950 border border-slate-700 rounded p-1.5 text-xs text-white focus:border-red-500 focus:outline-none" placeholder="Wind 10mph 3-o-clock"></div>
+                        <div class="sm:col-span-2"><label class="block text-[9px] font-black uppercase text-red-500/80 tracking-wider mb-1">Left / Right Limits of Fire</label><input type="text" maxlength="20" id="mop-rc-limits" value="${rcLimits}" class="w-full bg-slate-950 border border-slate-700 rounded p-1.5 text-xs text-white focus:border-red-500 focus:outline-none" placeholder="Left: Big Oak, Right: Creek"></div>
+                        <div class="sm:col-span-2"><div class="flex justify-between w-full mb-1"><label class="block text-[9px] font-black uppercase text-red-500/80 tracking-wider mb-1" style="margin-bottom:0">Target Reference Points (TRPs / Distances)</label><span class="text-[8px] font-mono text-white/50" id="mop-rc-trps-counter">0 / 1000</span></div><textarea maxlength="1000" id="mop-rc-trps" oninput="document.getElementById('mop-rc-trps-counter').textContent = this.value.length + ' / 1000'" class="w-full bg-slate-950 border border-slate-700 rounded p-1.5 text-xs text-white h-12 custom-scrollbar focus:border-red-500 focus:outline-none" placeholder="TRP1: 400yds (Bunker), TRP2: 800yds (Hill)">${rcTrps}</textarea></div>
+                        <div class="sm:col-span-2"><label class="block text-[9px] font-black uppercase text-red-500/80 tracking-wider mb-1">Windage / Elevation Notes</label><input type="text" maxlength="20" id="mop-rc-notes" value="${rcNotes}" class="w-full bg-slate-950 border border-slate-700 rounded p-1.5 text-xs text-white focus:border-red-500 focus:outline-none" placeholder="Wind 10mph 3-o-clock"></div>
                     </div>
                 </div>
 
@@ -136,10 +136,10 @@ window.openMasterOpForm = function(cardData = null) {
                         <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400"></i>
                     </button>
                     <div id="mop-sec-pmcs" class="p-3 grid grid-cols-1 sm:grid-cols-3 gap-3 hidden">
-                        <div><label class="block text-[9px] font-black uppercase text-purple-400/80 tracking-wider mb-1">Vehicle / Asset ID</label><input type="text" id="mop-veh-id" value="${vehId}" class="w-full bg-slate-950 border border-slate-700 rounded p-1.5 text-xs text-white focus:border-purple-500 focus:outline-none" placeholder="BearCat 1 / Boat 4"></div>
-                        <div><label class="block text-[9px] font-black uppercase text-purple-400/80 tracking-wider mb-1">Fuel / Battery Status</label><input type="text" id="mop-veh-fuel" value="${vehFuel}" class="w-full bg-slate-950 border border-slate-700 rounded p-1.5 text-xs text-white focus:border-purple-500 focus:outline-none" placeholder="Full / 100%"></div>
-                        <div><label class="block text-[9px] font-black uppercase text-purple-400/80 tracking-wider mb-1">Start / End Mileage</label><input type="text" id="mop-veh-miles" value="${vehMiles}" class="w-full bg-slate-950 border border-slate-700 rounded p-1.5 text-xs text-white focus:border-purple-500 focus:outline-none" placeholder="54,000"></div>
-                        <div class="sm:col-span-3"><label class="block text-[9px] font-black uppercase text-purple-400/80 tracking-wider mb-1">Damage / Maintenance Issues</label><input type="text" id="mop-veh-dam" value="${vehDam}" class="w-full bg-slate-950 border border-slate-700 rounded p-1.5 text-xs text-white focus:border-purple-500 focus:outline-none" placeholder="None observed"></div>
+                        <div><label class="block text-[9px] font-black uppercase text-purple-400/80 tracking-wider mb-1">Vehicle / Asset ID</label><input type="text" maxlength="20" id="mop-veh-id" value="${vehId}" class="w-full bg-slate-950 border border-slate-700 rounded p-1.5 text-xs text-white focus:border-purple-500 focus:outline-none" placeholder="BearCat 1 / Boat 4"></div>
+                        <div><label class="block text-[9px] font-black uppercase text-purple-400/80 tracking-wider mb-1">Fuel / Battery Status</label><input type="text" maxlength="20" id="mop-veh-fuel" value="${vehFuel}" class="w-full bg-slate-950 border border-slate-700 rounded p-1.5 text-xs text-white focus:border-purple-500 focus:outline-none" placeholder="Full / 100%"></div>
+                        <div><label class="block text-[9px] font-black uppercase text-purple-400/80 tracking-wider mb-1">Start / End Mileage</label><input type="text" maxlength="20" id="mop-veh-miles" value="${vehMiles}" class="w-full bg-slate-950 border border-slate-700 rounded p-1.5 text-xs text-white focus:border-purple-500 focus:outline-none" placeholder="54,000"></div>
+                        <div class="sm:col-span-3"><label class="block text-[9px] font-black uppercase text-purple-400/80 tracking-wider mb-1">Damage / Maintenance Issues</label><input type="text" maxlength="20" id="mop-veh-dam" value="${vehDam}" class="w-full bg-slate-950 border border-slate-700 rounded p-1.5 text-xs text-white focus:border-purple-500 focus:outline-none" placeholder="None observed"></div>
                     </div>
                 </div>
 
@@ -168,8 +168,8 @@ window.openMasterOpForm = function(cardData = null) {
                         <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400"></i>
                     </button>
                     <div id="mop-sec-aar" class="p-3 grid grid-cols-1 sm:grid-cols-2 gap-3 hidden">
-                        <div><label class="block text-[9px] font-black uppercase text-amber-500/80 tracking-wider mb-1">Sustains (What went right)</label><textarea id="mop-aar-sus" class="w-full bg-slate-950 border border-slate-700 rounded p-1.5 text-xs text-white h-20 custom-scrollbar focus:border-amber-500 focus:outline-none" placeholder="Comms were clear, fast insert.">${aarSus}</textarea></div>
-                        <div><label class="block text-[9px] font-black uppercase text-amber-500/80 tracking-wider mb-1">Improves (What went wrong)</label><textarea id="mop-aar-imp" class="w-full bg-slate-950 border border-slate-700 rounded p-1.5 text-xs text-white h-20 custom-scrollbar focus:border-amber-500 focus:outline-none" placeholder="Vehicle got stuck, need better recon.">${aarImp}</textarea></div>
+                        <div><div class="flex justify-between w-full mb-1"><label class="block text-[9px] font-black uppercase text-amber-500/80 tracking-wider mb-1" style="margin-bottom:0">Sustains (What went right)</label><span class="text-[8px] font-mono text-white/50" id="mop-aar-sus-counter">0 / 1000</span></div><textarea maxlength="1000" id="mop-aar-sus" oninput="document.getElementById('mop-aar-sus-counter').textContent = this.value.length + ' / 1000'" class="w-full bg-slate-950 border border-slate-700 rounded p-1.5 text-xs text-white h-20 custom-scrollbar focus:border-amber-500 focus:outline-none" placeholder="Comms were clear, fast insert.">${aarSus}</textarea></div>
+                        <div><div class="flex justify-between w-full mb-1"><label class="block text-[9px] font-black uppercase text-amber-500/80 tracking-wider mb-1" style="margin-bottom:0">Improves (What went wrong)</label><span class="text-[8px] font-mono text-white/50" id="mop-aar-imp-counter">0 / 1000</span></div><textarea maxlength="1000" id="mop-aar-imp" oninput="document.getElementById('mop-aar-imp-counter').textContent = this.value.length + ' / 1000'" class="w-full bg-slate-950 border border-slate-700 rounded p-1.5 text-xs text-white h-20 custom-scrollbar focus:border-amber-500 focus:outline-none" placeholder="Vehicle got stuck, need better recon.">${aarImp}</textarea></div>
                     </div>
                 </div>
 
@@ -205,8 +205,8 @@ window.renderMasterOpChecklistRows = function() {
 
     container.innerHTML = masterOpChecklist.map((c, idx) => `
         <div class="bg-slate-950 border border-slate-800 rounded p-1.5 flex items-center gap-2">
-            <input type="checkbox" ${c.done ? 'checked' : ''} onchange="window.updateMasterOpChecklist(${idx}, 'done', this.checked)" class="w-4 h-4 rounded bg-slate-900 border-slate-700 text-cyan-500 focus:ring-cyan-500 focus:ring-offset-slate-950">
-            <input type="text" value="${c.text}" onchange="window.updateMasterOpChecklist(${idx}, 'text', this.value)" class="flex-1 bg-transparent border-none text-xs text-white focus:outline-none focus:ring-0 ${c.done ? 'line-through text-slate-500' : ''}" placeholder="e.g. Check NODs batteries">
+            <input type="checkbox" id="mop-chk-done-${idx}" name="mop-chk-done-${idx}" aria-label="Toggle checklist item" ${c.done ? 'checked' : ''} onchange="window.updateMasterOpChecklist(${idx}, 'done', this.checked)" class="w-4 h-4 rounded bg-slate-900 border-slate-700 text-cyan-500 focus:ring-cyan-500 focus:ring-offset-slate-950">
+            <input type="text" id="mop-chk-text-${idx}" name="mop-chk-text-${idx}" aria-label="Checklist item text" maxlength="20" value="${c.text}" onchange="window.updateMasterOpChecklist(${idx}, 'text', this.value)" class="flex-1 bg-transparent border-none text-xs text-white focus:outline-none focus:ring-0 ${c.done ? 'line-through text-slate-500' : ''}" placeholder="e.g. Check NODs batteries">
             <button type="button" onclick="window.removeMasterOpChecklistRow(${idx})" class="w-6 h-6 flex items-center justify-center bg-slate-900 text-red-500 rounded hover:bg-slate-800">
                 <i data-lucide="x" class="w-3.5 h-3.5"></i>
             </button>
@@ -401,11 +401,11 @@ window.saveMasterOpToVault = async function(id) {
         try {
             const canvas = await html2canvas(tempDiv, {
                 backgroundColor: '#020617',
-                scale: 2.0, // Scale 2.0 for HD crystal clear text and diagram rendering
+                scale: 1.5,
                 logging: false,
                 useCORS: true
             });
-            cardImageSnapshot = canvas.toDataURL('image/jpeg', 0.90);
+            cardImageSnapshot = canvas.toDataURL('image/jpeg', 0.75);
         } catch(e) {
             console.error("Html2Canvas failed for Master Op card snapshot", e);
         }
@@ -460,9 +460,11 @@ window.blogMasterOpToWire = async function(id) {
 
     // 2. Fetch the raw card data
     const cardData = window.collectMasterOpData(id);
-    let vault = [];
-    try { vault = await TRC_IDB.get('workstationLibrary') || []; } catch(e){}
-    const savedCard = vault.find(v => v.id === id);
+    let savedCard = null;
+    try { savedCard = await TRC_IDB.get('workstationLibrary', id); } catch(e){}
+    if (!savedCard) {
+        try { savedCard = await TRC_IDB.get('workstationLibrary', id.toString()); } catch(e){}
+    }
     if (!savedCard || !savedCard.image) {
         alert("Could not locate snapshot image. Save to vault first.");
         return;
@@ -594,3 +596,6 @@ window.compressBase64Image = function(base64Str, maxWidth = 800, quality = 0.7) 
         };
     });
 };
+
+
+

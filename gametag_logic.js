@@ -486,7 +486,7 @@ if (gametagToVaultBtnTop) {
             renderZone.style.zIndex = '999999';
             document.body.appendChild(renderZone);
             
-            await new Promise(r => setTimeout(r, 600));
+            await new Promise(r => setTimeout(r, 150));
             
             if (!window.html2canvas) {
                 if (typeof window.ensureHtml2Canvas === 'function') {
@@ -502,24 +502,28 @@ if (gametagToVaultBtnTop) {
 
             const html2canvasPromise = window.html2canvas(renderZone, {
                 backgroundColor: '#3E4A35',
-                scale: 2, 
+                scale: 1.5, 
                 logging: false,
                 useCORS: true,
                 allowTaint: true
             });
             const timeoutPromise = new Promise((_, reject) => 
-                setTimeout(() => reject(new Error('html2canvas render timed out')), 4000)
+                setTimeout(() => reject(new Error('html2canvas render timed out')), 10000)
             );
             
             const canvas = await Promise.race([html2canvasPromise, timeoutPromise]);
             
-            const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.75);
             
             if (window.saveIntelSnapshot) {
+                // Strip heavy image from gametagData — snapshot already has the visual
+                const tagLite = { ...tag };
+                delete tagLite.image;
+                
                 await window.saveIntelSnapshot('HARVEST: ' + speciesVal.innerText, dataUrl, {
                     type: 'gametag-card',
                     isAmmo: false,
-                    gametagData: tag
+                    gametagData: tagLite
                 });
                 
                 if (window.showToast) window.showToast("✅ Field Tag Saved to Intel Vault!");

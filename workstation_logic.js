@@ -121,7 +121,7 @@ window.renderWorkstationMenu = async function() {
 
                     savedCardsHtml += `
                         <div class="bg-slate-950/90 border border-slate-800 rounded-lg p-2 flex flex-row items-center gap-2.5 hover:border-cyan-500/50 transition-colors group relative shadow-sm shrink-0">
-                            <input type="checkbox" class="ws-library-checkbox w-4 h-4 rounded bg-slate-900 border-slate-600 text-purple-600 focus:ring-purple-600 cursor-pointer shrink-0" value="${card.id}" onchange="window.checkWsCheckboxes()">
+                            <input type="checkbox" id="ws-lib-chk-${card.id}" name="ws-lib-chk-${card.id}" aria-label="Select Workstation Card" class="ws-library-checkbox w-4 h-4 rounded bg-slate-900 border-slate-600 text-purple-600 focus:ring-purple-600 cursor-pointer shrink-0" value="${card.id}" onchange="window.checkWsCheckboxes()">
                             ${thumbHtml}
                             <div class="flex-1 min-w-0 cursor-pointer" onclick="loadWorkstationCard('${card.id}')">
                                 <div class="flex items-center gap-1 mb-0.5">
@@ -268,51 +268,51 @@ window.openWorkstationForm = function(type, rawCardData = null) {
         headerIcon = 'activity'; headerColor = 'text-red-500'; headerTitle = '9-LINE MEDEVAC / INCIDENT REPORT';
         formFields = `
             <div class="grid grid-cols-2 gap-4">
-                <div><label class="text-[10px] text-gray-500">Location</label><input type="text" id="ws-loc" value="${cardData?.data?.loc || ''}" class="w-full bg-black border border-gray-700 text-white text-xs p-2 rounded"></div>
-                <div><label class="text-[10px] text-gray-500">Frequency/Callsign</label><input type="text" id="ws-freq" value="${cardData?.data?.freq || ''}" class="w-full bg-black border border-gray-700 text-white text-xs p-2 rounded"></div>
-                <div><label class="text-[10px] text-gray-500">Patients by Precedence</label><input type="text" id="ws-prec" value="${cardData?.data?.prec || ''}" class="w-full bg-black border border-gray-700 text-white text-xs p-2 rounded"></div>
-                <div><label class="text-[10px] text-gray-500">Special Equipment</label><input type="text" id="ws-equip" value="${cardData?.data?.equip || ''}" class="w-full bg-black border border-gray-700 text-white text-xs p-2 rounded"></div>
-                <div class="col-span-2"><label class="text-[10px] text-gray-500">Incident Details</label><textarea id="ws-details" class="w-full bg-black border border-gray-700 text-white text-xs p-2 rounded h-20">${cardData?.data?.details || ''}</textarea></div>
+                <div><label class="text-[10px] text-gray-500">Location</label><input type="text" maxlength="20" id="ws-loc" value="${cardData?.data?.loc || ''}" class="w-full bg-black border border-gray-700 text-white text-xs p-2 rounded"></div>
+                <div><label class="text-[10px] text-gray-500">Frequency/Callsign</label><input type="text" maxlength="20" id="ws-freq" value="${cardData?.data?.freq || ''}" class="w-full bg-black border border-gray-700 text-white text-xs p-2 rounded"></div>
+                <div><label class="text-[10px] text-gray-500">Patients by Precedence</label><input type="text" maxlength="20" id="ws-prec" value="${cardData?.data?.prec || ''}" class="w-full bg-black border border-gray-700 text-white text-xs p-2 rounded"></div>
+                <div><label class="text-[10px] text-gray-500">Special Equipment</label><input type="text" maxlength="20" id="ws-equip" value="${cardData?.data?.equip || ''}" class="w-full bg-black border border-gray-700 text-white text-xs p-2 rounded"></div>
+                <div class="col-span-2"><div class="flex justify-between w-full"><label class="text-[10px] text-gray-500">Incident Details</label><span class="text-[10px] text-gray-500" id="ws-details-counter">0 / 1000</span></div><textarea maxlength="1000" id="ws-details" oninput="document.getElementById('ws-details-counter').textContent = this.value.length + ' / 1000'" class="w-full bg-black border border-gray-700 text-white text-xs p-2 rounded h-20">${cardData?.data?.details || ''}</textarea></div>
             </div>`;
     } else if (type === 'scorecard') {
         headerIcon = 'crosshair'; headerColor = 'text-yellow-500'; headerTitle = 'COMPETITION SCORECARD';
         formFields = `
             <div class="grid grid-cols-2 gap-4">
-                <div><label class="text-[10px] text-gray-500">Match/Stage Name</label><input type="text" id="ws-match" value="${cardData?.data?.match || ''}" class="w-full bg-black border border-gray-700 text-white text-xs p-2 rounded"></div>
-                <div><label class="text-[10px] text-gray-500">Total Time</label><input type="text" id="ws-time" value="${cardData?.data?.time || ''}" class="w-full bg-black border border-gray-700 text-white text-xs p-2 rounded"></div>
-                <div><label class="text-[10px] text-gray-500">Hits / Points</label><input type="text" id="ws-hits" value="${cardData?.data?.hits || ''}" class="w-full bg-black border border-gray-700 text-white text-xs p-2 rounded"></div>
-                <div><label class="text-[10px] text-gray-500">Penalties</label><input type="text" id="ws-penalties" value="${cardData?.data?.penalties || ''}" class="w-full bg-black border border-gray-700 text-white text-xs p-2 rounded"></div>
-                <div class="col-span-2"><label class="text-[10px] text-gray-500">Stage Notes / Takeaways</label><textarea id="ws-notes" class="w-full bg-black border border-gray-700 text-white text-xs p-2 rounded h-20">${cardData?.data?.notes || ''}</textarea></div>
+                <div><label class="text-[10px] text-gray-500">Match/Stage Name</label><input type="text" maxlength="20" id="ws-match" value="${cardData?.data?.match || ''}" class="w-full bg-black border border-gray-700 text-white text-xs p-2 rounded"></div>
+                <div><label class="text-[10px] text-gray-500">Total Time</label><input type="text" maxlength="20" id="ws-time" value="${cardData?.data?.time || ''}" class="w-full bg-black border border-gray-700 text-white text-xs p-2 rounded"></div>
+                <div><label class="text-[10px] text-gray-500">Hits / Points</label><input type="text" maxlength="20" id="ws-hits" value="${cardData?.data?.hits || ''}" class="w-full bg-black border border-gray-700 text-white text-xs p-2 rounded"></div>
+                <div><label class="text-[10px] text-gray-500">Penalties</label><input type="text" maxlength="20" id="ws-penalties" value="${cardData?.data?.penalties || ''}" class="w-full bg-black border border-gray-700 text-white text-xs p-2 rounded"></div>
+                <div class="col-span-2"><div class="flex justify-between w-full"><label class="text-[10px] text-gray-500">Stage Notes / Takeaways</label><span class="text-[10px] text-gray-500" id="ws-notes-counter">0 / 1000</span></div><textarea maxlength="1000" id="ws-notes" oninput="document.getElementById('ws-notes-counter').textContent = this.value.length + ' / 1000'" class="w-full bg-black border border-gray-700 text-white text-xs p-2 rounded h-20">${cardData?.data?.notes || ''}</textarea></div>
             </div>`;
     } else if (type === 'logistics') {
         headerIcon = 'clipboard-list'; headerColor = 'text-emerald-500'; headerTitle = 'LOGISTICS & EXPENSES';
         formFields = `
             <div class="grid grid-cols-2 gap-4">
-                <div><label class="text-[10px] text-gray-500">Ammo Expended</label><input type="text" id="ws-ammo" value="${cardData?.data?.ammo || ''}" class="w-full bg-black border border-gray-700 text-white text-xs p-2 rounded"></div>
-                <div><label class="text-[10px] text-gray-500">Gear Damaged/Lost</label><input type="text" id="ws-gear" value="${cardData?.data?.gear || ''}" class="w-full bg-black border border-gray-700 text-white text-xs p-2 rounded"></div>
-                <div><label class="text-[10px] text-gray-500">Total Cost Estimate</label><input type="text" id="ws-cost" value="${cardData?.data?.cost || ''}" class="w-full bg-black border border-gray-700 text-white text-xs p-2 rounded"></div>
-                <div><label class="text-[10px] text-gray-500">Resupply Needed</label><input type="text" id="ws-resupply" value="${cardData?.data?.resupply || ''}" class="w-full bg-black border border-gray-700 text-white text-xs p-2 rounded"></div>
+                <div><label class="text-[10px] text-gray-500">Ammo Expended</label><input type="text" maxlength="20" id="ws-ammo" value="${cardData?.data?.ammo || ''}" class="w-full bg-black border border-gray-700 text-white text-xs p-2 rounded"></div>
+                <div><label class="text-[10px] text-gray-500">Gear Damaged/Lost</label><input type="text" maxlength="20" id="ws-gear" value="${cardData?.data?.gear || ''}" class="w-full bg-black border border-gray-700 text-white text-xs p-2 rounded"></div>
+                <div><label class="text-[10px] text-gray-500">Total Cost Estimate</label><input type="text" maxlength="20" id="ws-cost" value="${cardData?.data?.cost || ''}" class="w-full bg-black border border-gray-700 text-white text-xs p-2 rounded"></div>
+                <div><label class="text-[10px] text-gray-500">Resupply Needed</label><input type="text" maxlength="20" id="ws-resupply" value="${cardData?.data?.resupply || ''}" class="w-full bg-black border border-gray-700 text-white text-xs p-2 rounded"></div>
             </div>`;
     } else if (type === 'roster') {
         headerIcon = 'users'; headerColor = 'text-blue-500'; headerTitle = 'SQUAD ACCOUNTABILITY ROSTER';
         formFields = `
             <div class="grid grid-cols-1 gap-4">
-                <div><label class="text-[10px] text-gray-500">Squad / Element Name</label><input type="text" id="ws-squad" value="${cardData?.data?.squad || ''}" class="w-full bg-black border border-gray-700 text-white text-xs p-2 rounded"></div>
-                <div><label class="text-[10px] text-gray-500">Personnel Status (Present, Missing, WIA)</label><textarea id="ws-personnel" class="w-full bg-black border border-gray-700 text-white text-xs p-2 rounded h-24 placeholder-gray-700" placeholder="Alpha 1: Green&#10;Bravo 2: Green">${cardData?.data?.personnel || ''}</textarea></div>
+                <div><label class="text-[10px] text-gray-500">Squad / Element Name</label><input type="text" maxlength="20" id="ws-squad" value="${cardData?.data?.squad || ''}" class="w-full bg-black border border-gray-700 text-white text-xs p-2 rounded"></div>
+                <div><div class="flex justify-between w-full"><label class="text-[10px] text-gray-500">Personnel Status (Present, Missing, WIA)</label><span class="text-[10px] text-gray-500" id="ws-personnel-counter">0 / 1000</span></div><textarea maxlength="1000" id="ws-personnel" oninput="document.getElementById('ws-personnel-counter').textContent = this.value.length + ' / 1000'" class="w-full bg-black border border-gray-700 text-white text-xs p-2 rounded h-24 placeholder-gray-700" placeholder="Alpha 1: Green&#10;Bravo 2: Green">${cardData?.data?.personnel || ''}</textarea></div>
             </div>`;
     } else if (type === 'bragboard') {
         headerIcon = 'camera'; headerColor = 'text-purple-500'; headerTitle = 'MEDIA / BRAG BOARD';
         formFields = `
             <div class="grid grid-cols-1 gap-4">
-                <div><label class="text-[10px] text-gray-500">Event / Achievement</label><input type="text" id="ws-event" value="${cardData?.data?.event || ''}" class="w-full bg-black border border-gray-700 text-white text-xs p-2 rounded"></div>
-                <div><label class="text-[10px] text-gray-500">Trophy / Summary</label><textarea id="ws-summary" class="w-full bg-black border border-gray-700 text-white text-xs p-2 rounded h-24 placeholder-gray-700" placeholder="1000 yard impact on first round cold bore...">${cardData?.data?.summary || ''}</textarea></div>
+                <div><label class="text-[10px] text-gray-500">Event / Achievement</label><input type="text" maxlength="20" id="ws-event" value="${cardData?.data?.event || ''}" class="w-full bg-black border border-gray-700 text-white text-xs p-2 rounded"></div>
+                <div><div class="flex justify-between w-full"><label class="text-[10px] text-gray-500">Trophy / Summary</label><span class="text-[10px] text-gray-500" id="ws-summary-counter">0 / 1000</span></div><textarea maxlength="1000" id="ws-summary" oninput="document.getElementById('ws-summary-counter').textContent = this.value.length + ' / 1000'" class="w-full bg-black border border-gray-700 text-white text-xs p-2 rounded h-24 placeholder-gray-700" placeholder="1000 yard impact on first round cold bore...">${cardData?.data?.summary || ''}</textarea></div>
             </div>`;
     } else if (type === 'journal') {
         headerIcon = 'book-open'; headerColor = 'text-indigo-500'; headerTitle = 'TACTICAL JOURNAL';
         const dNow = new Date().toLocaleString();
         formFields = `
             <div class="grid grid-cols-2 gap-4">
-                <div><label class="text-[10px] text-gray-500">Date & Time</label><input type="text" id="ws-j-date" value="${cardData?.data?.date || dNow}" class="w-full bg-black border border-gray-700 text-white text-xs p-2 rounded"></div>
+                <div><label class="text-[10px] text-gray-500">Date & Time</label><input type="text" maxlength="20" id="ws-j-date" value="${cardData?.data?.date || dNow}" class="w-full bg-black border border-gray-700 text-white text-xs p-2 rounded"></div>
                 <div>
                     <label class="text-[10px] text-gray-500">Entry Type</label>
                     <select id="ws-j-type" class="w-full bg-black border border-gray-700 text-white text-xs p-2 rounded">
@@ -322,10 +322,10 @@ window.openWorkstationForm = function(type, rawCardData = null) {
                         <option value="AD-HOC" ${cardData?.data?.type === 'AD-HOC' ? 'selected' : ''}>AD-HOC ENTRY</option>
                     </select>
                 </div>
-                <div class="col-span-2"><label class="text-[10px] text-gray-500">Subject / Title</label><input type="text" id="ws-j-subject" value="${cardData?.data?.subject || ''}" class="w-full bg-black border border-gray-700 text-white text-xs p-2 rounded"></div>
-                <div class="col-span-2"><label class="text-[10px] text-gray-500">Summary (Short)</label><input type="text" id="ws-j-summary" value="${cardData?.data?.summary || ''}" class="w-full bg-black border border-gray-700 text-white text-xs p-2 rounded"></div>
-                <div class="col-span-2"><label class="text-[10px] text-gray-500">Full Entry</label><textarea id="ws-j-entry" class="w-full bg-black border border-gray-700 text-white text-xs p-2 rounded h-32">${cardData?.data?.entry || ''}</textarea></div>
-                <div class="col-span-2"><label class="text-[10px] text-gray-500">Action Items / Follow-ups</label><textarea id="ws-j-action" class="w-full bg-black border border-gray-700 text-white text-xs p-2 rounded h-16">${cardData?.data?.action || ''}</textarea></div>
+                <div class="col-span-2"><label class="text-[10px] text-gray-500">Subject / Title</label><input type="text" maxlength="20" id="ws-j-subject" value="${cardData?.data?.subject || ''}" class="w-full bg-black border border-gray-700 text-white text-xs p-2 rounded"></div>
+                <div class="col-span-2"><label class="text-[10px] text-gray-500">Summary (Short)</label><input type="text" maxlength="20" id="ws-j-summary" value="${cardData?.data?.summary || ''}" class="w-full bg-black border border-gray-700 text-white text-xs p-2 rounded"></div>
+                <div class="col-span-2"><div class="flex justify-between w-full"><label class="text-[10px] text-gray-500">Full Entry</label><span class="text-[10px] text-gray-500" id="ws-j-entry-counter">0 / 1000</span></div><textarea maxlength="1000" id="ws-j-entry" oninput="document.getElementById('ws-j-entry-counter').textContent = this.value.length + ' / 1000'" class="w-full bg-black border border-gray-700 text-white text-xs p-2 rounded h-32">${cardData?.data?.entry || ''}</textarea></div>
+                <div class="col-span-2"><div class="flex justify-between w-full"><label class="text-[10px] text-gray-500">Action Items / Follow-ups</label><span class="text-[10px] text-gray-500" id="ws-j-action-counter">0 / 1000</span></div><textarea maxlength="1000" id="ws-j-action" oninput="document.getElementById('ws-j-action-counter').textContent = this.value.length + ' / 1000'" class="w-full bg-black border border-gray-700 text-white text-xs p-2 rounded h-16">${cardData?.data?.action || ''}</textarea></div>
             </div>`;
     }
 
@@ -368,7 +368,7 @@ window.openWorkstationForm = function(type, rawCardData = null) {
                                         </button>
                                         <label class="flex-1 bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-200 text-[8px] font-black py-1 px-1.5 rounded uppercase flex items-center justify-center gap-1 cursor-pointer">
                                             <i data-lucide="camera" class="w-3 h-3 text-slate-300"></i> UPLOAD
-                                            <input type="file" accept="image/*" class="hidden" onchange="window.handleBragFileUpload(${num}, event)">
+                                            <input type="file" id="brag-file-${num}" name="brag-file-${num}" aria-label="Upload Brag Board Image" accept="image/*" class="hidden" onchange="window.handleBragFileUpload(${num}, event)">
                                         </label>
                                         <button type="button" onclick="window.clearBragSlot(${num})" class="bg-red-950 hover:bg-red-900 border border-red-800 text-red-400 text-[8px] font-black p-1 rounded cursor-pointer" title="Clear Slot ${num}">
                                             <i data-lucide="x" class="w-3 h-3"></i>
@@ -1058,7 +1058,7 @@ window.openBragBoardStudio = async function() {
 
                     <!-- User Summary Input Overlay -->
                     <div class="mt-3">
-                        <textarea id="brag-board-summary-input" class="w-full bg-black/50 border border-gray-800 rounded text-xs text-gray-300 p-3 h-24 focus:border-purple-500 focus:outline-none transition-colors placeholder-gray-700" placeholder="Type your AAR, notes, or master summary here..."></textarea>
+                        <div class="flex justify-between items-center mb-1"><span class="text-[9px] text-gray-500 font-bold uppercase tracking-wider">AAR / NOTES</span><span class="text-[9px] text-gray-500 font-mono" id="brag-board-summary-counter">0 / 1000</span></div><textarea maxlength="1000" id="brag-board-summary-input" oninput="document.getElementById('brag-board-summary-counter').textContent = this.value.length + ' / 1000'" class="w-full bg-black/50 border border-gray-800 rounded text-xs text-gray-300 p-3 h-24 focus:border-purple-500 focus:outline-none transition-colors placeholder-gray-700" placeholder="Type your AAR, notes, or master summary here..."></textarea>
                     </div>
                 </div>
             </div>
@@ -1144,3 +1144,6 @@ window.saveBragBoardToVault = async function() {
         alert("Html2canvas is not loaded. Cannot snapshot Brag Board.");
     }
 };
+
+
+

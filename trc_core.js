@@ -1,4 +1,4 @@
-﻿let geoDistanceUnit = 'YDS';
+let geoDistanceUnit = 'YDS';
 /* 
     TACTICAL RANGE CARD PRO - PRODUCTION CORE v2.1
     SECURITY: AES-256 ENCRYPTED COMMS
@@ -2592,7 +2592,7 @@ function initializeTacticalDashboard2() {
             document.body.classList.add('is-capturing');
 
             setTimeout(() => {
-                const scale = Math.max(window.devicePixelRatio || 2, 2);
+                const scale = Math.min(Math.max(window.devicePixelRatio || 1.5, 1.5), 1.5);
                 html2canvas(container, {
                     scale: scale,
                     backgroundColor: '#ffffff',
@@ -5020,7 +5020,8 @@ function initializeTacticalDashboard2() {
                 imgContent = `<i data-lucide="video" class="w-12 h-12 text-purple-500 opacity-80 pointer-events-none"></i>`;
             } else if (attachedPhoto) {
                 imgContent = `
-                    <div style="background-image: url('${attachedPhoto}'); background-size: contain; background-repeat: no-repeat; background-position: center; background-color: #030712; width: 100%; height: 100%;" class="opacity-95 group-hover:opacity-100 transition-all pointer-events-none relative">
+                    <div style="background-color: #030712; width: 100%; height: 100%; position: relative;" class="opacity-95 group-hover:opacity-100 transition-all pointer-events-none flex items-center justify-center">
+                        <img src="${attachedPhoto}" loading="lazy" decoding="async" style="max-width:100%; max-height:100%; object-fit:contain;" class="pointer-events-none" alt="">
                         ${isContact ? `
                         <div class="absolute top-1 left-1 bg-purple-950/90 text-purple-300 border border-purple-500/60 px-1 py-0.5 rounded text-[6px] font-black uppercase tracking-wider shadow z-10">
                             TRC OPERATOR
@@ -5182,6 +5183,14 @@ function initializeTacticalDashboard2() {
 
         if (isVideo) {
             mediaHtml = `<i data-lucide="video" class="w-20 h-20 text-purple-500 opacity-80"></i>`;
+        } else if (item.type === 'officer_sitrep' || item.workstationData?.type === 'officer' || item.type === 'workstation') {
+            // For officer and workstation cards, if we have a snapshot, just show the visual card!
+            // This prevents the raw HTML from overflowing and getting cropped in the small Window #4
+            if (item.image) {
+                mediaHtml = `<img src="${item.image}" class="w-full h-full object-contain">`;
+            } else {
+                mediaHtml = `<div class="flex items-center justify-center w-full h-full text-slate-500 font-mono text-[10px]">NO VISUAL SNAPSHOT</div>`;
+            }
         } else if (isContactCard) {
             const c = item.contact || {};
             const imgColHtml = item.image ? `
@@ -5216,72 +5225,6 @@ function initializeTacticalDashboard2() {
                             ` : ''}
                         </div>
                         ${item.content ? `<div class="mt-2.5 p-2 bg-slate-900 border border-slate-800 rounded text-xs font-mono text-slate-200 text-left whitespace-pre-wrap">${item.content}</div>` : ''}
-                    </div>
-                </div>
-            `;
-        } else if (item.type === 'officer_sitrep' || item.workstationData?.type === 'officer') {
-            if (typeof window.generateOfficerCardHTML === 'function') {
-                mediaHtml = window.generateOfficerCardHTML(item.workstationData || item);
-            } else {
-                mediaHtml = `<img src="${item.image}" class="w-full h-full object-contain">`;
-            }
-        } else if (item.type === 'workstation') {
-            let formDataHtml = '';
-            const d = item.workstationData?.data || {};
-            if (item.workstationData?.type === 'medevac') {
-                formDataHtml = `
-                    <div class="text-[10px] text-gray-400 mb-1">LINE 1: <span class="text-white">${d.loc || 'N/A'}</span></div>
-                    <div class="text-[10px] text-gray-400 mb-1">LINE 2: <span class="text-white">${d.freq || 'N/A'}</span></div>
-                    <div class="text-[10px] text-gray-400 mb-1">LINE 3: <span class="text-white">${d.prec || 'N/A'}</span></div>
-                    <div class="text-[10px] text-gray-400 mb-1">LINE 4: <span class="text-white">${d.equip || 'N/A'}</span></div>
-                    <div class="text-[10px] text-gray-400 mt-2 font-bold">DETAILS:</div>
-                    <div class="text-[10px] text-gray-300 italic whitespace-pre-wrap">${d.details || 'None'}</div>
-                `;
-            } else if (item.workstationData?.type === 'scorecard') {
-                formDataHtml = `
-                    <div class="text-[10px] text-gray-400 mb-1">MATCH: <span class="text-white">${d.match || 'N/A'}</span></div>
-                    <div class="text-[10px] text-gray-400 mb-1">TIME: <span class="text-white">${d.time || 'N/A'}</span></div>
-                    <div class="text-[10px] text-gray-400 mb-1">HITS: <span class="text-white">${d.hits || 'N/A'}</span></div>
-                    <div class="text-[10px] text-gray-400 mb-1">PENALTIES: <span class="text-white">${d.penalties || 'N/A'}</span></div>
-                    <div class="text-[10px] text-gray-400 mt-2 font-bold">NOTES:</div>
-                    <div class="text-[10px] text-gray-300 italic whitespace-pre-wrap">${d.notes || 'None'}</div>
-                `;
-            } else if (item.workstationData?.type === 'logistics') {
-                formDataHtml = `
-                    <div class="text-[10px] text-gray-400 mb-1">AMMO EXPENDED: <span class="text-white">${d.ammo || 'N/A'}</span></div>
-                    <div class="text-[10px] text-gray-400 mb-1">GEAR DAMAGED: <span class="text-white">${d.gear || 'N/A'}</span></div>
-                    <div class="text-[10px] text-gray-400 mb-1">TOTAL COST: <span class="text-white">${d.cost || 'N/A'}</span></div>
-                    <div class="text-[10px] text-gray-400 mb-1">RESUPPLY NEEDED: <span class="text-white">${d.resupply || 'N/A'}</span></div>
-                `;
-            } else if (item.workstationData?.type === 'roster') {
-                formDataHtml = `
-                    <div class="text-[10px] text-gray-400 mb-1">SQUAD NAME: <span class="text-white">${d.squad || 'N/A'}</span></div>
-                    <div class="text-[10px] text-gray-400 mt-2 font-bold">PERSONNEL STATUS:</div>
-                    <div class="text-[10px] text-gray-300 italic whitespace-pre-wrap">${d.personnel || 'None'}</div>
-                `;
-            } else if (item.workstationData?.type === 'bragboard') {
-                formDataHtml = `
-                    <div class="text-[10px] text-gray-400 mb-1">EVENT: <span class="text-white">${d.event || 'N/A'}</span></div>
-                    <div class="text-[10px] text-gray-400 mt-2 font-bold">SUMMARY:</div>
-                    <div class="text-[10px] text-gray-300 italic whitespace-pre-wrap">${d.summary || 'None'}</div>
-                `;
-            }
-
-            let leftColHtml = item.image 
-                ? `<img src="${item.image}" class="w-full h-full object-contain">`
-                : `<div class="flex items-center justify-center w-full h-full"><i data-lucide="monitor" class="w-20 h-20 text-blue-500 opacity-50"></i></div>`;
-
-            mediaHtml = `
-                <div class="flex w-full h-full">
-                    <div class="w-1/2 h-full border-r border-gray-800 bg-black flex items-center justify-center relative">
-                        ${leftColHtml}
-                    </div>
-                    <div class="w-1/2 h-full bg-gray-900 overflow-y-auto p-4 custom-scrollbar flex flex-col justify-center text-left">
-                        <div class="flex items-center gap-2 mb-4 pb-2 border-b border-gray-700">
-                            <i data-lucide="monitor" class="w-4 h-4 text-emerald-500"></i>
-                            <h3 class="text-xs font-black text-white uppercase tracking-widest">${item.label || 'WORKSTATION DATA'}</h3>
-                        </div>
-                        ${formDataHtml}
                     </div>
                 </div>
             `;
@@ -10767,9 +10710,9 @@ document.getElementById('btn-generate-matrix').addEventListener('click', () => {
         
         // Harvest results from the DOM updates
         const elev = document.getElementById('sol-elev-mil')?.textContent || '0.00';
-        const elevDir = document.getElementById('sol-elev-dir')?.textContent || 'U';
+        const elevDir = document.getElementById('sol-elev-label-code')?.textContent || 'U';
         const wind = document.getElementById('sol-wind-mil')?.textContent || '0.00';
-        const windDir = document.getElementById('sol-wind-dir')?.textContent || 'R';
+        const windDir = document.getElementById('sol-wind-label-code')?.textContent || 'R';
         const vel = document.getElementById('sol-vel')?.textContent || '0';
         const energy = document.getElementById('sol-energy')?.textContent || '0';
         
@@ -12275,3 +12218,28 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 });
+
+
+// GLOBAL FIX: Force Android software keyboards to respect HTML maxlength
+document.addEventListener('input', function(e) {
+    if (e.target.tagName === 'INPUT' && e.target.type === 'text' && e.target.hasAttribute('maxlength')) {
+        const max = parseInt(e.target.getAttribute('maxlength'));
+        if (e.target.value.length > max) {
+            e.target.value = e.target.value.slice(0, max);
+        }
+    }
+});
+
+
+// GLOBAL FIX: Prevent html2canvas memory leaks on mobile devices
+const originalToDataURL = HTMLCanvasElement.prototype.toDataURL;
+HTMLCanvasElement.prototype.toDataURL = function() {
+    const result = originalToDataURL.apply(this, arguments);
+    if (!document.body.contains(this)) {
+        setTimeout(() => {
+            this.width = 0;
+            this.height = 0;
+        }, 5000);
+    }
+    return result;
+};

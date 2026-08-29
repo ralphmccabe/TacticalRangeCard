@@ -1,29 +1,30 @@
-/* TRC-VERSION - v7.27.47 */
-const CACHE_NAME = 'trc-v7.27.47';
+/* TRC-VERSION - v7.27.47.1 */
+const CACHE_NAME = 'trc-v7.27.47.2';
 const ASSETS = [
     './',
-    './index.html?v=7.27.43',
+    './index.html?v=7.27.47.1',
     './style.css?v=117',
-    './trc_core.js?v=7.27.43',
-    './blog_logic.js?v=7.27.43',
+    './trc_core.js?v=7.27.47.1',
+    './blog_logic.js?v=7.27.47.1',
     './manifest.json',
     './icon-512.png',
     './icon-192.png',
     './splash-page.jpg',
-    './workstation_logic.js?v=7.27.43',
-    './officer_card_logic.js?v=7.27.43',
-    './gametag_logic.js?v=7.27.43',
-    './bolo_logic.js?v=7.27.43',
-    './license_logic.js?v=7.27.43',
+    './workstation_logic.js?v=7.27.47.1',
+    './officer_card_logic.js?v=7.27.47.1',
+    './gametag_logic.js?v=7.27.47.1',
+    './bolo_logic.js?v=7.27.47.1',
+    './license_logic.js?v=7.27.47.1',
     './tailwind.css?v=1.1',
     './lucide.min.js?v=1.5',
     './html2canvas.min.js?v=1.5',
     './idb_helper.js?v=1.6',
     './lib/supabase.min.js',
-    './master_op_card_logic.js?v=7.27.43'
+    './master_op_card_logic.js?v=7.27.47.1'
 ];
 
 self.addEventListener('install', event => {
+    self.skipWaiting();
     event.waitUntil(
         caches.open(CACHE_NAME).then(cache => {
             console.log('[SW] Caching New Version:', CACHE_NAME);
@@ -107,6 +108,11 @@ self.addEventListener('fetch', event => {
         })
     );
 });
+
+
+
+
+
 
 
 

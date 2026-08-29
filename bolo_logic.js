@@ -670,22 +670,22 @@ window.exportBoloToVault = async function(bolo, btnElement = null) {
             throw new Error('html2canvas library not loaded');
         }
 
-        await new Promise(r => setTimeout(r, 600));
+        await new Promise(r => setTimeout(r, 150));
         const bgColor = isPerson ? '#080808' : '#1a1a1a';
         
         const html2canvasPromise = window.html2canvas(renderZone, {
             backgroundColor: bgColor,
-            scale: 2,
+            scale: 1.5,
             logging: false,
             useCORS: true,
             allowTaint: true
         });
         const timeoutPromise = new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('html2canvas render timed out')), 4000)
+            setTimeout(() => reject(new Error('html2canvas render timed out')), 10000)
         );
         
         const canvas = await Promise.race([html2canvasPromise, timeoutPromise]);
-        const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.75);
         if(window.saveIntelSnapshot) {
             const label = isPerson ? 'BOLO: ' + (bolo.name || 'UNKNOWN SUSPECT')
                                    : 'ANIMAL BOLO: ' + (bolo.species || 'UNKNOWN').toUpperCase();
@@ -693,6 +693,10 @@ window.exportBoloToVault = async function(bolo, btnElement = null) {
             // Build the entry object
             const activeDistEl = document.getElementById('live-map-dist');
             const activeDist = (activeDistEl && activeDistEl.textContent !== "--.--") ? activeDistEl.textContent : null;
+            // Strip heavy image from boloData — snapshot already has the visual
+            const boloLite = { ...bolo };
+            delete boloLite.image;
+            
             newVaultEntry = {
                 id: Date.now(),
                 label: label,
@@ -701,7 +705,7 @@ window.exportBoloToVault = async function(bolo, btnElement = null) {
                 distance: activeDist,
                 type: 'bolo-card',
                 isAmmo: false,
-                boloData: bolo
+                boloData: boloLite
             };
             
             window.vaultCache.unshift(newVaultEntry);

@@ -402,27 +402,31 @@ if (licenseToVaultBtnTop) {
                 throw new Error('html2canvas library not loaded');
             }
 
-            await new Promise(r => setTimeout(r, 600)); // Increased wait time for mobile image paint
+            await new Promise(r => setTimeout(r, 150));
             
             const html2canvasPromise = window.html2canvas(renderZone, {
                 backgroundColor: typeBgColors[lic.type] || '#162b12',
-                scale:   2,
+                scale:   1.5,
                 logging: false,
                 useCORS: true,
                 allowTaint: true
             });
             const timeoutPromise = new Promise((_, reject) => 
-                setTimeout(() => reject(new Error('html2canvas render timed out')), 4000)
+                setTimeout(() => reject(new Error('html2canvas render timed out')), 10000)
             );
             
             const canvas = await Promise.race([html2canvasPromise, timeoutPromise]);
-            const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.75);
 
             if (window.saveIntelSnapshot) {
+                // Strip heavy image from licenseData — snapshot already has the visual
+                const licLite = { ...lic };
+                delete licLite.image;
+                
                 await window.saveIntelSnapshot(
                     (typeLabels[lic.type] || 'LICENSE') + ': ' + (lic.name || 'UNKNOWN'),
                     dataUrl,
-                    { type: 'license-card', isAmmo: false, licenseData: lic }
+                    { type: 'license-card', isAmmo: false, licenseData: licLite }
                 );
                 
                 licenseToVaultBtnTop.innerHTML = '<i data-lucide="check" class="w-4 h-4 inline-block mr-1"></i> SENT TO INTEL VAULT';
