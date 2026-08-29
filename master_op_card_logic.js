@@ -199,14 +199,14 @@ window.renderMasterOpChecklistRows = function() {
     if (!container) return;
 
     if (!masterOpChecklist || masterOpChecklist.length === 0) {
-        container.innerHTML = `<div class="text-[10px] text-slate-500 italic text-center py-2">No tasks added. Click + ADD TASK.</div>`;
+        container.innerHTML = `<div class="text-[10px] text-slate-400 italic text-center py-2">No tasks added. Click + ADD TASK.</div>`;
         return;
     }
 
     container.innerHTML = masterOpChecklist.map((c, idx) => `
         <div class="bg-slate-950 border border-slate-800 rounded p-1.5 flex items-center gap-2">
             <input type="checkbox" id="mop-chk-done-${idx}" name="mop-chk-done-${idx}" aria-label="Toggle checklist item" ${c.done ? 'checked' : ''} onchange="window.updateMasterOpChecklist(${idx}, 'done', this.checked)" class="w-4 h-4 rounded bg-slate-900 border-slate-700 text-cyan-500 focus:ring-cyan-500 focus:ring-offset-slate-950">
-            <input type="text" id="mop-chk-text-${idx}" name="mop-chk-text-${idx}" aria-label="Checklist item text" maxlength="20" value="${c.text}" onchange="window.updateMasterOpChecklist(${idx}, 'text', this.value)" class="flex-1 bg-transparent border-none text-xs text-white focus:outline-none focus:ring-0 ${c.done ? 'line-through text-slate-500' : ''}" placeholder="e.g. Check NODs batteries">
+            <input type="text" id="mop-chk-text-${idx}" name="mop-chk-text-${idx}" aria-label="Checklist item text" maxlength="20" value="${c.text}" onchange="window.updateMasterOpChecklist(${idx}, 'text', this.value)" class="flex-1 bg-transparent border-none text-xs text-white focus:outline-none focus:ring-0 ${c.done ? 'line-through text-slate-400' : ''}" placeholder="e.g. Check NODs batteries">
             <button type="button" onclick="window.removeMasterOpChecklistRow(${idx})" class="w-6 h-6 flex items-center justify-center bg-slate-900 text-red-500 rounded hover:bg-slate-800">
                 <i data-lucide="x" class="w-3.5 h-3.5"></i>
             </button>
@@ -596,6 +596,7 @@ window.compressBase64Image = function(base64Str, maxWidth = 800, quality = 0.7) 
         };
     });
 };
+
 
 
 

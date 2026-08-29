@@ -772,7 +772,7 @@ function initializeTacticalDashboard1() {
                 const row = document.createElement('div');
                 row.className = "p-2 bg-black/60 border border-gray-800 rounded-lg flex flex-col items-center justify-center transition-all hover:border-neon-green/30";
                 row.innerHTML = `
-                    <span class="text-[7px] text-gray-500 font-bold uppercase tracking-tighter">${d}Y</span>
+                    <span class="text-[7px] text-gray-400 font-bold uppercase tracking-tighter">${d}Y</span>
                     <span class="text-[11px] text-neon-green font-black leading-tight">${clicks}</span>
                     <span class="text-[7px] text-blue-400/70 font-bold uppercase">${udlr}</span>
                 `;
@@ -1914,7 +1914,7 @@ function initializeTacticalDashboard2() {
         const keys = Object.keys(profiles);
         if (keys.length === 0) {
             ammoLibraryList.innerHTML = `
-                <div class="col-span-1 md:col-span-2 flex flex-col items-center justify-center py-12 text-center text-gray-600 font-mono text-xs uppercase tracking-wider">
+                <div class="col-span-1 md:col-span-2 flex flex-col items-center justify-center py-12 text-center text-gray-400 font-mono text-xs uppercase tracking-wider">
                     <i data-lucide="info" class="w-8 h-8 opacity-20 mb-2"></i>
                     No saved ammo batches found.
                 </div>
@@ -2911,7 +2911,7 @@ function initializeTacticalDashboard2() {
         }
 
         if (names.length === 0) {
-            hudSelectorList.innerHTML = `<div class="text-center py-8 text-gray-500 text-xs font-mono uppercase tracking-widest">No saved ${type}s found</div>`;
+            hudSelectorList.innerHTML = `<div class="text-center py-8 text-gray-400 text-xs font-mono uppercase tracking-widest">No saved ${type}s found</div>`;
         } else {
             names.forEach(name => {
                 const row = document.createElement('div');
@@ -2924,9 +2924,9 @@ function initializeTacticalDashboard2() {
                 row.innerHTML = `
                     <div class="min-w-0">
                         <div class="font-bold text-[11px] text-white truncate uppercase group-hover:text-orange-400">${name}</div>
-                        <div class="text-[9px] text-gray-500 font-mono uppercase mt-0.5">${meta}</div>
+                        <div class="text-[9px] text-gray-400 font-mono uppercase mt-0.5">${meta}</div>
                     </div>
-                    <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-gray-600 group-hover:text-orange-400"></i>
+                    <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-gray-400 group-hover:text-orange-400"></i>
                 `;
 
                 row.addEventListener('click', () => {
@@ -3140,7 +3140,7 @@ function initializeTacticalDashboard2() {
 
         entry.className = `flex items-start gap-1.5 border-l-2 border-gray-800/50 pl-1 py-0.5 hover:bg-white/5 transition-colors group`;
         entry.innerHTML = `
-            <span class="text-[7px] text-gray-600 font-mono group-hover:text-emerald-700 transition-colors">${timestamp}</span>
+            <span class="text-[7px] text-gray-400 font-mono group-hover:text-emerald-700 transition-colors">${timestamp}</span>
             <span class="font-black tracking-tighter text-[8px] ${prefixColor}">[${type}]</span>
             <span class="${textColor} uppercase tracking-wide leading-tight flex-1 text-[10px]">${message}</span>
         `;
@@ -3167,7 +3167,7 @@ function initializeTacticalDashboard2() {
             t.className = "w-full h-full flex items-center justify-center text-center px-2 group-hover:bg-emerald-500/5 transition-all";
             t.innerHTML = `<div class="text-center">
                                 <i data-lucide="clipboard-list" class="w-6 h-6 text-gray-700 mx-auto mb-1 group-hover:text-emerald-600 transition-all"></i>
-                                <p class="text-[8px] font-mono text-gray-500 uppercase tracking-[0.2em]">LOAD DOPE CACHE</p>
+                                <p class="text-[8px] font-mono text-gray-400 uppercase tracking-[0.2em]">LOAD DOPE CACHE</p>
                             </div>`;
         } else if (win === 2) {
             const t = document.getElementById('sat-archive-active-display');
@@ -3175,14 +3175,14 @@ function initializeTacticalDashboard2() {
             t.className = "w-full h-full flex items-center justify-center text-center px-2 group-hover:bg-emerald-500/5 transition-all";
             t.innerHTML = `<div class="text-center">
                                 <i data-lucide="map" class="w-6 h-6 text-gray-700 mx-auto mb-1 group-hover:text-emerald-600 transition-all"></i>
-                                <p class="text-[8px] font-mono text-gray-500 uppercase tracking-[0.2em]">ACCESS SAT ARCHIVE</p>
+                                <p class="text-[8px] font-mono text-gray-400 uppercase tracking-[0.2em]">ACCESS SAT ARCHIVE</p>
                             </div>`;
         } else if (win === 4) {
             const t = document.getElementById('vault-active-display');
             if (!t) return;
             t.innerHTML = `<div class="text-center">
                                 <i data-lucide="database" class="w-6 h-6 text-gray-700 mx-auto mb-1 group-hover:text-emerald-600"></i>
-                                <p class="text-[8px] font-mono text-gray-500 uppercase tracking-[0.2em]">SECURE INTEL VAULT</p>
+                                <p class="text-[8px] font-mono text-gray-400 uppercase tracking-[0.2em]">SECURE INTEL VAULT</p>
                             </div>`;
         }
         if (window.lucide) window.lucide.createIcons();
@@ -3198,7 +3198,7 @@ function initializeTacticalDashboard2() {
         const names = Object.keys(profiles).filter(n => !profiles[n].isReconScenario).sort().reverse();
 
         if (names.length === 0) {
-            container.innerHTML = `<div class="col-span-full p-10 text-center border border-dashed border-gray-800 text-gray-600 uppercase font-mono text-xs">
+            container.innerHTML = `<div class="col-span-full p-10 text-center border border-dashed border-gray-800 text-gray-400 uppercase font-mono text-xs">
                 <i data-lucide="database" class="w-8 h-8 mx-auto mb-2 opacity-50"></i>
                 Library Empty.<br>Please create & save a Dope Card in main forms first.
             </div>`;
@@ -3225,7 +3225,7 @@ function initializeTacticalDashboard2() {
                     <h4 class="text-[10px] font-bold text-gray-200 truncate uppercase">${name}</h4>
                     <div class="flex justify-between mt-1">
                         <span class="text-[8px] font-mono text-emerald-500">${p.caliber || '--'}</span>
-                        <span class="text-[8px] font-mono text-gray-600">${p.date || '--'}</span>
+                        <span class="text-[8px] font-mono text-gray-400">${p.date || '--'}</span>
                     </div>
                 </div>
                 
@@ -3313,7 +3313,7 @@ function initializeTacticalDashboard2() {
         const names = Object.keys(profiles).filter(n => !!profiles[n].isReconScenario).sort().reverse();
 
         if (names.length === 0) {
-            container.innerHTML = `<div class="col-span-full p-10 text-center border border-dashed border-gray-800 text-gray-600 uppercase font-mono text-xs">
+            container.innerHTML = `<div class="col-span-full p-10 text-center border border-dashed border-gray-800 text-gray-400 uppercase font-mono text-xs">
                 <i data-lucide="satellite" class="w-8 h-8 mx-auto mb-2 opacity-50"></i>
                 No Maps Detected.<br>Please construct & save a Recon Map first.
             </div>`;
@@ -3343,7 +3343,7 @@ function initializeTacticalDashboard2() {
                     <h4 class="text-[10px] font-bold text-emerald-100 truncate uppercase">${name}</h4>
                     <div class="flex justify-between mt-1">
                         <span class="text-[8px] font-mono text-gray-400 uppercase">RECON SITREP</span>
-                        <span class="text-[8px] font-mono text-gray-600">${p.timestamp ? new Date(p.timestamp).toLocaleDateString() : '--'}</span>
+                        <span class="text-[8px] font-mono text-gray-400">${p.timestamp ? new Date(p.timestamp).toLocaleDateString() : '--'}</span>
                     </div>
                 </div>
                 
@@ -3878,7 +3878,7 @@ function initializeTacticalDashboard2() {
                     <div class="absolute top-1 left-1 text-[6px] text-emerald-500 font-black uppercase opacity-60">VECTOR LOCK</div>
                     <span class="text-2xl font-black text-white font-mono tracking-tighter leading-none">${lastDisplayDistance}</span>
                     <span class="text-[8px] font-black text-emerald-400 uppercase tracking-[0.2em] mt-1">${geoDistanceUnit}</span>
-                    <div class="absolute bottom-1 right-1 text-[6px] text-gray-600 font-mono">GEO_FIX</div>
+                    <div class="absolute bottom-1 right-1 text-[6px] text-gray-400 font-mono">GEO_FIX</div>
                 </div>
             `;
         }
@@ -3936,7 +3936,7 @@ function initializeTacticalDashboard2() {
             minimized.innerHTML = `
                 <div class="text-center">
                     <i data-lucide="ruler" class="w-6 h-6 text-gray-700 mx-auto mb-1 group-hover:text-emerald-600"></i>
-                    <p class="text-[8px] font-mono text-gray-500 uppercase tracking-[0.2em]">ENGAGE GEO MATRIX</p>
+                    <p class="text-[8px] font-mono text-gray-400 uppercase tracking-[0.2em]">ENGAGE GEO MATRIX</p>
                 </div>
             `;
             if (window.lucide) window.lucide.createIcons();
@@ -5055,7 +5055,7 @@ function initializeTacticalDashboard2() {
                     ${imgContent}
                 </div>
                 <div class="text-[7px] font-mono text-gray-400 uppercase truncate pr-4">${item.label || item.missionName || 'TACTICAL BRIEF'}</div>
-                <div class="text-[6px] text-gray-600">${
+                <div class="text-[6px] text-gray-400">${
                     (() => {
                         try {
                             let t = item.timestamp || item.id || Date.now();
@@ -5189,7 +5189,7 @@ function initializeTacticalDashboard2() {
             if (item.image) {
                 mediaHtml = `<img src="${item.image}" class="w-full h-full object-contain">`;
             } else {
-                mediaHtml = `<div class="flex items-center justify-center w-full h-full text-slate-500 font-mono text-[10px]">NO VISUAL SNAPSHOT</div>`;
+                mediaHtml = `<div class="flex items-center justify-center w-full h-full text-slate-400 font-mono text-[10px]">NO VISUAL SNAPSHOT</div>`;
             }
         } else if (isContactCard) {
             const c = item.contact || {};
@@ -5213,9 +5213,9 @@ function initializeTacticalDashboard2() {
                             ${c.unit ? `<div class="text-[10px] font-semibold text-slate-400 uppercase">${c.unit}</div>` : ''}
                             
                             <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs font-mono border-t border-slate-800 pt-2.5 mt-2.5 text-slate-300">
-                                <div><span class="text-slate-500 font-bold">PHONE:</span> <span class="font-bold text-white">${c.phone || '--'}</span></div>
-                                <div><span class="text-slate-500 font-bold">COMMS:</span> <span class="font-bold text-emerald-400">${c.comms || '--'}</span></div>
-                                <div><span class="text-slate-500 font-bold">WEB:</span> <span class="font-bold text-blue-400">${c.web || '--'}</span></div>
+                                <div><span class="text-slate-400 font-bold">PHONE:</span> <span class="font-bold text-white">${c.phone || '--'}</span></div>
+                                <div><span class="text-slate-400 font-bold">COMMS:</span> <span class="font-bold text-emerald-400">${c.comms || '--'}</span></div>
+                                <div><span class="text-slate-400 font-bold">WEB:</span> <span class="font-bold text-blue-400">${c.web || '--'}</span></div>
                             </div>
                             ${c.details ? `<div class="mt-2 text-xs italic text-purple-300 border-t border-slate-800/80 pt-2">Specialties: "${c.details}"</div>` : ''}
                             ${c.cardImageUrl ? `
@@ -5621,7 +5621,7 @@ function initializeTacticalDashboard2() {
                 // Reset toggle button state if it was toggled off previously
                 if (hudToggleBtn) {
                     hudToggleBtn.innerHTML = '<i data-lucide="eye-off" class="w-4 h-4"></i> HUD';
-                    hudToggleBtn.classList.replace('text-gray-500', 'text-gray-300');
+                    hudToggleBtn.classList.replace('text-gray-400', 'text-gray-300');
                     if (window.lucide) window.lucide.createIcons();
                 }
             } else {
@@ -5776,10 +5776,10 @@ function initializeTacticalDashboard2() {
                 // Toggle icon
                 if (hud.classList.contains('hidden')) {
                     hudToggleBtn.innerHTML = '<i data-lucide="eye" class="w-4 h-4"></i> HUD';
-                    hudToggleBtn.classList.replace('text-gray-300', 'text-gray-500');
+                    hudToggleBtn.classList.replace('text-gray-300', 'text-gray-400');
                 } else {
                     hudToggleBtn.innerHTML = '<i data-lucide="eye-off" class="w-4 h-4"></i> HUD';
-                    hudToggleBtn.classList.replace('text-gray-500', 'text-gray-300');
+                    hudToggleBtn.classList.replace('text-gray-400', 'text-gray-300');
                 }
                 if (window.lucide) window.lucide.createIcons();
             }
@@ -8681,7 +8681,7 @@ function initializeTacticalDashboard2() {
                     sosToggle.classList.remove('hidden');
                     // Fully reset the toggle button back to neutral — wipe any red stuck-state classes
                     sosToggle.classList.remove('bg-red-950', 'border-red-700', 'text-red-400', 'animate-pulse');
-                    sosToggle.classList.add('bg-gray-900', 'border-gray-700', 'text-gray-500');
+                    sosToggle.classList.add('bg-gray-900', 'border-gray-700', 'text-gray-400');
                 }
                 // Reset the SOS bar container back to neutral — no red background remnants
                 const sosBarEl = document.getElementById('comms-sos-bar');
@@ -9711,7 +9711,7 @@ function initializeTacticalDashboard2() {
             
             if (keys.length === 0) {
                 listEl.innerHTML = `
-                    <div class="col-span-1 md:col-span-2 flex flex-col items-center justify-center py-12 text-center text-gray-600 font-mono text-xs uppercase tracking-wider">
+                    <div class="col-span-1 md:col-span-2 flex flex-col items-center justify-center py-12 text-center text-gray-400 font-mono text-xs uppercase tracking-wider">
                         <i data-lucide="info" class="w-8 h-8 opacity-20 mb-2"></i>
                         No saved briefings found.
                     </div>
@@ -10446,7 +10446,7 @@ window.toggleAISpotter = function() {
         aiSpotterActive = false;
         if (aiSpotterRecognition) aiSpotterRecognition.stop();
         btn.classList.remove('text-red-500', 'animate-pulse');
-        btn.classList.add('text-gray-500');
+        btn.classList.add('text-gray-400');
         aiSpeak("Spotter standing down.");
         if (window.pushTacLog) window.pushTacLog("AI SPOTTER: OFFLINE", "SYS");
         return;
@@ -10466,7 +10466,7 @@ window.toggleAISpotter = function() {
         aiSpotterRecognition.lang = 'en-US';
 
         aiSpotterRecognition.onstart = function() {
-            btn.classList.remove('text-gray-500');
+            btn.classList.remove('text-gray-400');
             btn.classList.add('text-red-500', 'animate-pulse');
             if (window.pushTacLog) window.pushTacLog("AI SPOTTER: LISTENING...", "SUCCESS");
         };
@@ -10620,7 +10620,7 @@ window.toggleAISpotter = function() {
             if (event.error === 'not-allowed') {
                 aiSpotterActive = false;
                 btn.classList.remove('text-red-500', 'animate-pulse');
-                btn.classList.add('text-gray-500');
+                btn.classList.add('text-gray-400');
                 aiSpeak("Microphone access denied.");
             }
         };
@@ -10723,7 +10723,7 @@ document.getElementById('btn-generate-matrix').addEventListener('click', () => {
             <td class="py-1 px-2 border-r border-gray-800">${elevDir}${elev} ${opticMode}</td>
             <td class="py-1 px-2 border-r border-gray-800">${windDir}${wind} ${opticMode}</td>
             <td class="py-1 px-2 hidden sm:table-cell text-gray-400 border-r border-gray-800">${vel}</td>
-            <td class="py-1 px-2 hidden sm:table-cell text-gray-500">${energy}</td>
+            <td class="py-1 px-2 hidden sm:table-cell text-gray-400">${energy}</td>
         `;
         tbody.appendChild(tr);
     }
@@ -11595,7 +11595,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const headerParent = document.getElementById('calendar-days-header');
                 if (headerParent) {
                     Array.from(headerParent.children).forEach((child, index) => {
-                        child.classList.remove('text-gray-500', 'text-neon-green', 'bg-neon-green/20', 'shadow-[0_0_10px_rgba(57,255,20,0.2)]', 'opacity-30', 'scale-110');
+                        child.classList.remove('text-gray-400', 'text-neon-green', 'bg-neon-green/20', 'shadow-[0_0_10px_rgba(57,255,20,0.2)]', 'opacity-30', 'scale-110');
                         if (index === dayOfWeek) {
                             child.classList.add('text-neon-green', 'bg-neon-green/20', 'shadow-[0_0_10px_rgba(57,255,20,0.2)]', 'scale-110');
                         } else {
@@ -11609,7 +11609,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (headerParent) {
                     Array.from(headerParent.children).forEach((child) => {
                         child.classList.remove('text-neon-green', 'bg-neon-green/20', 'shadow-[0_0_10px_rgba(57,255,20,0.2)]', 'opacity-30', 'scale-110');
-                        child.classList.add('text-gray-500');
+                        child.classList.add('text-gray-400');
                     });
                 }
             });
@@ -11839,7 +11839,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const keys = Object.keys(inv).sort((a, b) => b - a); // newest first
         
         if (keys.length === 0) {
-            libraryList.innerHTML = `<div class="col-span-full text-center py-10 text-gray-600 text-[10px] font-mono tracking-widest uppercase border border-dashed border-gray-800 rounded">No calendars found in inventory.</div>`;
+            libraryList.innerHTML = `<div class="col-span-full text-center py-10 text-gray-400 text-[10px] font-mono tracking-widest uppercase border border-dashed border-gray-800 rounded">No calendars found in inventory.</div>`;
             return;
         }
         
@@ -11863,7 +11863,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
                 <div class="p-2 flex flex-col gap-1 border-t border-gray-800 bg-gray-950">
                     <div class="text-[10px] font-black text-white uppercase tracking-wider truncate">${item.label}</div>
-                    <div class="text-[8px] text-gray-500 font-mono">${dateStr}</div>
+                    <div class="text-[8px] text-gray-400 font-mono">${dateStr}</div>
                     <div class="flex gap-2 mt-2">
                         <button class="flex-1 bg-amber-900/40 hover:bg-amber-800 text-amber-500 text-[9px] font-bold py-1.5 rounded border border-amber-700/50 transition-colors uppercase load-cal-btn" data-id="${item.id}">
                             <i data-lucide="wrench" class="w-3 h-3 inline"></i> REWORK
@@ -12243,3 +12243,4 @@ HTMLCanvasElement.prototype.toDataURL = function() {
     }
     return result;
 };
+

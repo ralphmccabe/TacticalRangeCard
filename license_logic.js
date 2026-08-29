@@ -187,7 +187,7 @@ async function renderLicenseLibrary() {
         listEl.innerHTML = '';
 
         if (all.length === 0) {
-            listEl.innerHTML = '<div class="text-center text-gray-600 text-xs py-10 font-bold tracking-widest border border-dashed border-gray-800 rounded-lg">INVENTORY EMPTY</div>';
+            listEl.innerHTML = '<div class="text-center text-gray-400 text-xs py-10 font-bold tracking-widest border border-dashed border-gray-800 rounded-lg">INVENTORY EMPTY</div>';
             return;
         }
 
@@ -220,15 +220,15 @@ async function renderLicenseLibrary() {
                     <div class="w-12 h-12 bg-black border border-gray-700 rounded overflow-hidden shrink-0 flex items-center justify-center">
                         ${lic.image
                             ? `<img src="${lic.image}" class="w-full h-full object-cover">`
-                            : `<i data-lucide="id-card" class="w-4 h-4 text-gray-600"></i>`}
+                            : `<i data-lucide="id-card" class="w-4 h-4 text-gray-400"></i>`}
                     </div>
                     <div class="flex-1 min-w-0 flex flex-col justify-center">
                         <div class="text-[9px] text-gray-300 truncate font-bold">${lic.number || 'No # on file'}</div>
-                        <div class="text-[8px] text-gray-500 truncate">Exp: ${lic.expiry || 'N/A'}</div>
-                        <div class="text-[8px] text-gray-600 truncate">${lic.state || ''}</div>
+                        <div class="text-[8px] text-gray-400 truncate">Exp: ${lic.expiry || 'N/A'}</div>
+                        <div class="text-[8px] text-gray-400 truncate">${lic.state || ''}</div>
                     </div>
                     <button onclick="event.stopPropagation(); window.deleteLicense('${lic.id}')"
-                        class="text-gray-600 hover:text-red-500 p-1 bg-black rounded self-center pointer-events-auto shrink-0" title="Delete">
+                        class="text-gray-400 hover:text-red-500 p-1 bg-black rounded self-center pointer-events-auto shrink-0" title="Delete">
                         <i data-lucide="trash" class="w-3 h-3"></i>
                     </button>
                 </div>
@@ -505,3 +505,4 @@ if (vaultToLicenseBtn) {
         alert('Select a License card or a photo snapshot to load into the License editor.');
     });
 }
+

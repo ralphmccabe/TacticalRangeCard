@@ -169,7 +169,7 @@ window.renderOfficerForm = function(cardData = null) {
             <div class="bg-slate-900/90 border border-slate-800 rounded-lg p-2 sm:p-3 mb-3">
                 <div class="flex items-center justify-between border-b border-slate-800 pb-1.5 mb-2 flex-wrap gap-2">
                     <span class="text-[10px] font-black text-cyan-300 uppercase tracking-widest flex items-center gap-1.5">
-                        <i data-lucide="pen-tool" class="w-4 h-4 text-cyan-400"></i> CRIME SCENE SKETCHPAD: <span id="active-sketch-tool-status" class="ml-1 font-mono tracking-widest text-slate-500">NONE</span>
+                        <i data-lucide="pen-tool" class="w-4 h-4 text-cyan-400"></i> CRIME SCENE SKETCHPAD: <span id="active-sketch-tool-status" class="ml-1 font-mono tracking-widest text-slate-400">NONE</span>
                     </span>
                     <div class="flex items-center gap-1.5 flex-wrap">
                         <button type="button" onclick="window.setOfficerSketchTool('#0a0f1a', 'ERASER')" id="sketch-tool-ERASER" data-color="#0a0f1a" class="sketch-tool-btn text-[9px] font-bold px-2 py-1 rounded border border-slate-500 text-slate-300 bg-slate-800 hover:bg-slate-700 uppercase flex items-center gap-1 shrink-0"><i data-lucide="eraser" class="w-3 h-3"></i> ERASER</button>
@@ -229,9 +229,9 @@ window.renderOfficerForm = function(cardData = null) {
             <div class="mb-4">
                 <div class="flex justify-between items-end mb-1">
                     <label class="block text-[9px] font-black uppercase text-cyan-400 tracking-wider">Master SITREP Summary & Observations</label>
-                    <span id="officer-incident-notes-counter" class="text-[9px] font-mono text-slate-500">${incidentNotes.length} / 1000</span>
+                    <span id="officer-incident-notes-counter" class="text-[9px] font-mono text-slate-400">${incidentNotes.length} / 1000</span>
                 </div>
-                <textarea maxlength="1000" id="officer-incident-notes" oninput="document.getElementById('officer-incident-notes-counter').textContent = this.value.length + ' / 1000'" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-xs text-slate-100 placeholder:text-slate-500 h-16 focus:border-cyan-400 focus:outline-none custom-scrollbar" placeholder="Enter incident summary, suspect flight path, witness remarks, or initial investigation findings...">${incidentNotes}</textarea>
+                <textarea maxlength="1000" id="officer-incident-notes" oninput="document.getElementById('officer-incident-notes-counter').textContent = this.value.length + ' / 1000'" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-xs text-slate-100 placeholder:text-slate-400 h-16 focus:border-cyan-400 focus:outline-none custom-scrollbar" placeholder="Enter incident summary, suspect flight path, witness remarks, or initial investigation findings...">${incidentNotes}</textarea>
             </div>
 
             <!-- ACTION PIPELINE BUTTONS -->
@@ -306,7 +306,7 @@ window.renderOfficerPhotoThumbnails = function() {
     if (countSpan) countSpan.textContent = `${officerScenePhotos.length}/5`;
 
     if (!officerScenePhotos || officerScenePhotos.length === 0) {
-        container.innerHTML = `<span class="text-[10px] text-slate-500 italic p-1">No real scene photos attached yet. Tap "Take Live Photo" or "Gallery" to capture evidence.</span>`;
+        container.innerHTML = `<span class="text-[10px] text-slate-400 italic p-1">No real scene photos attached yet. Tap "Take Live Photo" or "Gallery" to capture evidence.</span>`;
         return;
     }
 
@@ -425,7 +425,7 @@ window.renderOfficerFirstAidRows = function() {
     if (!container) return;
 
     if (!officerFirstAidList || officerFirstAidList.length === 0) {
-        container.innerHTML = `<div class="text-[10px] text-slate-500 italic text-center py-2">No patients added. Click + Add Patient if medical care was rendered.</div>`;
+        container.innerHTML = `<div class="text-[10px] text-slate-400 italic text-center py-2">No patients added. Click + Add Patient if medical care was rendered.</div>`;
         return;
     }
 
@@ -1042,9 +1042,9 @@ window.generateOfficerCardHTML = function(card) {
                 <span style="color: #fbbf24;" class="font-mono text-[9px] font-black uppercase bg-amber-950/60 px-1.5 py-0.5 rounded border border-amber-500/40">${p.status || 'UNINJURED'}</span>
             </div>
             <div class="grid grid-cols-2 gap-1.5 text-[10px] font-mono text-slate-300 pt-1">
-                <div><span class="text-slate-500 font-bold">PHONE:</span> ${p.phone || '--'}</div>
-                <div><span class="text-slate-500 font-bold">DL #:</span> ${p.license || '--'}</div>
-                <div class="col-span-2"><span class="text-slate-500 font-bold">VEHICLE / PLATE:</span> ${p.vehicle || '--'}</div>
+                <div><span class="text-slate-400 font-bold">PHONE:</span> ${p.phone || '--'}</div>
+                <div><span class="text-slate-400 font-bold">DL #:</span> ${p.license || '--'}</div>
+                <div class="col-span-2"><span class="text-slate-400 font-bold">VEHICLE / PLATE:</span> ${p.vehicle || '--'}</div>
             </div>
         </div>
     `).join('');
@@ -1136,9 +1136,9 @@ window.generateOfficerCardHTML = function(card) {
                             <span class="text-white">${fa.faEvac !== 'NONE' ? fa.faEvac + ' EVAC' : ''}</span>
                         </div>
                         <div class="grid grid-cols-2 gap-2 text-slate-300">
-                            <div><span class="text-slate-500 font-bold block text-[9px] uppercase">Patient Name / Tag</span> ${fa.faName || 'UNKNOWN'}</div>
-                            <div><span class="text-slate-500 font-bold block text-[9px] uppercase">Complaint & Vitals</span> ${fa.faVitals || 'N/A'}</div>
-                            <div class="col-span-2"><span class="text-slate-500 font-bold block text-[9px] uppercase">Treatments & Meds Administered</span> ${fa.faTreatment || 'N/A'}</div>
+                            <div><span class="text-slate-400 font-bold block text-[9px] uppercase">Patient Name / Tag</span> ${fa.faName || 'UNKNOWN'}</div>
+                            <div><span class="text-slate-400 font-bold block text-[9px] uppercase">Complaint & Vitals</span> ${fa.faVitals || 'N/A'}</div>
+                            <div class="col-span-2"><span class="text-slate-400 font-bold block text-[9px] uppercase">Treatments & Meds Administered</span> ${fa.faTreatment || 'N/A'}</div>
                         </div>
                     </div>
                     `).join('')}
@@ -1168,7 +1168,7 @@ window.generateOfficerCardHTML = function(card) {
 
             <!-- Rework Card Action -->
             <div class="border-t border-slate-800 pt-3 flex justify-between items-center">
-                <span class="text-[9px] font-mono text-slate-500">${new Date(card.timestamp || Date.now()).toLocaleString()}</span>
+                <span class="text-[9px] font-mono text-slate-400">${new Date(card.timestamp || Date.now()).toLocaleString()}</span>
                 <button type="button" onclick="if(window.openWorkstationForm) window.openWorkstationForm('officer', ${JSON.stringify(card).replace(/"/g, '&quot;')})" class="bg-cyan-950 text-cyan-300 hover:bg-cyan-900 border border-cyan-500/50 text-[10.5px] font-black px-3.5 py-1.5 rounded-lg uppercase tracking-wider flex items-center gap-1.5 shadow transition-colors cursor-pointer">
                     <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> REWORK THIS SITREP
                 </button>
@@ -1176,5 +1176,6 @@ window.generateOfficerCardHTML = function(card) {
         </div>
     `;
 };
+
 
 

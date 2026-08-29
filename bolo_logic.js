@@ -318,7 +318,7 @@ async function renderBoloLibrary() {
         const allBolos = Object.values(boloObj || {});
         listEl.innerHTML = '';
         if(allBolos.length === 0) {
-            listEl.innerHTML = '<div class="col-span-full text-center text-gray-600 text-xs py-10 font-bold tracking-widest border border-dashed border-gray-800 rounded-lg">INVENTORY EMPTY</div>';
+            listEl.innerHTML = '<div class="col-span-full text-center text-gray-400 text-xs py-10 font-bold tracking-widest border border-dashed border-gray-800 rounded-lg">INVENTORY EMPTY</div>';
             return;
         }
         allBolos.sort((a,b) => Number(b.id) - Number(a.id));
@@ -348,7 +348,7 @@ async function renderBoloLibrary() {
                 </div>
                 <div class="flex gap-2 pointer-events-none pl-8">
                     <div class="w-12 h-12 bg-black border border-gray-700 rounded overflow-hidden shrink-0 flex items-center justify-center relative">
-                        ${bolo.image ? `<img src="${bolo.image}" class="w-full h-full object-cover">` : `<i data-lucide="${isPerson ? 'user' : 'paw-print'}" class="w-4 h-4 text-gray-600"></i>`}
+                        ${bolo.image ? `<img src="${bolo.image}" class="w-full h-full object-cover">` : `<i data-lucide="${isPerson ? 'user' : 'paw-print'}" class="w-4 h-4 text-gray-400"></i>`}
                         ${bolo.captured ? `
                         <div class="absolute inset-0 bg-red-950/75 flex items-center justify-center z-10">
                             <span class="text-[6px] font-black text-red-400 border border-red-500 px-0.5 rounded rotate-[-12deg] tracking-tighter uppercase">CAPTURED</span>
@@ -357,9 +357,9 @@ async function renderBoloLibrary() {
                     </div>
                     <div class="flex-1 min-w-0">
                         <div class="text-[9px] text-gray-300 truncate">${displaySub}</div>
-                        <div class="text-[8px] text-gray-500 truncate mt-1">${dateStr}</div>
+                        <div class="text-[8px] text-gray-400 truncate mt-1">${dateStr}</div>
                     </div>
-                    <button class="text-gray-600 hover:text-red-500 p-1 bg-black rounded self-center pointer-events-auto" onclick="event.stopPropagation(); deleteBolo('${bolo.id}')" title="Delete">
+                    <button class="text-gray-400 hover:text-red-500 p-1 bg-black rounded self-center pointer-events-auto" onclick="event.stopPropagation(); deleteBolo('${bolo.id}')" title="Delete">
                         <i data-lucide="trash" class="w-3 h-3"></i>
                     </button>
                 </div>
@@ -838,3 +838,4 @@ window.toggleBoloCapturedById = async function(boloId) {
         }
     }
 };
+

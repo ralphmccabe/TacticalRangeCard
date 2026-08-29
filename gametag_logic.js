@@ -57,7 +57,7 @@ window.setGameTagType = function(type) {
         btnGame.style.backgroundColor = '#f59e0b'; // amber-500
         btnGame.style.color = '#451a03'; // amber-950
         
-        btnFish.className = 'flex-1 py-2 text-xs font-black uppercase tracking-widest text-gray-500 hover:text-white rounded transition-all';
+        btnFish.className = 'flex-1 py-2 text-xs font-black uppercase tracking-widest text-gray-400 hover:text-white rounded transition-all';
         btnFish.style.backgroundColor = 'transparent';
         
         fieldsGame.classList.remove('hidden');
@@ -68,7 +68,7 @@ window.setGameTagType = function(type) {
         btnFish.style.backgroundColor = '#3b82f6'; // blue-500
         btnFish.style.color = 'white';
         
-        btnGame.className = 'flex-1 py-2 text-xs font-black uppercase tracking-widest text-gray-500 hover:text-white rounded transition-all';
+        btnGame.className = 'flex-1 py-2 text-xs font-black uppercase tracking-widest text-gray-400 hover:text-white rounded transition-all';
         btnGame.style.backgroundColor = 'transparent';
         
         fieldsFish.classList.remove('hidden');
@@ -196,7 +196,7 @@ async function renderGametagLibrary() {
         listEl.innerHTML = '';
         
         if(allTags.length === 0) {
-            listEl.innerHTML = '<div class="col-span-full text-center text-gray-600 text-xs py-10 font-bold tracking-widest border border-dashed border-gray-800 rounded-lg">INVENTORY EMPTY</div>';
+            listEl.innerHTML = '<div class="col-span-full text-center text-gray-400 text-xs py-10 font-bold tracking-widest border border-dashed border-gray-800 rounded-lg">INVENTORY EMPTY</div>';
             return;
         }
         
@@ -216,18 +216,18 @@ async function renderGametagLibrary() {
                 </div>
                 <div class="flex items-start justify-between mb-2 pointer-events-none">
                     <div style="padding-left: 32px;" class="font-black ${tag.type === 'game' ? 'text-amber-500' : 'text-blue-500'} text-[10px] uppercase tracking-widest truncate max-w-[150px]">${displayName}</div>
-                    <div class="text-[8px] text-gray-500 shrink-0">${dateStr}</div>
+                    <div class="text-[8px] text-gray-400 shrink-0">${dateStr}</div>
                 </div>
                 <div class="flex gap-2 pointer-events-none pl-8">
                     <div class="w-12 h-12 bg-black border border-gray-700 rounded overflow-hidden shrink-0 flex items-center justify-center">
-                        ${tag.image ? `<img src="${tag.image}" class="w-full h-full object-cover">` : `<i data-lucide="image" class="w-4 h-4 text-gray-600"></i>`}
+                        ${tag.image ? `<img src="${tag.image}" class="w-full h-full object-cover">` : `<i data-lucide="image" class="w-4 h-4 text-gray-400"></i>`}
                     </div>
                     <div class="flex-1 min-w-0">
                         <div class="text-[9px] text-gray-300 truncate">${tag.type === 'game' ? (tag.game_sex || '') : (tag.fish_water || '')}</div>
-                        <div class="text-[8px] text-gray-500 truncate mt-1">Loc: ${tag.gps || 'N/A'}</div>
+                        <div class="text-[8px] text-gray-400 truncate mt-1">Loc: ${tag.gps || 'N/A'}</div>
                     </div>
                     <div class="flex flex-col gap-1 items-end pointer-events-auto">
-                        <button onclick="event.stopPropagation(); window.deleteGametag('${tag.id}')" class="text-gray-600 hover:text-red-500 p-1 bg-black rounded" title="Delete">
+                        <button onclick="event.stopPropagation(); window.deleteGametag('${tag.id}')" class="text-gray-400 hover:text-red-500 p-1 bg-black rounded" title="Delete">
                             <i data-lucide="trash" class="w-3 h-3"></i>
                         </button>
                     </div>
@@ -617,3 +617,4 @@ if (vaultToGametagBtn) {
         if (panel) panel.classList.add('hidden');
     });
 }
+

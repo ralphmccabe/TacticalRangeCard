@@ -330,9 +330,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (prevBizname) prevBizname.textContent = bizname;
         if (prevAuthor) prevAuthor.textContent = author;
         if (prevUnit) prevUnit.textContent = unit;
-        if (prevPhone) prevPhone.innerHTML = `<span class="text-slate-500">PHONE:</span> <span class="text-white font-bold">${phone}</span>`;
-        if (prevComms) prevComms.innerHTML = `<span class="text-slate-500">COMMS:</span> <span class="text-emerald-400 font-bold">${comms}</span>`;
-        if (prevWeb) prevWeb.innerHTML = `<span class="text-slate-500">WEB:</span> <span class="text-blue-400 font-bold">${web}</span>`;
+        if (prevPhone) prevPhone.innerHTML = `<span class="text-slate-400">PHONE:</span> <span class="text-white font-bold">${phone}</span>`;
+        if (prevComms) prevComms.innerHTML = `<span class="text-slate-400">COMMS:</span> <span class="text-emerald-400 font-bold">${comms}</span>`;
+        if (prevWeb) prevWeb.innerHTML = `<span class="text-slate-400">WEB:</span> <span class="text-blue-400 font-bold">${web}</span>`;
         if (prevDetails) prevDetails.textContent = `Specialties: ${details}`;
     }
     window.updateLiveCardPreview = updateLiveCardPreview;
@@ -631,7 +631,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         </div>
                         <div class="p-2">
                             <div class="text-[9px] font-black text-white truncate uppercase">${itemName}</div>
-                            <div class="text-[8px] font-black text-gray-500 uppercase mt-1">${itemDate}</div>
+                            <div class="text-[8px] font-black text-gray-400 uppercase mt-1">${itemDate}</div>
                         </div>
                     `;
                     el.addEventListener('click', () => {
@@ -1063,7 +1063,7 @@ try {
                     <div class="flex items-center gap-1.5 min-w-0 flex-1">
                         <i data-lucide="user" class="w-4 h-4 text-gray-700 shrink-0"></i>
                         <span class="font-black text-black uppercase tracking-wider text-xs sm:text-sm truncate max-w-[90px] sm:max-w-[180px]">${post.author || 'ANONYMOUS'}</span>
-                        <span class="text-[9px] sm:text-[10px] font-bold text-gray-500 uppercase truncate shrink-0">${timeStr}</span>
+                        <span class="text-[9px] sm:text-[10px] font-bold text-gray-400 uppercase truncate shrink-0">${timeStr}</span>
                     </div>
                     <div class="flex items-center gap-1.5 shrink-0">
                         ${catBadge}
@@ -1571,7 +1571,7 @@ window.fetchCommLinkFeed = async function() {
         
         feed.innerHTML = '';
         if (!data || data.length === 0) {
-            feed.innerHTML = '<div class="text-slate-500 text-xs text-center font-mono py-4">NO TRAFFIC ON THIS FREQUENCY.</div>';
+            feed.innerHTML = '<div class="text-slate-400 text-xs text-center font-mono py-4">NO TRAFFIC ON THIS FREQUENCY.</div>';
             return;
         }
         
@@ -1638,6 +1638,7 @@ window.submitCommLinkMessage = async function() {
 window.clearCommLinkFeed = function() {
     const feed = document.getElementById('comm-link-feed');
     if (feed) {
-        feed.innerHTML = '<div class="text-center text-slate-500 text-[10px] font-mono py-4">LOCAL FEED CLEARED.</div>';
+        feed.innerHTML = '<div class="text-center text-slate-400 text-[10px] font-mono py-4">LOCAL FEED CLEARED.</div>';
     }
 };
+
