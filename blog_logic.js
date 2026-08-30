@@ -24,22 +24,56 @@ window.investigateWireCoords = function(lat, lon, btn) {
     const wireModal = document.getElementById('panel-global-wire');
     if (wireModal) wireModal.classList.add('hidden');
 
-    // 2. Center Orbital Map (Geo-Matrix)
-    if (window.orbitalMap && typeof window.orbitalMap.setView === 'function') {
-        window.orbitalMap.invalidateSize();
-        window.orbitalMap.setView([lat, lon], 16, { animate: false });
-
-        // Add Target Marker
-        if (window.L) {
-            const marker = L.circleMarker([lat, lon], {
-                radius: 8, color: '#10b981', fillColor: '#10b981', fillOpacity: 0.6, weight: 2
-            }).bindTooltip(`TARGET: ${lat.toFixed(5)}, ${lon.toFixed(5)}`).addTo(window.orbitalMap);
-
-            if (!window.wireIntelMarkers) window.wireIntelMarkers = [];
-            window.wireIntelMarkers.push(marker);
+    // 2. Open Satellite Recon Panel in Fullscreen for immersive terrain survey
+    const satPanel = document.getElementById('panel-sat-select');
+    if (satPanel && typeof toggleFullscreen === 'function') {
+        const isFullscreen = satPanel.classList.contains('fullscreen') || satPanel.classList.contains('dash-panel-maximized') || satPanel.style.display === 'flex';
+        if (!isFullscreen) {
+            toggleFullscreen('panel-sat-select');
         }
+    }
+
+    // 3. Center Orbital Map (Geo-Matrix) on Ranch Coordinates
+    if (window.orbitalMap && typeof window.orbitalMap.setView === 'function') {
+        setTimeout(() => {
+            window.orbitalMap.invalidateSize();
+            window.orbitalMap.setView([lat, lon], 16, { animate: true });
+
+            // Add High-Visibility Ranch Target Marker
+            if (window.L) {
+                const marker = L.circleMarker([lat, lon], {
+                    radius: 10, color: '#f59e0b', fillColor: '#fbbf24', fillOpacity: 0.8, weight: 3
+                }).bindTooltip(`🏕️ RANCH / TARGET: ${lat.toFixed(5)}, ${lon.toFixed(5)}`, { permanent: true, direction: 'top' }).addTo(window.orbitalMap);
+
+                if (!window.wireIntelMarkers) window.wireIntelMarkers = [];
+                window.wireIntelMarkers.push(marker);
+            }
+        }, 300);
     } else {
-        alert(`Target Coords: Lat ${lat.toFixed(5)}, Lon ${lon.toFixed(5)}`);
+        alert(`Ranch Coordinates: Lat ${lat.toFixed(5)}, Lon ${lon.toFixed(5)}`);
+    }
+
+    if (window.pushTacLog) {
+        window.pushTacLog(`SURVEYING RANCH TERRAIN AT: ${lat.toFixed(5)}, ${lon.toFixed(5)}`, "SUCCESS");
+    }
+};
+
+// Global Wire & Transmissions Guide Modal Helpers
+window.openBlogGuideModal = function() {
+    const modal = document.getElementById('blog-guide-modal');
+    if (modal) {
+        modal.classList.remove('hidden');
+        modal.style.setProperty('display', 'flex', 'important');
+        modal.style.setProperty('z-index', '100000050', 'important');
+        if (window.lucide) window.lucide.createIcons();
+    }
+};
+
+window.closeBlogGuideModal = function() {
+    const modal = document.getElementById('blog-guide-modal');
+    if (modal) {
+        modal.classList.add('hidden');
+        modal.style.setProperty('display', 'none', 'important');
     }
 };
 
@@ -140,7 +174,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                     canvas.width = width;
                     canvas.height = height;
-                    const ctx = canvas.getContext('2d');
+                    const ctx = canvas.getContext('2d', { willReadFrequently: true });
                     ctx.drawImage(img, 0, 0, width, height);
                     const compressedBase64 = canvas.toDataURL('image/jpeg', 0.75);
 
@@ -216,10 +250,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 else if (filterText.includes('GENERAL')) currentWireCategoryFilter = 'GENERAL';
                 else if (filterText.includes('CONTACT')) currentWireCategoryFilter = 'CONTACTS';
                 else if (filterText.includes('LISTING')) currentWireCategoryFilter = 'LISTINGS';
+                else if (filterText.includes('GUIDED') || filterText.includes('LODGING')) currentWireCategoryFilter = 'GUIDED_HUNTS';
                 else if (filterText.includes('HUNTING')) currentWireCategoryFilter = 'HUNTING';
                 else if (filterText.includes('FISHING')) currentWireCategoryFilter = 'FISHING';
                 else if (filterText.includes('BUSINESS')) currentWireCategoryFilter = 'BUSINESS';
                 else if (filterText.includes('MISC')) currentWireCategoryFilter = 'MISC';
+                else if (filterText.includes('FLAGGED')) currentWireCategoryFilter = 'FLAGGED';
                 else currentWireCategoryFilter = 'ALL';
 
                 fetchWirePosts();
@@ -305,6 +341,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const commsInput = document.getElementById('post-contact-comms');
     const webInput = document.getElementById('post-contact-web');
     const detailsInput = document.getElementById('post-contact-details');
+    const lodgeGpsInput = document.getElementById('post-lodge-gps');
+    const lodgeGpsBtn = document.getElementById('post-lodge-gps-btn');
+    const creatorPinInput = document.getElementById('post-creator-pin');
     const facebookInput = document.getElementById('post-contact-facebook');
     const twitterInput = document.getElementById('post-contact-twitter');
     const youtubeInput = document.getElementById('post-contact-youtube');
@@ -316,6 +355,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const prevComms = document.getElementById('preview-card-comms');
     const prevWeb = document.getElementById('preview-card-web');
     const prevDetails = document.getElementById('preview-card-details');
+    const prevGps = document.getElementById('preview-card-gps');
+    const prevGpsText = document.getElementById('preview-card-gps-text');
     const clearBizcardBtn = document.getElementById('clear-bizcard-btn');
 
     function updateLiveCardPreview() {
@@ -326,6 +367,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const comms = (commsInput ? commsInput.value.trim() : '') || '--';
         const web = (webInput ? webInput.value.trim() : '') || '--';
         const details = (detailsInput ? detailsInput.value.trim() : '') || '--';
+        const lodgeGps = (lodgeGpsInput ? lodgeGpsInput.value.trim() : '') || '';
 
         if (prevBizname) prevBizname.textContent = bizname;
         if (prevAuthor) prevAuthor.textContent = author;
@@ -334,8 +376,42 @@ document.addEventListener('DOMContentLoaded', () => {
         if (prevComms) prevComms.innerHTML = `<span class="text-slate-400">COMMS:</span> <span class="text-emerald-400 font-bold">${comms}</span>`;
         if (prevWeb) prevWeb.innerHTML = `<span class="text-slate-400">WEB:</span> <span class="text-blue-400 font-bold">${web}</span>`;
         if (prevDetails) prevDetails.textContent = `Specialties: ${details}`;
+        if (prevGps && prevGpsText) {
+            if (lodgeGps) {
+                prevGps.classList.remove('hidden');
+                prevGpsText.textContent = `RANCH GPS: ${lodgeGps}`;
+            } else {
+                prevGps.classList.add('hidden');
+            }
+        }
     }
     window.updateLiveCardPreview = updateLiveCardPreview;
+
+    // Grab Lodge GPS Button Handler
+    if (lodgeGpsBtn && lodgeGpsInput) {
+        lodgeGpsBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            const lbl = document.getElementById('post-lodge-gps-btn-label');
+            const orig = lbl ? lbl.textContent : "GRAB GPS";
+            if (lbl) lbl.textContent = "ACQUIRING...";
+            if ("geolocation" in navigator) {
+                navigator.geolocation.getCurrentPosition((pos) => {
+                    const lat = pos.coords.latitude.toFixed(5);
+                    const lon = pos.coords.longitude.toFixed(5);
+                    lodgeGpsInput.value = `${lat}, ${lon}`;
+                    if (lbl) lbl.textContent = "CAPTURED!";
+                    updateLiveCardPreview();
+                    setTimeout(() => { if (lbl) lbl.textContent = orig; }, 2000);
+                }, (err) => {
+                    alert("GPS signal unavailable or location permission denied.");
+                    if (lbl) lbl.textContent = "FAILED";
+                    setTimeout(() => { if (lbl) lbl.textContent = orig; }, 2000);
+                }, { enableHighAccuracy: true, timeout: 10000 });
+            } else {
+                alert("Geolocation not supported on this browser.");
+            }
+        });
+    }
 
     // Clear Business Card Form Handler
     if (clearBizcardBtn) {
@@ -347,6 +423,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (commsInput) commsInput.value = '';
             if (webInput) webInput.value = '';
             if (detailsInput) detailsInput.value = '';
+            if (lodgeGpsInput) lodgeGpsInput.value = '';
 
             const bizcardUpload = document.getElementById('post-bizcard-upload');
             const bizcardLabel = document.getElementById('post-bizcard-label');
@@ -373,9 +450,14 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Load saved business card from LocalStorage
+    // Load saved business card and Creator PIN from LocalStorage
     try {
         const savedCard = JSON.parse(localStorage.getItem('myTacticalBusinessCard') || '{}');
+        const savedPin = localStorage.getItem('trc_operator_pin') || '';
+        if (savedPin && creatorPinInput && !creatorPinInput.value) {
+            creatorPinInput.value = savedPin;
+        }
+
         if (savedCard) {
             if (savedCard.author && authorInput && !authorInput.value) authorInput.value = savedCard.author;
             if (savedCard.bizname && biznameInput) biznameInput.value = savedCard.bizname;
@@ -384,11 +466,13 @@ document.addEventListener('DOMContentLoaded', () => {
             if (savedCard.comms && commsInput) commsInput.value = savedCard.comms;
             if (savedCard.web && webInput) webInput.value = savedCard.web;
             if (savedCard.details && detailsInput) detailsInput.value = savedCard.details;
+            if (savedCard.gps && lodgeGpsInput) lodgeGpsInput.value = savedCard.gps;
+            if (savedCard.pin && creatorPinInput && !creatorPinInput.value) creatorPinInput.value = savedCard.pin;
             updateLiveCardPreview();
         }
     } catch(e) {}
 
-    [authorInput, biznameInput, unitInput, phoneInput, commsInput, webInput, detailsInput].forEach(inp => {
+    [authorInput, biznameInput, unitInput, phoneInput, commsInput, webInput, detailsInput, lodgeGpsInput].forEach(inp => {
         if (inp) {
             inp.addEventListener('input', updateLiveCardPreview);
         }
@@ -725,7 +809,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const author = (authorInput ? authorInput.value.trim() : '') || 'ANONYMOUS';
             const category = categorySelect ? categorySelect.value : 'GENERAL';
-            const intelText = contentInput ? contentInput.value.trim() : '';
+            let intelText = (contentInput ? contentInput.value.trim() : '');
             const file = imageUpload && imageUpload.files ? imageUpload.files[0] : null;
 
             // Grab Contact Card Fields
@@ -735,18 +819,43 @@ document.addEventListener('DOMContentLoaded', () => {
             const comms = commsInput ? commsInput.value.trim() : '';
             const web = webInput ? webInput.value.trim() : '';
             let details = detailsInput ? detailsInput.value.trim() : '';
+            const lodgeGps = lodgeGpsInput ? lodgeGpsInput.value.trim() : '';
+            const creatorPin = (creatorPinInput ? creatorPinInput.value.trim() : '') || localStorage.getItem('trc_operator_pin') || '';
             let facebook = facebookInput ? facebookInput.value.trim() : '';
             let twitter = twitterInput ? twitterInput.value.trim() : '';
             let youtube = youtubeInput ? youtubeInput.value.trim() : '';
             const bizFile = bizcardUpload && bizcardUpload.files ? bizcardUpload.files[0] : null;
 
+            // Remember Creator PIN & Callsign for Ownership Management
+            if (creatorPin) {
+                try { localStorage.setItem('trc_operator_pin', creatorPin); } catch(e) {}
+            }
+            if (author && author !== 'ANONYMOUS') {
+                try { localStorage.setItem('my_tactical_callsign', author); } catch(e) {}
+            }
+
+            // Parse Lodge GPS Coordinates if supplied
+            let lodgeLat = null, lodgeLon = null;
+            if (lodgeGps) {
+                const parts = lodgeGps.split(',');
+                if (parts.length === 2 && !isNaN(parseFloat(parts[0])) && !isNaN(parseFloat(parts[1]))) {
+                    lodgeLat = parseFloat(parts[0].trim());
+                    lodgeLon = parseFloat(parts[1].trim());
+                }
+            }
+
             const isStandaloneCard = (currentPostMode === 'STANDALONE_CARD');
-            const hasContactFields = !!(bizname || unit || phone || comms || web || details || facebook || twitter || youtube || bizFile);
+            const hasContactFields = !!(bizname || unit || phone || comms || web || details || lodgeGps || facebook || twitter || youtube || bizFile);
             const isAttachingContact = isStandaloneCard || (isContactFormOpen && hasContactFields);
 
             if (!intelText && !isAttachingContact) {
                 alert("Intel Report or TRC Business Card fields cannot be empty.");
                 return;
+            }
+
+            // Auto-append [COORD: lat, lon] tag if coordinates were entered in the Ranch GPS field and not already in text
+            if (lodgeLat !== null && lodgeLon !== null && !intelText.includes('[COORD:')) {
+                intelText = intelText + (intelText ? '\n\n' : '') + `[COORD: ${lodgeLat.toFixed(5)}, ${lodgeLon.toFixed(5)}]`;
             }
 
             submitBtn.innerHTML = `<i data-lucide="loader" class="w-4 h-4 animate-spin"></i> TRANSMITTING...`;
@@ -803,7 +912,9 @@ document.addEventListener('DOMContentLoaded', () => {
                             phone: phone,
                             comms: comms,
                             web: web,
-                            details: details
+                            details: details,
+                            gps: lodgeGps,
+                            pin: creatorPin
                         }));
                     } catch(e) {}
                 }
@@ -813,6 +924,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (isAttachingContact) {
                     const payload = {
                         intelText: intelText,
+                        creatorPin: creatorPin,
                         contact: {
                             bizname: bizname,
                             unit: unit,
@@ -820,11 +932,21 @@ document.addEventListener('DOMContentLoaded', () => {
                             comms: comms,
                             web: web,
                             details: details,
+                            gps: lodgeGps,
+                            lat: lodgeLat,
+                            lon: lodgeLon,
+                            creatorPin: creatorPin,
                             facebook: facebook,
                             twitter: twitter,
                             youtube: youtube,
                             cardImageUrl: bizcardImageUrl
                         }
+                    };
+                    finalContent = JSON.stringify(payload);
+                } else if (creatorPin) {
+                    const payload = {
+                        intelText: intelText,
+                        creatorPin: creatorPin
                     };
                     finalContent = JSON.stringify(payload);
                 }
@@ -847,8 +969,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 if (insertError) throw new Error("Database Insert Failed: " + insertError.message);
 
-                // 5. AUTOMATICALLY SAVE TO INTEL VAULT & IDB
+                // 5. Track My Created Post IDs Locally
                 const newPostId = (insertedData && insertedData[0]) ? insertedData[0].id : Date.now();
+                try {
+                    let myPosts = JSON.parse(localStorage.getItem('my_created_post_ids') || '[]');
+                    if (!myPosts.includes(newPostId)) {
+                        myPosts.push(newPostId);
+                        localStorage.setItem('my_created_post_ids', JSON.stringify(myPosts));
+                    }
+                } catch(pe) {}
                 const vaultEntry = {
                     id: 'wire_' + newPostId,
                     name: (author || 'INTEL REPORT') + ' - ' + insertedCategory,
@@ -866,6 +995,9 @@ document.addEventListener('DOMContentLoaded', () => {
                         comms: comms,
                         web: web,
                         details: details,
+                        gps: lodgeGps,
+                        lat: lodgeLat,
+                        lon: lodgeLon,
                         facebook: facebook,
                         twitter: twitter,
                         youtube: youtube,
@@ -925,7 +1057,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 highlightActiveFilterButton('ALL POSTS');
                 
                 // Close modal and refresh feed
-                if (postModal) postModal.classList.add('hidden');
+                if (postModal) {
+                    postModal.classList.add('hidden');
+                    postModal.style.display = 'none';
+                }
                 await fetchWirePosts();
 
             } catch (err) {
@@ -963,10 +1098,12 @@ try {
             .order('created_at', { ascending: false })
             .limit(50);
 
-        if (currentWireCategoryFilter && currentWireCategoryFilter !== 'ALL') {
+        if (currentWireCategoryFilter && currentWireCategoryFilter !== 'ALL' && currentWireCategoryFilter !== 'FLAGGED') {
             // CONTACTS filter: match both CONTACTS and CONTACT (legacy) posts
             if (currentWireCategoryFilter === 'CONTACTS') {
                 query = query.or('category.eq.CONTACTS,category.eq.CONTACT');
+            } else if (currentWireCategoryFilter === 'GUIDED_HUNTS') {
+                query = query.or('category.ilike.%GUIDED%,category.ilike.%LODGING%');
             } else {
                 // Use ilike to catch both singular/plural variants in DB (HOTSPOT or HOTSPOTS)
                 query = query.ilike('category', `%${currentWireCategoryFilter.replace(/S$/, '')}%`);
@@ -983,26 +1120,41 @@ try {
         window.fetchedWirePosts = filteredData;
         if (typeof window.updateBlogBookDisplay === 'function') window.updateBlogBookDisplay();
 
+        const isMasterAdmin = sessionStorage.getItem('trc_is_master_admin') === 'true';
+        const reportedPosts = JSON.parse(localStorage.getItem('trc_reported_posts') || '[]');
+        const reportedLog = JSON.parse(localStorage.getItem('trc_reported_posts_log') || '{}');
+
+        let visibleData = [];
+        if (currentWireCategoryFilter === 'FLAGGED') {
+            visibleData = (filteredData || []).filter(p => reportedPosts.includes(p.id.toString()) || reportedPosts.includes(p.id) || p.status === 'suspended' || p.status === 'flagged');
+        } else if (isMasterAdmin) {
+            visibleData = filteredData || [];
+        } else {
+            visibleData = (filteredData || []).filter(p => !reportedPosts.includes(p.id.toString()) && !reportedPosts.includes(p.id));
+        }
+
         feedContainer.innerHTML = '';
 
-        if (!filteredData || filteredData.length === 0) {
+        if (!visibleData || visibleData.length === 0) {
             feedContainer.innerHTML = `
                 <div class="text-center py-20 px-4 border-4 border-dashed border-slate-700 rounded-xl bg-slate-900/50">
-                    <h3 class="text-slate-400 font-black text-sm uppercase tracking-widest mb-3">NO TRANSMISSIONS INTERCEPTED IN "${currentWireCategoryFilter}".</h3>
+                    <h3 class="text-slate-400 font-black text-sm uppercase tracking-widest mb-3">NO TRANSMISSIONS FOUND IN "${currentWireCategoryFilter}".</h3>
                     <button onclick="window.currentWireCategoryFilter='ALL'; window.fetchWirePosts();" class="bg-blue-600 text-white font-black text-[10px] px-6 py-2.5 rounded hover:bg-blue-500 uppercase tracking-widest transition-colors shadow-lg">SHOW ALL POSTS</button>
                 </div>
             `;
             return;
         }
 
-        filteredData.forEach(post => {
+        visibleData.forEach(post => {
             // Unpack content JSON if contact card is attached
             let intelText = post.content || '';
             let contactData = null;
+            let postContentObj = null;
 
             if (post.content && post.content.startsWith('{')) {
                 try {
                     const parsed = JSON.parse(post.content);
+                    postContentObj = parsed;
                     if (parsed.intelText !== undefined) {
                         intelText = parsed.intelText;
                         contactData = parsed.contact || null;
@@ -1010,10 +1162,14 @@ try {
                 } catch(e) {}
             }
 
+            const postIdStr = post.id ? post.id.toString() : '';
+            const reportMeta = reportedLog[postIdStr] || reportedLog[post.id] || null;
+            const isPostReported = reportedPosts.includes(postIdStr) || reportedPosts.includes(post.id) || post.status === 'suspended' || post.status === 'flagged' || Boolean(reportMeta);
+
             const card = document.createElement('div');
             card.id = `wire-post-${post.id}`;
             card.dataset.postId = post.id;
-            card.className = "w-full max-w-2xl bg-white border-4 border-black shadow-[8px_8px_0_rgba(0,0,0,1)] rounded-sm overflow-hidden flex flex-col mx-auto relative mb-6 transition-all duration-300";
+            card.className = `w-full max-w-2xl bg-white ${isPostReported ? 'border-4 border-red-600 shadow-[8px_8px_0_rgba(220,38,38,1)]' : 'border-4 border-black shadow-[8px_8px_0_rgba(0,0,0,1)]'} rounded-sm overflow-hidden flex flex-col mx-auto relative mb-6 transition-all duration-300`;
 
             // Format date
             const dateObj = new Date(post.created_at);
@@ -1033,22 +1189,37 @@ try {
                 catBadgeStyle = 'background-color: #10b981 !important; color: #000000 !important; border: 1px solid #000 !important; font-weight: 900 !important;';
                 displayCatName = '🏆 TROPHY';
             } else if (rawCat.includes('WARNING')) {
-                catBadgeStyle = 'background-color: #dc2626 !important; color: #ffffff !important; border: 1px solid #000 !important; font-weight: 900 !important;';
+                catBadgeStyle = 'background-color: #ef4444 !important; color: #ffffff !important; border: 1px solid #000 !important; font-weight: 900 !important;';
                 displayCatName = '⚠️ WARNING';
-            } else if (rawCat.includes('CONTACT')) {
-                catBadgeStyle = 'background-color: #581c87 !important; color: #e9d5ff !important; border: 2px solid #c084fc !important; font-weight: 900 !important;';
-                displayCatName = '🎴 CONTACT CARD';
+            } else if (rawCat.includes('CONTACT') || rawCat.includes('BUSINESS')) {
+                catBadgeStyle = 'background-color: #a855f7 !important; color: #ffffff !important; border: 1px solid #000 !important; font-weight: 900 !important;';
+                displayCatName = '🎴 OUTFITTER';
+            } else if (rawCat.includes('LODGING') || rawCat.includes('GUIDED')) {
+                catBadgeStyle = 'background-color: #f59e0b !important; color: #000000 !important; border: 1px solid #000 !important; font-weight: 900 !important;';
+                displayCatName = '🏕️ GUIDED/LODGE';
+            } else if (rawCat.includes('FISHING')) {
+                catBadgeStyle = 'background-color: #06b6d4 !important; color: #000000 !important; border: 1px solid #000 !important; font-weight: 900 !important;';
+                displayCatName = '🎣 FISHING';
             }
 
             const catBadge = `<span style="${catBadgeStyle}" class="text-[10px] px-2 py-0.5 rounded uppercase tracking-wider shrink-0 shadow-sm inline-block">${displayCatName}</span>`;
 
-            // Parse for coordinates in content (e.g., [COORD: 32.7767, -96.7970])
+            // Parse for coordinates in content (e.g., [COORD: 32.7767, -96.7970]) or contactData.gps
             let extractedLat = null;
             let extractedLon = null;
             const coordMatch = intelText.match(/\[(?:COORD|MGRS):?\s*(-?\d+\.\d+),\s*(-?\d+\.\d+)\]/i);
             if (coordMatch) {
                 extractedLat = parseFloat(coordMatch[1]);
                 extractedLon = parseFloat(coordMatch[2]);
+            } else if (contactData && contactData.lat && contactData.lon) {
+                extractedLat = parseFloat(contactData.lat);
+                extractedLon = parseFloat(contactData.lon);
+            } else if (contactData && contactData.gps) {
+                const parts = contactData.gps.split(',');
+                if (parts.length === 2 && !isNaN(parseFloat(parts[0])) && !isNaN(parseFloat(parts[1]))) {
+                    extractedLat = parseFloat(parts[0].trim());
+                    extractedLon = parseFloat(parts[1].trim());
+                }
             }
 
             const upvotes = post.upvotes || 0;
@@ -1056,22 +1227,73 @@ try {
             // Unpack media & contact info
             const trophyPhotoUrl = post.image_url || post.imageUrl || post.image || null;
             const personalBizCardUrl = (contactData && contactData.cardImageUrl) ? contactData.cardImageUrl : null;
-            const hasTRCDigitalCard = contactData && (contactData.bizname || contactData.unit || contactData.phone || contactData.comms || contactData.web || contactData.details);
+            const hasTRCDigitalCard = contactData && (contactData.bizname || contactData.unit || contactData.phone || contactData.comms || contactData.web || contactData.details || contactData.gps);
+
+            // Determine Post Ownership & Authorization
+            const myPostIds = JSON.parse(localStorage.getItem('my_created_post_ids') || '[]');
+            const mySavedPin = (localStorage.getItem('trc_operator_pin') || '').trim();
+            const myCallsign = (localStorage.getItem('my_tactical_callsign') || '').trim().toLowerCase();
+            const postPin = (contactData && (contactData.creatorPin || contactData.pin)) || (postContentObj && postContentObj.creatorPin) || post.creator_pin || null;
+
+            const isOwner = myPostIds.includes(post.id) || (postPin && mySavedPin && postPin.toString() === mySavedPin.toString()) || (myCallsign && post.author && post.author.trim().toLowerCase() === myCallsign && myCallsign !== 'anonymous');
+
+            let formattedTxId = 'TX-#';
+            if (post.id) {
+                const rawId = post.id.toString();
+                if (rawId.length > 8) {
+                    formattedTxId = 'TX-#' + rawId.replace(/-/g, '').slice(-6).toUpperCase();
+                } else {
+                    formattedTxId = 'TX-#' + rawId.padStart(5, '0');
+                }
+            }
 
             card.innerHTML = `
-                <div class="p-2.5 sm:p-3 border-b-2 border-black bg-gray-100 flex items-center justify-between gap-1.5 w-full">
-                    <div class="flex items-center gap-1.5 min-w-0 flex-1">
+                <div class="p-2.5 sm:p-3 border-b-2 border-black ${isPostReported ? 'bg-red-100' : 'bg-gray-100'} flex items-center justify-between gap-1.5 w-full flex-wrap">
+                    <div class="flex items-center gap-2 min-w-0 flex-1">
+                        <span class="bg-black text-amber-300 font-mono font-black text-[10px] px-1.5 py-0.5 rounded border border-gray-700 shrink-0">${formattedTxId}</span>
+                        ${isPostReported ? `<span class="bg-red-700 text-white font-black text-[9px] px-1.5 py-0.5 rounded uppercase shrink-0">⚠️ FLAGGED</span>` : ''}
                         <i data-lucide="user" class="w-4 h-4 text-gray-700 shrink-0"></i>
                         <span class="font-black text-black uppercase tracking-wider text-xs sm:text-sm truncate max-w-[90px] sm:max-w-[180px]">${post.author || 'ANONYMOUS'}</span>
                         <span class="text-[9px] sm:text-[10px] font-bold text-gray-400 uppercase truncate shrink-0">${timeStr}</span>
                     </div>
-                    <div class="flex items-center gap-1.5 shrink-0">
+                    <div class="flex items-center gap-1.5 shrink-0 flex-wrap">
                         ${catBadge}
-                        <button class="wire-delete-btn bg-red-600 hover:bg-red-700 active:bg-red-800 text-white border border-red-800 p-1.5 rounded-md transition-all shrink-0 flex items-center justify-center shadow-sm cursor-pointer" data-id="${post.id}" title="Delete Post" aria-label="Delete Post">
-                            <i data-lucide="trash-2" class="w-4 h-4 text-white pointer-events-none"></i>
+                        ${(isMasterAdmin && isPostReported) ? `
+                        <button onclick="window.masterRestorePost('${post.id}')" style="background-color: #047857 !important; color: #ffffff !important; border: 2px solid #064e3b !important;" class="font-black text-[10px] px-2.5 py-1 rounded flex items-center gap-1 cursor-pointer shadow uppercase hover:brightness-125 transition-all" title="Master Admin: Restore Post">
+                            <i data-lucide="check-circle" class="w-3.5 h-3.5 text-white pointer-events-none"></i> <span>RESTORE</span>
+                        </button>
+                        ` : ''}
+                        ${isMasterAdmin ? `
+                        <button onclick="window.masterDeletePost('${post.id}')" style="background-color: #dc2626 !important; color: #ffffff !important; border: 2px solid #7f1d1d !important;" class="font-black text-[10px] px-2.5 py-1 rounded flex items-center gap-1 cursor-pointer shadow uppercase hover:brightness-125 transition-all" title="Master Commander: Delete Post">
+                            <i data-lucide="trash-2" class="w-3.5 h-3.5 text-white pointer-events-none"></i> <span>DELETE</span>
+                        </button>
+                        <button onclick="window.masterPurgeBanPost('${post.id}', '${(post.author || 'ANONYMOUS').replace(/'/g, "\\'")}')" style="background-color: #b91c1c !important; color: #ffffff !important; border: 2px solid #7f1d1d !important;" class="font-black text-[10px] px-2.5 py-1 rounded flex items-center gap-1 cursor-pointer shadow uppercase hover:brightness-125 transition-all" title="Master Admin: Ban & Purge">
+                            <i data-lucide="slash" class="w-3.5 h-3.5 text-white pointer-events-none"></i> <span>BAN</span>
+                        </button>
+                        ` : ''}
+                        ${(isOwner && !isMasterAdmin) ? `
+                        <button class="wire-delete-btn bg-red-600 hover:bg-red-700 active:bg-red-800 text-white border border-red-800 px-2 py-1 rounded text-[10px] font-black uppercase tracking-wider flex items-center gap-1 transition-all shrink-0 cursor-pointer shadow-sm" data-id="${post.id}" data-pin="${postPin || ''}" title="Delete My Transmission" aria-label="Delete My Transmission">
+                            <i data-lucide="trash-2" class="w-3.5 h-3.5 text-white pointer-events-none"></i> <span>DELETE</span>
+                        </button>
+                        ` : ''}
+                        <button class="wire-report-btn bg-slate-900 hover:bg-red-950 active:bg-red-900 text-red-400 border border-red-800/80 px-2 py-1 rounded text-[10px] font-black uppercase tracking-wider flex items-center gap-1 transition-all shrink-0 cursor-pointer shadow-sm" data-id="${post.id}" title="Report Inappropriate Content (UGC Policy)" aria-label="Report Inappropriate Content">
+                            <i data-lucide="flag" class="w-3 h-3 text-red-400 pointer-events-none"></i> <span>REPORT</span>
                         </button>
                     </div>
                 </div>
+
+                <!-- MODERATION AUDIT BANNER (Visible on Flagged Transmissions) -->
+                ${isPostReported ? `
+                <div class="bg-red-950 border-b-2 border-red-700 p-2.5 sm:p-3 flex items-center justify-between gap-2 flex-wrap">
+                    <div class="flex items-center gap-2 text-xs font-black text-red-200">
+                        <i data-lucide="alert-triangle" class="w-4 h-4 text-red-400 shrink-0"></i>
+                        <span>MODERATION AUDIT: <span class="text-red-300 font-normal">"${reportMeta ? reportMeta.reason : 'User Reported'}"</span></span>
+                    </div>
+                    <div class="text-[10px] font-mono font-bold text-red-400 bg-red-900/60 px-2 py-0.5 rounded border border-red-700/80">
+                        REPORTED: ${reportMeta ? new Date(reportMeta.timestamp).toLocaleString() : 'PENDING REVIEW'}
+                    </div>
+                </div>
+                ` : ''}
 
                 <!-- SECTION 1: Trophy / Main Field Photo -->
                 ${trophyPhotoUrl ? `
@@ -1104,9 +1326,15 @@ try {
                                 <i data-lucide="contact" class="w-4 h-4 text-purple-400"></i> TACTICAL RANGE CARD OPERATOR
                             </span>
                             <div class="flex items-center gap-2 shrink-0">
-                                <button style="background-color: #9333ea !important; color: #ffffff !important; border: 2px solid #000000 !important;" class="wire-rework-post-card-btn font-black text-[11px] px-3.5 py-1.5 rounded-lg uppercase tracking-wider hover:brightness-125 transition-all shadow-[0_0_12px_rgba(168,85,247,0.8)] flex items-center gap-1.5 cursor-pointer">
-                                    <i data-lucide="wrench" class="w-4 h-4 text-white"></i> REWORK CARD
+                                ${isOwner ? `
+                                <button style="background-color: #9333ea !important; color: #ffffff !important; border: 2px solid #000000 !important;" class="wire-rework-post-card-btn font-black text-[11px] px-3.5 py-1.5 rounded-lg uppercase tracking-wider hover:brightness-125 transition-all shadow-[0_0_12px_rgba(168,85,247,0.8)] flex items-center gap-1.5 cursor-pointer" title="Edit your business card">
+                                    <i data-lucide="wrench" class="w-4 h-4 text-white"></i> EDIT CARD
                                 </button>
+                                ` : `
+                                <button style="background-color: #0d9488 !important; color: #ffffff !important; border: 2px solid #000000 !important;" class="wire-save-contact-btn font-black text-[11px] px-3.5 py-1.5 rounded-lg uppercase tracking-wider hover:brightness-125 transition-all shadow-[0_0_12px_rgba(13,148,136,0.8)] flex items-center gap-1.5 cursor-pointer" title="Save this outfitter contact to your local Intel Vault">
+                                    <i data-lucide="contact" class="w-4 h-4 text-white"></i> SAVE CONTACT
+                                </button>
+                                `}
                                 <span style="background-color: #064e3b !important; color: #34d399 !important; border: 1px solid #10b981 !important;" class="font-mono text-[9px] px-2.5 py-1 rounded uppercase font-bold">
                                     VERIFIED CONTACT
                                 </span>
@@ -1133,6 +1361,14 @@ try {
                         </div>
                         ` : ''}
                         ${contactData.details ? `<div style="color: #d8b4fe; border-top: 1px solid rgba(255,255,255,0.1);" class="mt-2 text-xs italic pt-2">Specialties: "${contactData.details}"</div>` : ''}
+                        ${(contactData && (contactData.gps || (extractedLat !== null && !isNaN(extractedLat) && extractedLon !== null && !isNaN(extractedLon)))) ? `
+                        <div style="border-top: 1px solid rgba(255,255,255,0.1);" class="mt-2 text-xs font-mono pt-2 flex flex-wrap items-center justify-between gap-1 text-amber-300">
+                            <span class="flex items-center gap-1.5"><i data-lucide="map-pin" class="w-3.5 h-3.5 text-amber-400"></i> RANCH GPS: <b class="text-amber-200">${contactData.gps || ((extractedLat !== null && extractedLon !== null) ? (extractedLat.toFixed(5) + ', ' + extractedLon.toFixed(5)) : '--')}</b></span>
+                            <span style="background-color: #78350f !important; color: #fde68a !important; border: 1px solid #d97706 !important;" class="text-[9px] px-2 py-0.5 rounded font-bold uppercase tracking-wider">
+                                🛰️ SATELLITE PLOTTED
+                            </span>
+                        </div>
+                        ` : ''}
                     </div>
                     ` : ''}
 
@@ -1145,9 +1381,9 @@ try {
                             <i data-lucide="folder-plus" class="w-4 h-4 text-purple-700"></i> INTEL VAULT
                         </button>
 
-                        ${(!isNaN(extractedLat) && !isNaN(extractedLon)) ? `
-                        <button class="wire-investigate-btn flex-1 bg-green-100 text-green-800 font-bold text-xs py-2 border-2 border-green-700 rounded flex items-center justify-center gap-1.5 hover:bg-green-200 transition-colors uppercase" data-lat="${extractedLat}" data-lon="${extractedLon}">
-                            <i data-lucide="crosshair" class="w-4 h-4"></i> INVESTIGATE
+                        ${(extractedLat !== null && !isNaN(extractedLat) && extractedLon !== null && !isNaN(extractedLon)) ? `
+                        <button class="wire-investigate-btn flex-1 ${(rawCat.includes('GUIDED') || rawCat.includes('LODGING')) ? 'bg-amber-400 hover:bg-amber-300 text-black border-2 border-black shadow-[0_0_15px_rgba(245,158,11,0.5)]' : 'bg-green-100 hover:bg-green-200 text-green-800 border-2 border-green-700'} font-black text-xs py-2 px-3 rounded flex items-center justify-center gap-1.5 transition-all uppercase cursor-pointer" data-lat="${extractedLat}" data-lon="${extractedLon}" title="Survey Ranch Terrain on Satellite Map">
+                            <i data-lucide="${(rawCat.includes('GUIDED') || rawCat.includes('LODGING')) ? 'satellite' : 'crosshair'}" class="w-4 h-4 text-black"></i> ${(rawCat.includes('GUIDED') || rawCat.includes('LODGING')) ? '🛰️ SURVEY RANCH ON MAP' : '🛰️ SURVEY TERRAIN'}
                         </button>
                         ` : ''}
                     </div>
@@ -1201,7 +1437,57 @@ try {
                 });
             }
 
-            // Attach Rework Card handler
+            // Attach Save Contact handler (For Customers)
+            const saveContactBtn = card.querySelector('.wire-save-contact-btn');
+            if (saveContactBtn) {
+                saveContactBtn.addEventListener('click', async (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    saveContactBtn.disabled = true;
+                    saveContactBtn.innerHTML = `<i data-lucide="loader" class="w-4 h-4 animate-spin text-teal-700"></i> SAVING...`;
+                    if (window.lucide) window.lucide.createIcons();
+
+                    const contactEntry = {
+                        id: 'contact_' + post.id,
+                        name: (contactData.bizname || post.author || 'OUTFITTER') + ' [CONTACT]',
+                        type: 'intel_report',
+                        timestamp: Date.now(),
+                        date: new Date().toLocaleDateString(),
+                        author: post.author || 'OPERATOR',
+                        category: 'CONTACTS',
+                        content: intelText || `Verified Outfitter Contact: ${contactData.bizname || post.author}`,
+                        image: personalBizCardUrl || trophyPhotoUrl || null,
+                        contact: contactData,
+                        targetLat: extractedLat,
+                        targetLon: extractedLon
+                    };
+
+                    try {
+                        if (!window.vaultCache) window.vaultCache = [];
+                        window.vaultCache = window.vaultCache.filter(v => v && v.id && v.id.toString() !== contactEntry.id.toString());
+                        window.vaultCache.unshift(contactEntry);
+
+                        if (window.TRC_IDB) {
+                            await window.TRC_IDB.set('intelVault', contactEntry.id.toString(), contactEntry);
+                        }
+                        if (typeof window.refreshVaultGrid === 'function') window.refreshVaultGrid();
+                        alert(`✅ ${contactData.bizname || post.author || 'Outfitter'} contact successfully saved to your offline Intel Vault!`);
+                        saveContactBtn.innerHTML = `<i data-lucide="check-circle" class="w-4 h-4 text-emerald-300"></i> SAVED`;
+                    } catch(err) {
+                        console.error("Save Contact Error:", err);
+                        alert("Failed to save contact: " + err.message);
+                        saveContactBtn.innerHTML = `<i data-lucide="contact" class="w-4 h-4 text-white"></i> SAVE CONTACT`;
+                    } finally {
+                        setTimeout(() => {
+                            saveContactBtn.disabled = false;
+                            saveContactBtn.innerHTML = `<i data-lucide="contact" class="w-4 h-4 text-white"></i> SAVE CONTACT`;
+                            if (window.lucide) window.lucide.createIcons();
+                        }, 2500);
+                    }
+                });
+            }
+
+            // Attach Rework / Edit Card handler (For Post Owner)
             const reworkPostCardBtn = card.querySelector('.wire-rework-post-card-btn');
             if (reworkPostCardBtn) {
                 reworkPostCardBtn.addEventListener('click', (e) => {
@@ -1215,13 +1501,26 @@ try {
                 });
             }
 
-            // Attach Delete handler
+            // Attach Delete handler (For Post Owner with PIN protection)
             const deleteBtn = card.querySelector('.wire-delete-btn');
             if (deleteBtn) {
                 deleteBtn.addEventListener('click', async (e) => {
                     e.preventDefault();
                     const postId = deleteBtn.getAttribute('data-id');
-                    if (!confirm("Are you sure you want to delete this transmission?")) return;
+                    const requiredPin = (deleteBtn.getAttribute('data-pin') || '').trim();
+                    const localSavedPin = (localStorage.getItem('trc_operator_pin') || '').trim();
+
+                    // PIN Verification check if post has a PIN and local PIN doesn't match
+                    if (requiredPin && requiredPin !== '' && requiredPin !== localSavedPin) {
+                        const enteredPin = prompt("Enter your 4-Digit Creator PIN to delete this transmission:");
+                        if (enteredPin === null) return;
+                        if (enteredPin.trim() !== requiredPin) {
+                            alert("⛔ ACCESS DENIED: Incorrect Creator Security PIN.");
+                            return;
+                        }
+                    } else {
+                        if (!confirm("Are you sure you want to permanently delete this transmission?")) return;
+                    }
 
                     deleteBtn.disabled = true;
                     deleteBtn.innerHTML = `<i data-lucide="loader" class="w-4 h-4 animate-spin text-red-600"></i>`;
@@ -1235,6 +1534,12 @@ try {
 
                         if (error) throw error;
 
+                        try {
+                            let myPosts = JSON.parse(localStorage.getItem('my_created_post_ids') || '[]');
+                            myPosts = myPosts.filter(id => id.toString() !== postId.toString());
+                            localStorage.setItem('my_created_post_ids', JSON.stringify(myPosts));
+                        } catch(pe) {}
+
                         card.remove();
                     } catch (err) {
                         console.error("Delete post error:", err);
@@ -1242,6 +1547,52 @@ try {
                         deleteBtn.disabled = false;
                         deleteBtn.innerHTML = `<i data-lucide="trash-2" class="w-4 h-4 text-white pointer-events-none"></i>`;
                         if (window.lucide) window.lucide.createIcons();
+                    }
+                });
+            }
+
+            // Attach Report / Flag handler (For UGC Safety & Google Play Compliance)
+            const reportBtn = card.querySelector('.wire-report-btn');
+            if (reportBtn) {
+                reportBtn.addEventListener('click', async (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const postId = reportBtn.getAttribute('data-id');
+                    if (!postId) return;
+                    const reason = prompt("Tactical Range Card UGC Moderation:\nPlease specify the reason for reporting this transmission (e.g. Inappropriate Content, Spam, Harassment, Violation):");
+                    if (reason && reason.trim()) {
+                        const postIdStr = postId.toString();
+                        const reported = JSON.parse(localStorage.getItem('trc_reported_posts') || '[]');
+                        if (!reported.includes(postIdStr)) reported.push(postIdStr);
+                        localStorage.setItem('trc_reported_posts', JSON.stringify(reported));
+
+                        const reportLog = JSON.parse(localStorage.getItem('trc_reported_posts_log') || '{}');
+                        reportLog[postIdStr] = {
+                            reason: reason.trim(),
+                            timestamp: new Date().toISOString(),
+                            reportedBy: localStorage.getItem('my_tactical_callsign') || 'ANONYMOUS'
+                        };
+                        localStorage.setItem('trc_reported_posts_log', JSON.stringify(reportLog));
+
+                        try {
+                            const client = window.getSupabaseClient();
+                            if (client) {
+                                const { error: updateErr } = await client.from('global_wire').update({ status: 'flagged' }).eq('id', postId);
+                                if (updateErr) console.warn("Supabase update post error:", updateErr);
+
+                                const { error: insertErr } = await client.from('global_wire_reports').insert([{
+                                    post_id: postId,
+                                    reporter_callsign: localStorage.getItem('my_tactical_callsign') || 'ANONYMOUS',
+                                    reason: reason.trim()
+                                }]);
+                                if (insertErr) console.warn("Supabase insert report error:", insertErr);
+                            }
+                        } catch(se) {
+                            console.error("Supabase report log error:", se);
+                        }
+
+                        alert(`✅ Report filed: "${reason.trim()}".\nThis transmission has been flagged for review.`);
+                        fetchWirePosts();
                     }
                 });
             }
@@ -1334,6 +1685,9 @@ try {
         </div>`;
     }
 }
+
+window.fetchWirePosts = fetchWirePosts;
+window.fetchGlobalWirePosts = fetchWirePosts;
 
 // =========================================================================
 // 3D OPEN BOOK BLOG FLIPBOOK LOGIC
@@ -1526,16 +1880,22 @@ window.toggleCommLink = function() {
     if (!sidebar) return;
     
     const isOpen = sidebar.style.transform === 'translateX(0px)';
+    const client = typeof getSupabaseClient === 'function' ? getSupabaseClient() : window.supabaseClient;
     
     if (!isOpen) {
         sidebar.classList.remove('translate-x-full');
         sidebar.style.transform = 'translateX(0)';
+        
+        const authorInput = document.getElementById('comm-link-author');
+        if (authorInput && !authorInput.value) {
+            authorInput.value = (localStorage.getItem('my_tactical_callsign') || '').substring(0, 20);
+        }
+        
         window.fetchCommLinkFeed();
-        const client = typeof getSupabaseClient === 'function' ? getSupabaseClient() : window.supabaseClient;
         if (client && !commLinkSubscription) {
             commLinkSubscription = client
-                .channel('comm-link-channel')
-                .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'global_wire', filter: "category=eq.COMM_CHAT" }, payload => {
+                .channel('global_wire_chat')
+                .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'global_wire', filter: 'category=eq.COMM_CHAT' }, payload => {
                     window.fetchCommLinkFeed();
                 })
                 .subscribe();
@@ -1544,7 +1904,6 @@ window.toggleCommLink = function() {
         sidebar.classList.add('translate-x-full');
         sidebar.style.transform = 'translateX(100%)';
         if (commLinkSubscription) {
-            const client = typeof getSupabaseClient === 'function' ? getSupabaseClient() : window.supabaseClient;
             if (client) client.removeChannel(commLinkSubscription);
             commLinkSubscription = null;
         }
@@ -1583,7 +1942,7 @@ window.fetchCommLinkFeed = async function() {
             msgEl.style.borderColor = 'rgba(var(--accent-rgb), 0.3)';
             msgEl.innerHTML = `
                 <div class="flex justify-between items-start mb-1 border-b pb-1" style="border-color: rgba(var(--accent-rgb), 0.3);">
-                    <span class="font-black uppercase text-ellipsis overflow-hidden whitespace-nowrap" style="color: var(--accent-color);">${msg.author || 'UNKNOWN'}</span>
+                    <span class="font-black uppercase text-ellipsis overflow-hidden whitespace-nowrap max-w-[180px]" style="color: var(--accent-color);">${(msg.author || 'UNKNOWN').substring(0, 20)}</span>
                     <span class="text-[9px] shrink-0" style="color: rgba(var(--accent-rgb), 0.7);">${timeStr}</span>
                 </div>
                 <div class="drop-shadow-md whitespace-pre-wrap break-words font-medium" style="color: rgba(255,255,255,0.9);">${msg.content}</div>
@@ -1606,12 +1965,21 @@ window.submitCommLinkMessage = async function() {
     const authorInput = document.getElementById('comm-link-author');
     const msgInput = document.getElementById('comm-link-input');
     
-    const author = authorInput.value.trim() || 'OPERATOR';
-    const msg = msgInput.value.trim();
+    let author = (authorInput && authorInput.value ? authorInput.value.trim() : '') || localStorage.getItem('my_tactical_callsign') || 'OPERATOR';
+    if (author.length > 20) author = author.substring(0, 20);
+
+    let msg = msgInput ? msgInput.value.trim() : '';
+    if (msg.length > 500) msg = msg.substring(0, 500);
     
     if (!msg) return;
+
+    if (author && author !== 'OPERATOR') {
+        try { localStorage.setItem('my_tactical_callsign', author); } catch(e) {}
+    }
     
     msgInput.value = '';
+    const charCountEl = document.getElementById('comm-link-char-count');
+    if (charCountEl) charCountEl.textContent = '0/500';
     
     try {
         const { error } = await client
@@ -1630,8 +1998,9 @@ window.submitCommLinkMessage = async function() {
         
     } catch (err) {
         console.error('Error sending message:', err);
-        alert('Failed to transmit message.');
+        alert('Failed to transmit message: ' + err.message);
         msgInput.value = msg;
+        if (charCountEl) charCountEl.textContent = `${msg.length}/500`;
     }
 };
 
@@ -1642,3 +2011,138 @@ window.clearCommLinkFeed = function() {
     }
 };
 
+// Setup Live Character Counters for Comms Link
+(function initCommLinkCounters() {
+    function setupCounters() {
+        const authorInput = document.getElementById('comm-link-author');
+        const authorCount = document.getElementById('comm-link-author-count');
+        const msgInput = document.getElementById('comm-link-input');
+        const msgCount = document.getElementById('comm-link-char-count');
+
+        if (authorInput && authorCount) {
+            authorInput.addEventListener('input', () => {
+                authorCount.textContent = `${authorInput.value.length}/20`;
+            });
+        }
+
+        if (msgInput && msgCount) {
+            msgInput.addEventListener('input', () => {
+                msgCount.textContent = `${msgInput.value.length}/500`;
+                if (msgInput.value.length >= 480) {
+                    msgCount.classList.add('text-amber-400');
+                } else {
+                    msgCount.classList.remove('text-amber-400');
+                }
+            });
+        }
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', setupCounters);
+    } else {
+        setupCounters();
+    }
+})();
+
+// ==========================================
+// MASTER ADMIN SECRETS & MODERATION PORTAL
+// ==========================================
+window.toggleMasterAdminPortal = function() {
+    const isMaster = sessionStorage.getItem('trc_is_master_admin') === 'true';
+    if (isMaster) {
+        const choice = confirm("👑 MASTER COMMANDER SESSION ACTIVE\n\nClick OK to Logout of Master Admin Mode, or Cancel to remain logged in.");
+        if (choice) {
+            sessionStorage.removeItem('trc_is_master_admin');
+            alert("Master Admin Mode Deactivated.");
+            const badge = document.getElementById('master-admin-badge');
+            if (badge) badge.innerText = "ADMIN";
+            fetchWirePosts();
+        }
+        return;
+    }
+
+    const enteredPin = prompt("🔐 ENTER MASTER COMMANDER SECURITY PIN:");
+    if (!enteredPin) return;
+
+    const savedMasterPin = (localStorage.getItem('trc_master_admin_pin') || '8420').trim();
+    if (enteredPin.trim() === savedMasterPin) {
+        sessionStorage.setItem('trc_is_master_admin', 'true');
+        alert("👑 ACCESS GRANTED: Welcome, Master Commander.\nUniversal Moderation & Enforcement Controls are now active.");
+        const badge = document.getElementById('master-admin-badge');
+        if (badge) badge.innerText = "COMMANDER";
+        fetchWirePosts();
+    } else {
+        alert("⛔ ACCESS DENIED: Invalid Master Security PIN.");
+    }
+};
+
+window.masterRestorePost = async function(postId) {
+    const postIdStr = postId ? postId.toString() : '';
+    if (!confirm(`Restore Transmission TX-#${postIdStr.slice(-6).toUpperCase()} to live public feed?`)) return;
+    try {
+        const client = window.getSupabaseClient();
+        if (client) {
+            await client.from('global_wire').update({ status: 'published', report_count: 0 }).eq('id', postId);
+            await client.from('global_wire_reports').delete().eq('post_id', postId);
+        }
+        let reported = JSON.parse(localStorage.getItem('trc_reported_posts') || '[]');
+        reported = reported.filter(id => id.toString() !== postIdStr);
+        localStorage.setItem('trc_reported_posts', JSON.stringify(reported));
+
+        let reportLog = JSON.parse(localStorage.getItem('trc_reported_posts_log') || '{}');
+        delete reportLog[postIdStr];
+        localStorage.setItem('trc_reported_posts_log', JSON.stringify(reportLog));
+
+        alert(`✅ Transmission restored to active public feed and unmuted.`);
+        fetchWirePosts();
+    } catch(err) {
+        console.error("Restore error:", err);
+        alert("Restore failed: " + err.message);
+    }
+};
+
+window.masterDeletePost = async function(postId) {
+    const postIdStr = postId ? postId.toString() : '';
+    if (!confirm(`👑 MASTER COMMANDER OVERRIDE:\nAre you sure you want to permanently delete Transmission TX-#${postIdStr.slice(-6).toUpperCase()} from the database?`)) return;
+    try {
+        const client = window.getSupabaseClient();
+        if (client) {
+            const { error } = await client.from('global_wire').delete().eq('id', postId);
+            if (error) throw error;
+            await client.from('global_wire_reports').delete().eq('post_id', postId);
+        }
+        let reported = JSON.parse(localStorage.getItem('trc_reported_posts') || '[]');
+        reported = reported.filter(id => id.toString() !== postIdStr);
+        localStorage.setItem('trc_reported_posts', JSON.stringify(reported));
+
+        let reportLog = JSON.parse(localStorage.getItem('trc_reported_posts_log') || '{}');
+        delete reportLog[postIdStr];
+        localStorage.setItem('trc_reported_posts_log', JSON.stringify(reportLog));
+
+        alert(`🗑️ Transmission TX-#${postIdStr.slice(-6).toUpperCase()} permanently deleted from network.`);
+        fetchWirePosts();
+    } catch(err) {
+        console.error("Master delete error:", err);
+        alert("Delete failed: " + err.message);
+    }
+};
+
+window.masterPurgeBanPost = async function(postId, author) {
+    if (!confirm(`🚫 PERMANENT PURGE & BAN:\nAre you sure you want to permanently ban author "${author}" and purge TX-#${String(postId).slice(-6).toUpperCase()}?`)) return;
+    try {
+        const client = window.getSupabaseClient();
+        if (client) {
+            await client.from('global_wire').update({ status: 'banned' }).eq('id', postId);
+        }
+        let bannedAuthors = JSON.parse(localStorage.getItem('trc_banned_authors') || '[]');
+        if (author && !bannedAuthors.includes(author.toLowerCase())) {
+            bannedAuthors.push(author.toLowerCase());
+            localStorage.setItem('trc_banned_authors', JSON.stringify(bannedAuthors));
+        }
+        alert(`🚫 Author "${author}" blacklisted and transmission permanently banned from network.`);
+        fetchWirePosts();
+    } catch(err) {
+        console.error("Ban error:", err);
+        alert("Ban failed: " + err.message);
+    }
+};

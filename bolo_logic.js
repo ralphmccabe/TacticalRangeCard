@@ -30,7 +30,9 @@ let activeBoloId = null;
 let selectedBoloId = null;
 let currentBoloThreatLevel = 'poi';   // 'poi' | 'fugitive' | 'armed'
 let currentBoloType = 'person';        // 'person' | 'animal'
-let currentBoloSex = 'unknown';        // 'male' | 'female' | 'unknown'
+let currentBoloSex = 'unknown';
+let currentVehType = 'car';
+let currentVehFlag = 'stolen';        // 'male' | 'female' | 'unknown'
 let currentAnimalThreat = 'nuisance'; // 'nuisance' | 'dangerous' | 'trophy'
 
 // ============================================================
@@ -38,25 +40,26 @@ let currentAnimalThreat = 'nuisance'; // 'nuisance' | 'dangerous' | 'trophy'
 // ============================================================
 window.setBoloType = function(type) {
     currentBoloType = type;
-
     const personForm   = document.getElementById('bolo-person-fields');
     const animalForm   = document.getElementById('bolo-animal-fields');
+    const vehicleForm  = document.getElementById('bolo-vehicle-fields');
     const btnPerson    = document.getElementById('bolo-type-btn-person');
     const btnAnimal    = document.getElementById('bolo-type-btn-animal');
+    const btnVehicle   = document.getElementById('bolo-type-btn-vehicle');
     const photoLabel   = document.getElementById('bolo-photo-label');
 
-    if (type === 'person') {
-        if (personForm) personForm.style.display = '';
-        if (animalForm) animalForm.style.display = 'none';
-        if (btnPerson)  { btnPerson.style.background='#7f1d1d'; btnPerson.style.color='#fca5a5'; btnPerson.style.borderColor='#ef4444'; }
-        if (btnAnimal)  { btnAnimal.style.background=''; btnAnimal.style.color='#6b7280'; btnAnimal.style.borderColor='#374151'; }
-        if (photoLabel) photoLabel.innerText = 'Suspect Photo';
-    } else {
-        if (personForm) personForm.style.display = 'none';
-        if (animalForm) animalForm.style.display = '';
-        if (btnAnimal)  { btnAnimal.style.background='#374151'; btnAnimal.style.color='#d1d5db'; btnAnimal.style.borderColor='#9ca3af'; }
-        if (btnPerson)  { btnPerson.style.background=''; btnPerson.style.color='#6b7280'; btnPerson.style.borderColor='#374151'; }
-        if (photoLabel) photoLabel.innerText = 'Animal Photo';
+    if (personForm) personForm.style.display = (type === 'person') ? '' : 'none';
+    if (animalForm) animalForm.style.display = (type === 'animal') ? '' : 'none';
+    if (vehicleForm) vehicleForm.style.display = (type === 'vehicle') ? '' : 'none';
+
+    if (btnPerson)  { btnPerson.style.background = (type === 'person') ? '#7f1d1d' : 'transparent'; btnPerson.style.color = (type === 'person') ? '#fca5a5' : '#6b7280'; btnPerson.style.borderColor = (type === 'person') ? '#ef4444' : '#374151'; }
+    if (btnAnimal)  { btnAnimal.style.background = (type === 'animal') ? '#374151' : 'transparent'; btnAnimal.style.color = (type === 'animal') ? '#d1d5db' : '#6b7280'; btnAnimal.style.borderColor = (type === 'animal') ? '#9ca3af' : '#374151'; }
+    if (btnVehicle) { btnVehicle.style.background = (type === 'vehicle') ? '#1e3a8a' : 'transparent'; btnVehicle.style.color = (type === 'vehicle') ? '#93c5fd' : '#6b7280'; btnVehicle.style.borderColor = (type === 'vehicle') ? '#3b82f6' : '#374151'; }
+
+    if (photoLabel) {
+        if (type === 'person') photoLabel.innerText = 'Suspect Photo';
+        else if (type === 'animal') photoLabel.innerText = 'Animal Photo';
+        else photoLabel.innerText = 'Vehicle Photo';
     }
 };
 
@@ -248,6 +251,37 @@ if (boloImageUpload) {
 }
 
 // ============================================================
+
+window.setBoloVehType = function(type) {
+    currentVehType = type;
+    const btns = ['car', 'truck', 'moto'];
+    btns.forEach(b => {
+        const el = document.getElementById('bolo-veh-btn-' + b);
+        if(!el) return;
+        if(b === type) {
+            el.style.background = '#1e3a8a'; el.style.color = '#93c5fd'; el.style.borderColor = '#3b82f6';
+        } else {
+            el.style.background = 'transparent'; el.style.color = '#6b7280'; el.style.borderColor = '#374151';
+        }
+    });
+};
+
+window.setBoloVehFlag = function(flag) {
+    currentVehFlag = flag;
+    const btns = ['stolen', 'felony', 'armed'];
+    btns.forEach(b => {
+        const el = document.getElementById('bolo-veh-flag-' + b);
+        if(!el) return;
+        if(b === flag) {
+            el.style.background = 'rgba(59,130,246,0.4)'; el.style.color = '#60a5fa'; el.style.borderColor = '#3b82f6';
+            el.style.boxShadow = '0 0 8px rgba(59,130,246,0.3)';
+        } else {
+            el.style.background = 'transparent'; el.style.color = '#6b7280'; el.style.borderColor = '#374151';
+            el.style.boxShadow = 'none';
+        }
+    });
+};
+
 // SAVE TO INVENTORY
 // ============================================================
 if(boloSaveInventoryBtn) {
@@ -282,6 +316,19 @@ if(boloSaveInventoryBtn) {
             data.warning      = document.getElementById('bolo-input-warning').value || '';
             data.contact      = document.getElementById('bolo-input-contact').value || '';
             if (!data.name && !data.reason && !data.image) { alert('Fill out at least a Name or Charges.'); return; }
+        } else if (currentBoloType === 'vehicle') {
+            data.veh_type     = currentVehType;
+            data.veh_flag     = currentVehFlag;
+            data.veh_make     = document.getElementById('bolo-veh-make').value      || '';
+            data.veh_color    = document.getElementById('bolo-veh-color').value     || '';
+            data.veh_plate    = document.getElementById('bolo-veh-plate').value     || '';
+            data.veh_state    = document.getElementById('bolo-veh-state').value     || '';
+            data.veh_vin      = document.getElementById('bolo-veh-vin').value       || '';
+            data.veh_features = document.getElementById('bolo-veh-features').value  || '';
+            data.veh_owner    = document.getElementById('bolo-veh-owner').value     || '';
+            data.veh_reason   = document.getElementById('bolo-veh-reason').value    || '';
+            data.agency       = document.getElementById('bolo-input-agency').value  || '';
+            data.case_num     = document.getElementById('bolo-input-case').value    || '';
         } else {
             data.agency          = document.getElementById('bolo-input-agency').value           || '';
             data.case_num        = document.getElementById('bolo-input-case').value             || '';
@@ -318,20 +365,31 @@ async function renderBoloLibrary() {
         const allBolos = Object.values(boloObj || {});
         listEl.innerHTML = '';
         if(allBolos.length === 0) {
-            listEl.innerHTML = '<div class="col-span-full text-center text-gray-400 text-xs py-10 font-bold tracking-widest border border-dashed border-gray-800 rounded-lg">INVENTORY EMPTY</div>';
+            listEl.innerHTML = '<div class="col-span-full text-center text-gray-600 text-xs py-10 font-bold tracking-widest border border-dashed border-gray-800 rounded-lg">INVENTORY EMPTY</div>';
             return;
         }
         allBolos.sort((a,b) => Number(b.id) - Number(a.id));
         allBolos.forEach(bolo => {
-            const isPerson    = (bolo.bolo_type || 'person') === 'person';
+                        const isVehicle   = bolo.bolo_type === 'vehicle';
+            const isAnimal    = bolo.bolo_type === 'animal';
+            const isPerson    = !isVehicle && !isAnimal;
             const isActive    = selectedBoloId === bolo.id;
             const dateStr     = new Date(bolo.timestamp).toLocaleString();
-            const displayName = isPerson ? (bolo.name || 'UNKNOWN') : (bolo.species || 'UNKNOWN ANIMAL');
-            const displaySub  = isPerson ? (bolo.reason || 'WANTED') : (bolo.animal_territory || bolo.animal_threat || 'NUISANCE ANIMAL');
-            const accentColor = isPerson ? '#ef4444' : '#9ca3af';
-            const cardBorder  = isActive ? (isPerson ? 'border-red-500' : 'border-gray-400') : 'border-gray-800';
-            const cardBg      = isActive ? (isPerson ? 'bg-red-900/30' : 'bg-gray-700/30') : 'bg-gray-900/50';
-            const typeLabel   = isPerson ? '👤 PERSON' : '🐗 ANIMAL';
+            
+            let displayName = 'UNKNOWN';
+            if (isPerson) displayName = bolo.name || 'UNKNOWN';
+            else if (isAnimal) displayName = bolo.species || 'UNKNOWN ANIMAL';
+            else if (isVehicle) displayName = bolo.veh_plate ? (bolo.veh_plate + ' (' + (bolo.veh_state||'') + ')') : (bolo.veh_make || 'UNKNOWN VEHICLE');
+            
+            let displaySub = 'WANTED';
+            if (isPerson) displaySub = bolo.reason || 'WANTED';
+            else if (isAnimal) displaySub = bolo.animal_territory || bolo.animal_threat || 'NUISANCE ANIMAL';
+            else if (isVehicle) displaySub = bolo.veh_reason || bolo.veh_color || 'NO DETAILS';
+            
+            const accentColor = isPerson ? '#ef4444' : (isVehicle ? '#3b82f6' : '#9ca3af');
+            const cardBorder  = isActive ? (isPerson ? 'border-red-500' : (isVehicle ? 'border-blue-500' : 'border-gray-400')) : 'border-gray-800';
+            const cardBg      = isActive ? (isPerson ? 'bg-red-900/30' : (isVehicle ? 'bg-blue-900/30' : 'bg-gray-700/30')) : 'bg-gray-900/50';
+            const typeLabel   = isPerson ? '🚨 PERSON' : (isVehicle ? '🚗 VEHICLE' : '🐾 ANIMAL');
 
             const card = document.createElement('div');
             card.className = `relative p-3 rounded-lg border-2 cursor-pointer transition-all ${cardBg} ${cardBorder} hover:border-gray-600`;
@@ -348,7 +406,7 @@ async function renderBoloLibrary() {
                 </div>
                 <div class="flex gap-2 pointer-events-none pl-8">
                     <div class="w-12 h-12 bg-black border border-gray-700 rounded overflow-hidden shrink-0 flex items-center justify-center relative">
-                        ${bolo.image ? `<img src="${bolo.image}" class="w-full h-full object-cover">` : `<i data-lucide="${isPerson ? 'user' : 'paw-print'}" class="w-4 h-4 text-gray-400"></i>`}
+                        ${bolo.image ? `<img src="${bolo.image}" class="w-full h-full object-cover">` : `<i data-lucide="${isPerson ? 'user' : (isVehicle ? 'car' : 'paw-print')}" class="w-4 h-4 text-gray-600"></i>`}
                         ${bolo.captured ? `
                         <div class="absolute inset-0 bg-red-950/75 flex items-center justify-center z-10">
                             <span class="text-[6px] font-black text-red-400 border border-red-500 px-0.5 rounded rotate-[-12deg] tracking-tighter uppercase">CAPTURED</span>
@@ -359,7 +417,7 @@ async function renderBoloLibrary() {
                         <div class="text-[9px] text-gray-300 truncate">${displaySub}</div>
                         <div class="text-[8px] text-gray-400 truncate mt-1">${dateStr}</div>
                     </div>
-                    <button class="text-gray-400 hover:text-red-500 p-1 bg-black rounded self-center pointer-events-auto" onclick="event.stopPropagation(); deleteBolo('${bolo.id}')" title="Delete">
+                    <button class="text-gray-600 hover:text-red-500 p-1 bg-black rounded self-center pointer-events-auto" onclick="event.stopPropagation(); deleteBolo('${bolo.id}')" title="Delete">
                         <i data-lucide="trash" class="w-3 h-3"></i>
                     </button>
                 </div>
@@ -539,7 +597,7 @@ window.exportBoloToVault = async function(bolo, btnElement = null) {
     }
     
     const isPerson = (bolo.bolo_type || 'person') === 'person';
-    const renderZoneId = isPerson ? 'bolo-poster-render-zone' : 'bolo-animal-render-zone';
+    const renderZoneId = (bolo.bolo_type === 'vehicle') ? 'bolo-veh-poster-render-zone' : (bolo.bolo_type === 'animal' ? 'bolo-animal-render-zone' : 'bolo-poster-render-zone');
     const renderZone   = document.getElementById(renderZoneId);
     if(!renderZone) {
         if (btnElement) {
@@ -596,6 +654,56 @@ window.exportBoloToVault = async function(bolo, btnElement = null) {
         // Show CAPTURED stamp on output poster if captured
         const stamp = el('bolo-captured-stamp');
         if (stamp) stamp.style.display = bolo.captured ? 'block' : 'none';
+    } else if (bolo.bolo_type === 'vehicle') {
+        const el = id => document.getElementById(id);
+        const setTxt = (id, val) => { const e = el(id); if(e) e.innerText = val; };
+        
+        setTxt('bolo-veh-render-agency',   bolo.agency || 'TACTICAL RANGE CARD');
+        setTxt('bolo-veh-render-case',     bolo.case_num || 'N/A');
+        setTxt('bolo-veh-render-species',   (bolo.veh_make || 'UNKNOWN VEHICLE').toUpperCase());
+        setTxt('bolo-veh-render-sex',       (bolo.veh_type || 'UNKNOWN').toUpperCase());
+        setTxt('bolo-veh-render-weight',    bolo.veh_plate || 'N/A');
+        setTxt('bolo-veh-render-marks',     bolo.veh_features || 'None noted.');
+        setTxt('bolo-veh-render-territory', bolo.veh_state || 'Unknown area.');
+        setTxt('bolo-veh-render-reward',    bolo.veh_vin || 'N/A');
+        setTxt('bolo-veh-render-contact',   bolo.veh_reason || 'CONTACT LOCAL AUTHORITIES');
+        setTxt('bolo-veh-render-type-label', 'VEHICLE BOLO');
+
+        const bannerEl  = el('bolo-veh-render-banner');
+        const bannerTxt = el('bolo-veh-render-banner-text');
+        
+        const flagColors = {
+            stolen: { bg: '#92400e', text: '⚠  STOLEN VEHICLE  ⚠' },
+            felony: { bg: '#7f1d1d', text: '⚠  FELONY VEHICLE  ⚠' },
+            occupants: { bg: '#1d4ed8', text: '⚠  WANTED OCCUPANTS  ⚠' }
+        };
+        const vCfg = flagColors[bolo.veh_flag || 'stolen'] || flagColors.stolen;
+        
+        if(bannerEl)  bannerEl.style.background = vCfg.bg;
+        if(bannerTxt) bannerTxt.innerText = vCfg.text;
+
+        const notesEl = el('bolo-veh-render-notes');
+        const notesSec = el('bolo-veh-render-notes-section');
+        if(bolo.notes && bolo.notes.trim()) {
+            if(notesSec) notesSec.style.display = 'block';
+            if(notesEl)  notesEl.innerText = bolo.notes;
+        } else {
+            if(notesSec) notesSec.style.display = 'none';
+        }
+
+        const vehImg = el('bolo-veh-render-img');
+        const vehPh  = el('bolo-veh-render-placeholder');
+        if(bolo.image) {
+            if(vehImg) { vehImg.src = bolo.image; vehImg.style.display = 'block'; }
+            if(vehPh)  vehPh.style.display = 'none';
+        } else {
+            if(vehImg) vehImg.style.display = 'none';
+            if(vehPh)  vehPh.style.display = 'block';
+        }
+        
+        const stamp = el('bolo-veh-captured-stamp');
+        if (stamp) stamp.style.display = bolo.captured ? 'block' : 'none';
+        
     } else {
         const el = id => document.getElementById(id);
         const threatLabels = { nuisance: 'NUISANCE ANIMAL', dangerous: 'DANGEROUS / AT LARGE', trophy: 'TROPHY ANIMAL' };
@@ -654,7 +762,9 @@ window.exportBoloToVault = async function(bolo, btnElement = null) {
     renderZone.style.position = 'fixed';
     renderZone.style.left = '0';
     renderZone.style.top  = '0';
-    renderZone.style.zIndex = '-9999';
+    renderZone.style.zIndex = '99999';
+    renderZone.style.opacity = '1';
+    renderZone.style.pointerEvents = 'none';
 
     let newVaultEntry = null;
 
@@ -670,7 +780,7 @@ window.exportBoloToVault = async function(bolo, btnElement = null) {
             throw new Error('html2canvas library not loaded');
         }
 
-        await new Promise(r => setTimeout(r, 150));
+        await new Promise(r => setTimeout(r, 200));
         const bgColor = isPerson ? '#080808' : '#1a1a1a';
         
         const html2canvasPromise = window.html2canvas(renderZone, {
@@ -678,25 +788,33 @@ window.exportBoloToVault = async function(bolo, btnElement = null) {
             scale: 1.5,
             logging: false,
             useCORS: true,
-            allowTaint: true
+            allowTaint: true,
+            imageTimeout: 8000,
+            removeContainer: true,
+            onclone: (clonedDoc) => {
+                const clonedZone = clonedDoc.getElementById('bolo-poster-render-zone');
+                if (clonedZone) {
+                    clonedZone.style.opacity = '1';
+                    clonedZone.style.visibility = 'visible';
+                    clonedZone.style.display = 'block';
+                }
+            }
         });
         const timeoutPromise = new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('html2canvas render timed out')), 10000)
+            setTimeout(() => reject(new Error('html2canvas render timed out')), 15000)
         );
         
         const canvas = await Promise.race([html2canvasPromise, timeoutPromise]);
-        const dataUrl = canvas.toDataURL('image/jpeg', 0.75);
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
         if(window.saveIntelSnapshot) {
-            const label = isPerson ? 'BOLO: ' + (bolo.name || 'UNKNOWN SUSPECT')
-                                   : 'ANIMAL BOLO: ' + (bolo.species || 'UNKNOWN').toUpperCase();
+            let label = 'BOLO';
+            if (isPerson) label = 'BOLO: ' + (bolo.name || 'UNKNOWN SUSPECT');
+            else if (bolo.bolo_type === 'animal') label = 'ANIMAL BOLO: ' + (bolo.species || 'UNKNOWN').toUpperCase();
+            else if (bolo.bolo_type === 'vehicle') label = 'VEHICLE BOLO: ' + (bolo.veh_make || bolo.veh_plate || 'UNKNOWN').toUpperCase();
             
             // Build the entry object
             const activeDistEl = document.getElementById('live-map-dist');
             const activeDist = (activeDistEl && activeDistEl.textContent !== "--.--") ? activeDistEl.textContent : null;
-            // Strip heavy image from boloData — snapshot already has the visual
-            const boloLite = { ...bolo };
-            delete boloLite.image;
-            
             newVaultEntry = {
                 id: Date.now(),
                 label: label,
@@ -705,7 +823,7 @@ window.exportBoloToVault = async function(bolo, btnElement = null) {
                 distance: activeDist,
                 type: 'bolo-card',
                 isAmmo: false,
-                boloData: boloLite
+                boloData: bolo
             };
             
             window.vaultCache.unshift(newVaultEntry);
@@ -827,7 +945,7 @@ window.toggleBoloCapturedById = async function(boloId) {
         
         renderBoloLibrary();
         
-        const displayName = (bolo.bolo_type === 'person') ? (bolo.name || 'UNKNOWN') : (bolo.species || 'UNKNOWN').toUpperCase();
+        const displayName = (bolo.bolo_type === 'person') ? (bolo.name || 'UNKNOWN') : (bolo.bolo_type === 'vehicle' ? (bolo.veh_make || 'UNKNOWN VEHICLE') : (bolo.species || 'UNKNOWN').toUpperCase());
         if (bolo.captured) {
             if (window.showToast) window.showToast(`🎯 Marked ${displayName} as CAPTURED!`);
             if (window.broadcastMessage) {
@@ -838,4 +956,3 @@ window.toggleBoloCapturedById = async function(boloId) {
         }
     }
 };
-

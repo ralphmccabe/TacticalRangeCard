@@ -388,7 +388,9 @@ if (licenseToVaultBtnTop) {
         renderZone.style.position = 'fixed';
         renderZone.style.left = '0';
         renderZone.style.top  = '0';
-        renderZone.style.zIndex = '-9999';
+        renderZone.style.zIndex = '99999';
+        renderZone.style.opacity = '1';
+        renderZone.style.pointerEvents = 'none';
 
         try {
             if (!window.html2canvas) {
@@ -402,17 +404,27 @@ if (licenseToVaultBtnTop) {
                 throw new Error('html2canvas library not loaded');
             }
 
-            await new Promise(r => setTimeout(r, 150));
+            await new Promise(r => setTimeout(r, 200));
             
             const html2canvasPromise = window.html2canvas(renderZone, {
                 backgroundColor: typeBgColors[lic.type] || '#162b12',
                 scale:   1.5,
                 logging: false,
                 useCORS: true,
-                allowTaint: true
+                allowTaint: true,
+                imageTimeout: 8000,
+                removeContainer: true,
+                onclone: (clonedDoc) => {
+                    const clonedZone = clonedDoc.getElementById('license-render-zone');
+                    if (clonedZone) {
+                        clonedZone.style.opacity = '1';
+                        clonedZone.style.visibility = 'visible';
+                        clonedZone.style.display = 'block';
+                    }
+                }
             });
             const timeoutPromise = new Promise((_, reject) => 
-                setTimeout(() => reject(new Error('html2canvas render timed out')), 10000)
+                setTimeout(() => reject(new Error('html2canvas render timed out')), 15000)
             );
             
             const canvas = await Promise.race([html2canvasPromise, timeoutPromise]);

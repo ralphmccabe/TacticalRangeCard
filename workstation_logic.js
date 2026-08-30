@@ -4,6 +4,31 @@
 
 // STORES is defined globally in idb_helper.js
 
+// Currency input formatter: $ only, decimals, max $1,000,000.00
+window.formatCurrencyInput = function(val) {
+    // Strip everything except digits and decimal
+    let raw = val.replace(/[^0-9.]/g, '');
+    // Allow only one decimal point
+    const parts = raw.split('.');
+    if (parts.length > 2) raw = parts[0] + '.' + parts.slice(1).join('');
+    // Limit to 2 decimal places
+    if (parts.length === 2 && parts[1].length > 2) {
+        raw = parts[0] + '.' + parts[1].substring(0, 2);
+    }
+    // Cap at 1,000,000.00
+    const num = parseFloat(raw);
+    if (num > 1000000) raw = '1000000.00';
+    // Return with $ prefix (or empty if cleared)
+    if (raw === '' || raw === '.') return '';
+    return '$ ' + raw;
+};
+
+// Parse currency string back to float
+window.parseCurrencyValue = function(val) {
+    if (!val) return 0;
+    return parseFloat(String(val).replace(/[^0-9.]/g, '')) || 0;
+};
+
 document.addEventListener('DOMContentLoaded', () => {
     // Inject the main menu when panel is loaded
     setTimeout(() => {
@@ -121,7 +146,7 @@ window.renderWorkstationMenu = async function() {
 
                     savedCardsHtml += `
                         <div class="bg-slate-950/90 border border-slate-800 rounded-lg p-2 flex flex-row items-center gap-2.5 hover:border-cyan-500/50 transition-colors group relative shadow-sm shrink-0">
-                            <input type="checkbox" id="ws-lib-chk-${card.id}" name="ws-lib-chk-${card.id}" aria-label="Select Workstation Card" class="ws-library-checkbox w-4 h-4 rounded bg-slate-900 border-slate-600 text-purple-600 focus:ring-purple-600 cursor-pointer shrink-0" value="${card.id}" onchange="window.checkWsCheckboxes()">
+                            <input type="checkbox" class="ws-library-checkbox w-4 h-4 rounded bg-slate-900 border-slate-600 text-purple-600 focus:ring-purple-600 cursor-pointer shrink-0" value="${card.id}" onchange="window.checkWsCheckboxes()">
                             ${thumbHtml}
                             <div class="flex-1 min-w-0 cursor-pointer" onclick="loadWorkstationCard('${card.id}')">
                                 <div class="flex items-center gap-1 mb-0.5">
@@ -221,6 +246,17 @@ window.renderWorkstationMenu = async function() {
                         </div>
                     </button>
                 </div>
+                
+                <!-- 9. EXECUTIVE CASE FILE -->
+                <div class="mt-2 w-full">
+                    <button onclick="openWorkstationForm('casefile')" class="w-full bg-slate-900 border-2 border-slate-700 rounded-lg p-3 flex items-center justify-center gap-3 hover:bg-slate-800 hover:border-slate-400 transition-all shadow-[0_0_20px_rgba(255,255,255,0.1)] group">
+                        <i data-lucide="file-check-2" class="w-6 h-6 text-slate-300 group-hover:scale-110 transition-transform"></i>
+                        <div class="text-left">
+                            <div class="text-[12px] font-black text-white uppercase leading-tight tracking-widest">EXECUTIVE CASE FILE</div>
+                            <div class="text-[8px] text-slate-400 uppercase mt-0.5 tracking-wider">Final PDF Invoice & Intel Report</div>
+                        </div>
+                    </button>
+                </div>
             </div>
 
             <!-- UNRESTRICTED SCROLLABLE BOTTOM LIBRARY AREA -->
@@ -268,51 +304,102 @@ window.openWorkstationForm = function(type, rawCardData = null) {
         headerIcon = 'activity'; headerColor = 'text-red-500'; headerTitle = '9-LINE MEDEVAC / INCIDENT REPORT';
         formFields = `
             <div class="grid grid-cols-2 gap-4">
-                <div><label class="text-[10px] text-gray-400">Location</label><input type="text" maxlength="20" id="ws-loc" value="${cardData?.data?.loc || ''}" class="w-full bg-black border border-gray-700 text-white text-xs p-2 rounded"></div>
-                <div><label class="text-[10px] text-gray-400">Frequency/Callsign</label><input type="text" maxlength="20" id="ws-freq" value="${cardData?.data?.freq || ''}" class="w-full bg-black border border-gray-700 text-white text-xs p-2 rounded"></div>
-                <div><label class="text-[10px] text-gray-400">Patients by Precedence</label><input type="text" maxlength="20" id="ws-prec" value="${cardData?.data?.prec || ''}" class="w-full bg-black border border-gray-700 text-white text-xs p-2 rounded"></div>
-                <div><label class="text-[10px] text-gray-400">Special Equipment</label><input type="text" maxlength="20" id="ws-equip" value="${cardData?.data?.equip || ''}" class="w-full bg-black border border-gray-700 text-white text-xs p-2 rounded"></div>
-                <div class="col-span-2"><div class="flex justify-between w-full"><label class="text-[10px] text-gray-400">Incident Details</label><span class="text-[10px] text-gray-400" id="ws-details-counter">0 / 1000</span></div><textarea maxlength="1000" id="ws-details" oninput="document.getElementById('ws-details-counter').textContent = this.value.length + ' / 1000'" class="w-full bg-black border border-gray-700 text-white text-xs p-2 rounded h-20">${cardData?.data?.details || ''}</textarea></div>
+                <div><label class="text-[10px] text-gray-400">Location</label><input type="text" id="ws-loc" value="${cardData?.data?.loc || ''}" class="w-full bg-black border border-gray-700 text-white text-xs p-2 rounded"></div>
+                <div><label class="text-[10px] text-gray-400">Frequency/Callsign</label><input type="text" id="ws-freq" value="${cardData?.data?.freq || ''}" class="w-full bg-black border border-gray-700 text-white text-xs p-2 rounded"></div>
+                <div><label class="text-[10px] text-gray-400">Patients by Precedence</label><input type="text" id="ws-prec" value="${cardData?.data?.prec || ''}" class="w-full bg-black border border-gray-700 text-white text-xs p-2 rounded"></div>
+                <div><label class="text-[10px] text-gray-400">Special Equipment</label><input type="text" id="ws-equip" value="${cardData?.data?.equip || ''}" class="w-full bg-black border border-gray-700 text-white text-xs p-2 rounded"></div>
+                <div class="col-span-2"><label class="text-[10px] text-gray-400">Incident Details</label><textarea id="ws-details" class="w-full bg-black border border-gray-700 text-white text-xs p-2 rounded h-20">${cardData?.data?.details || ''}</textarea></div>
             </div>`;
     } else if (type === 'scorecard') {
         headerIcon = 'crosshair'; headerColor = 'text-yellow-500'; headerTitle = 'COMPETITION SCORECARD';
         formFields = `
             <div class="grid grid-cols-2 gap-4">
-                <div><label class="text-[10px] text-gray-400">Match/Stage Name</label><input type="text" maxlength="20" id="ws-match" value="${cardData?.data?.match || ''}" class="w-full bg-black border border-gray-700 text-white text-xs p-2 rounded"></div>
-                <div><label class="text-[10px] text-gray-400">Total Time</label><input type="text" maxlength="20" id="ws-time" value="${cardData?.data?.time || ''}" class="w-full bg-black border border-gray-700 text-white text-xs p-2 rounded"></div>
-                <div><label class="text-[10px] text-gray-400">Hits / Points</label><input type="text" maxlength="20" id="ws-hits" value="${cardData?.data?.hits || ''}" class="w-full bg-black border border-gray-700 text-white text-xs p-2 rounded"></div>
-                <div><label class="text-[10px] text-gray-400">Penalties</label><input type="text" maxlength="20" id="ws-penalties" value="${cardData?.data?.penalties || ''}" class="w-full bg-black border border-gray-700 text-white text-xs p-2 rounded"></div>
-                <div class="col-span-2"><div class="flex justify-between w-full"><label class="text-[10px] text-gray-400">Stage Notes / Takeaways</label><span class="text-[10px] text-gray-400" id="ws-notes-counter">0 / 1000</span></div><textarea maxlength="1000" id="ws-notes" oninput="document.getElementById('ws-notes-counter').textContent = this.value.length + ' / 1000'" class="w-full bg-black border border-gray-700 text-white text-xs p-2 rounded h-20">${cardData?.data?.notes || ''}</textarea></div>
+                <div><label class="text-[10px] text-gray-400">Match/Stage Name</label><input type="text" id="ws-match" value="${cardData?.data?.match || ''}" class="w-full bg-black border border-gray-700 text-white text-xs p-2 rounded"></div>
+                <div><label class="text-[10px] text-gray-400">Total Time</label><input type="text" id="ws-time" value="${cardData?.data?.time || ''}" class="w-full bg-black border border-gray-700 text-white text-xs p-2 rounded"></div>
+                <div><label class="text-[10px] text-gray-400">Hits / Points</label><input type="text" id="ws-hits" value="${cardData?.data?.hits || ''}" class="w-full bg-black border border-gray-700 text-white text-xs p-2 rounded"></div>
+                <div><label class="text-[10px] text-gray-400">Penalties</label><input type="text" id="ws-penalties" value="${cardData?.data?.penalties || ''}" class="w-full bg-black border border-gray-700 text-white text-xs p-2 rounded"></div>
+                <div class="col-span-2"><label class="text-[10px] text-gray-400">Stage Notes / Takeaways</label><textarea id="ws-notes" class="w-full bg-black border border-gray-700 text-white text-xs p-2 rounded h-20">${cardData?.data?.notes || ''}</textarea></div>
             </div>`;
+    } else if (type === 'casefile') {
+        headerIcon = 'file-check-2'; headerColor = 'text-slate-300'; headerTitle = 'EXECUTIVE CASE FILE & INVOICE';
+        const invoiceNotesVal = cardData?.data?.invoice_notes || '';
+        formFields = `
+              <div class="grid grid-cols-2 gap-4 mb-4">
+                  <div>
+                      <label class="text-[10px] text-blue-400 uppercase tracking-widest font-black">Operator Name / Callsign</label>
+                      <input type="text" id="ws-op_name" maxlength="20" value="${cardData?.data?.op_name || window.commsUser?.callsign || window.userObj?.callsign || ''}" class="w-full bg-black border border-gray-700 text-white text-xs p-2 rounded focus:border-slate-400 mt-1" placeholder="e.g. John Doe / GHOST_01">
+                  </div>
+                  <div>
+                      <label class="text-[10px] text-blue-400 uppercase tracking-widest font-black">Agency / Company</label>
+                      <input type="text" id="ws-op_agency" maxlength="20" value="${cardData?.data?.op_agency || ''}" class="w-full bg-black border border-gray-700 text-white text-xs p-2 rounded focus:border-slate-400 mt-1" placeholder="e.g. Apex Recovery LLC">
+                  </div>
+                  <div>
+                      <label class="text-[10px] text-blue-400 uppercase tracking-widest font-black">License / ID Number</label>
+                      <input type="text" id="ws-op_license" maxlength="20" value="${cardData?.data?.op_license || ''}" class="w-full bg-black border border-gray-700 text-white text-xs p-2 rounded focus:border-slate-400 mt-1" placeholder="e.g. BEA-559281">
+                  </div>
+                  <div>
+                      <label class="text-[10px] text-blue-400 uppercase tracking-widest font-black">Qualifications</label>
+                      <input type="text" id="ws-op_quals" maxlength="20" value="${cardData?.data?.op_quals || ''}" class="w-full bg-black border border-gray-700 text-white text-xs p-2 rounded focus:border-slate-400 mt-1" placeholder="e.g. Bail Enforcement Agent">
+                  </div>
+              </div>
+              
+              <div class="grid grid-cols-2 gap-4 border-t border-slate-700 pt-4 mb-4">
+                  <div>
+                      <label class="text-[10px] text-blue-400 uppercase tracking-widest font-black">Case Number</label>
+                      <input type="text" id="ws-case_number" maxlength="20" value="${cardData?.data?.case_number || ''}" class="w-full bg-black border border-gray-700 text-white text-xs p-2 rounded focus:border-slate-400 mt-1" placeholder="e.g. CR-2026-04821">
+                  </div>
+                  <div>
+                      <label class="text-[10px] text-blue-400 uppercase tracking-widest font-black">Invoice For (Bail, Court, etc.)</label>
+                      <input type="text" id="ws-invoice_type" maxlength="20" value="${cardData?.data?.invoice_type || ''}" class="w-full bg-black border border-gray-700 text-white text-xs p-2 rounded focus:border-slate-400 mt-1" placeholder="e.g. Bail Recovery">
+                  </div>
+              </div>
+              
+              <div class="grid grid-cols-2 gap-4 border-t border-slate-700 pt-4">
+                  <div>
+                      <label class="text-[10px] text-gray-400 uppercase tracking-widest font-black">Job Amount / Bounty ($)</label>
+                      <input type="text" inputmode="decimal" id="ws-bounty" value="${cardData?.data?.bounty || ''}" class="w-full bg-black border border-gray-700 text-white text-xs p-2 rounded focus:border-slate-400 mt-1" placeholder="$ 0.00" oninput="this.value = window.formatCurrencyInput(this.value)">
+                  </div>
+                  <div>
+                      <label class="text-[10px] text-gray-400 uppercase tracking-widest font-black">Expenses / Fuel ($)</label>
+                      <input type="text" inputmode="decimal" id="ws-expenses" value="${cardData?.data?.expenses || ''}" class="w-full bg-black border border-gray-700 text-white text-xs p-2 rounded focus:border-slate-400 mt-1" placeholder="$ 0.00" oninput="this.value = window.formatCurrencyInput(this.value)">
+                  </div>
+                  <div class="col-span-2">
+                      <div class="flex justify-between items-end mb-1">
+                          <label class="text-[10px] text-gray-400 uppercase tracking-widest font-black">Additional Invoice Notes / Payment Terms</label>
+                          <span id="ws-invoice-notes-counter" class="text-[9px] font-mono text-slate-400">${invoiceNotesVal.length} / 1000</span>
+                      </div>
+                      <textarea id="ws-invoice_notes" maxlength="1000" oninput="document.getElementById('ws-invoice-notes-counter').textContent = this.value.length + ' / 1000'" class="w-full bg-black border border-gray-700 text-white text-xs p-2 rounded h-16 focus:border-slate-400 mt-1" placeholder="e.g. Due upon receipt. Make checks payable to...">${invoiceNotesVal}</textarea>
+                  </div>
+              </div>`;
     } else if (type === 'logistics') {
         headerIcon = 'clipboard-list'; headerColor = 'text-emerald-500'; headerTitle = 'LOGISTICS & EXPENSES';
         formFields = `
             <div class="grid grid-cols-2 gap-4">
-                <div><label class="text-[10px] text-gray-400">Ammo Expended</label><input type="text" maxlength="20" id="ws-ammo" value="${cardData?.data?.ammo || ''}" class="w-full bg-black border border-gray-700 text-white text-xs p-2 rounded"></div>
-                <div><label class="text-[10px] text-gray-400">Gear Damaged/Lost</label><input type="text" maxlength="20" id="ws-gear" value="${cardData?.data?.gear || ''}" class="w-full bg-black border border-gray-700 text-white text-xs p-2 rounded"></div>
-                <div><label class="text-[10px] text-gray-400">Total Cost Estimate</label><input type="text" maxlength="20" id="ws-cost" value="${cardData?.data?.cost || ''}" class="w-full bg-black border border-gray-700 text-white text-xs p-2 rounded"></div>
-                <div><label class="text-[10px] text-gray-400">Resupply Needed</label><input type="text" maxlength="20" id="ws-resupply" value="${cardData?.data?.resupply || ''}" class="w-full bg-black border border-gray-700 text-white text-xs p-2 rounded"></div>
+                <div><label class="text-[10px] text-gray-400">Ammo Expended</label><input type="text" id="ws-ammo" value="${cardData?.data?.ammo || ''}" class="w-full bg-black border border-gray-700 text-white text-xs p-2 rounded"></div>
+                <div><label class="text-[10px] text-gray-400">Gear Damaged/Lost</label><input type="text" id="ws-gear" value="${cardData?.data?.gear || ''}" class="w-full bg-black border border-gray-700 text-white text-xs p-2 rounded"></div>
+                <div><label class="text-[10px] text-gray-400">Total Cost Estimate</label><input type="text" id="ws-cost" value="${cardData?.data?.cost || ''}" class="w-full bg-black border border-gray-700 text-white text-xs p-2 rounded"></div>
+                <div><label class="text-[10px] text-gray-400">Resupply Needed</label><input type="text" id="ws-resupply" value="${cardData?.data?.resupply || ''}" class="w-full bg-black border border-gray-700 text-white text-xs p-2 rounded"></div>
             </div>`;
     } else if (type === 'roster') {
         headerIcon = 'users'; headerColor = 'text-blue-500'; headerTitle = 'SQUAD ACCOUNTABILITY ROSTER';
         formFields = `
             <div class="grid grid-cols-1 gap-4">
-                <div><label class="text-[10px] text-gray-400">Squad / Element Name</label><input type="text" maxlength="20" id="ws-squad" value="${cardData?.data?.squad || ''}" class="w-full bg-black border border-gray-700 text-white text-xs p-2 rounded"></div>
-                <div><div class="flex justify-between w-full"><label class="text-[10px] text-gray-400">Personnel Status (Present, Missing, WIA)</label><span class="text-[10px] text-gray-400" id="ws-personnel-counter">0 / 1000</span></div><textarea maxlength="1000" id="ws-personnel" oninput="document.getElementById('ws-personnel-counter').textContent = this.value.length + ' / 1000'" class="w-full bg-black border border-gray-700 text-white text-xs p-2 rounded h-24 placeholder-gray-500" placeholder="Alpha 1: Green&#10;Bravo 2: Green">${cardData?.data?.personnel || ''}</textarea></div>
+                <div><label class="text-[10px] text-gray-400">Squad / Element Name</label><input type="text" id="ws-squad" value="${cardData?.data?.squad || ''}" class="w-full bg-black border border-gray-700 text-white text-xs p-2 rounded"></div>
+                <div><label class="text-[10px] text-gray-400">Personnel Status (Present, Missing, WIA)</label><textarea id="ws-personnel" class="w-full bg-black border border-gray-700 text-white text-xs p-2 rounded h-24 placeholder-gray-500" placeholder="Alpha 1: Green&#10;Bravo 2: Green">${cardData?.data?.personnel || ''}</textarea></div>
             </div>`;
     } else if (type === 'bragboard') {
         headerIcon = 'camera'; headerColor = 'text-purple-500'; headerTitle = 'MEDIA / BRAG BOARD';
         formFields = `
             <div class="grid grid-cols-1 gap-4">
-                <div><label class="text-[10px] text-gray-400">Event / Achievement</label><input type="text" maxlength="20" id="ws-event" value="${cardData?.data?.event || ''}" class="w-full bg-black border border-gray-700 text-white text-xs p-2 rounded"></div>
-                <div><div class="flex justify-between w-full"><label class="text-[10px] text-gray-400">Trophy / Summary</label><span class="text-[10px] text-gray-400" id="ws-summary-counter">0 / 1000</span></div><textarea maxlength="1000" id="ws-summary" oninput="document.getElementById('ws-summary-counter').textContent = this.value.length + ' / 1000'" class="w-full bg-black border border-gray-700 text-white text-xs p-2 rounded h-24 placeholder-gray-500" placeholder="1000 yard impact on first round cold bore...">${cardData?.data?.summary || ''}</textarea></div>
+                <div><label class="text-[10px] text-gray-400">Event / Achievement</label><input type="text" id="ws-event" value="${cardData?.data?.event || ''}" class="w-full bg-black border border-gray-700 text-white text-xs p-2 rounded"></div>
+                <div><label class="text-[10px] text-gray-400">Trophy / Summary</label><textarea id="ws-summary" class="w-full bg-black border border-gray-700 text-white text-xs p-2 rounded h-24 placeholder-gray-500" placeholder="1000 yard impact on first round cold bore...">${cardData?.data?.summary || ''}</textarea></div>
             </div>`;
     } else if (type === 'journal') {
         headerIcon = 'book-open'; headerColor = 'text-indigo-500'; headerTitle = 'TACTICAL JOURNAL';
         const dNow = new Date().toLocaleString();
         formFields = `
             <div class="grid grid-cols-2 gap-4">
-                <div><label class="text-[10px] text-gray-400">Date & Time</label><input type="text" maxlength="20" id="ws-j-date" value="${cardData?.data?.date || dNow}" class="w-full bg-black border border-gray-700 text-white text-xs p-2 rounded"></div>
+                <div><label class="text-[10px] text-gray-400">Date & Time</label><input type="text" id="ws-j-date" value="${cardData?.data?.date || dNow}" class="w-full bg-black border border-gray-700 text-white text-xs p-2 rounded"></div>
                 <div>
                     <label class="text-[10px] text-gray-400">Entry Type</label>
                     <select id="ws-j-type" class="w-full bg-black border border-gray-700 text-white text-xs p-2 rounded">
@@ -322,10 +409,10 @@ window.openWorkstationForm = function(type, rawCardData = null) {
                         <option value="AD-HOC" ${cardData?.data?.type === 'AD-HOC' ? 'selected' : ''}>AD-HOC ENTRY</option>
                     </select>
                 </div>
-                <div class="col-span-2"><label class="text-[10px] text-gray-400">Subject / Title</label><input type="text" maxlength="20" id="ws-j-subject" value="${cardData?.data?.subject || ''}" class="w-full bg-black border border-gray-700 text-white text-xs p-2 rounded"></div>
-                <div class="col-span-2"><label class="text-[10px] text-gray-400">Summary (Short)</label><input type="text" maxlength="20" id="ws-j-summary" value="${cardData?.data?.summary || ''}" class="w-full bg-black border border-gray-700 text-white text-xs p-2 rounded"></div>
-                <div class="col-span-2"><div class="flex justify-between w-full"><label class="text-[10px] text-gray-400">Full Entry</label><span class="text-[10px] text-gray-400" id="ws-j-entry-counter">0 / 1000</span></div><textarea maxlength="1000" id="ws-j-entry" oninput="document.getElementById('ws-j-entry-counter').textContent = this.value.length + ' / 1000'" class="w-full bg-black border border-gray-700 text-white text-xs p-2 rounded h-32">${cardData?.data?.entry || ''}</textarea></div>
-                <div class="col-span-2"><div class="flex justify-between w-full"><label class="text-[10px] text-gray-400">Action Items / Follow-ups</label><span class="text-[10px] text-gray-400" id="ws-j-action-counter">0 / 1000</span></div><textarea maxlength="1000" id="ws-j-action" oninput="document.getElementById('ws-j-action-counter').textContent = this.value.length + ' / 1000'" class="w-full bg-black border border-gray-700 text-white text-xs p-2 rounded h-16">${cardData?.data?.action || ''}</textarea></div>
+                <div class="col-span-2"><label class="text-[10px] text-gray-400">Subject / Title</label><input type="text" id="ws-j-subject" value="${cardData?.data?.subject || ''}" class="w-full bg-black border border-gray-700 text-white text-xs p-2 rounded"></div>
+                <div class="col-span-2"><label class="text-[10px] text-gray-400">Summary (Short)</label><input type="text" id="ws-j-summary" value="${cardData?.data?.summary || ''}" class="w-full bg-black border border-gray-700 text-white text-xs p-2 rounded"></div>
+                <div class="col-span-2"><label class="text-[10px] text-gray-400">Full Entry</label><textarea id="ws-j-entry" class="w-full bg-black border border-gray-700 text-white text-xs p-2 rounded h-32">${cardData?.data?.entry || ''}</textarea></div>
+                <div class="col-span-2"><label class="text-[10px] text-gray-400">Action Items / Follow-ups</label><textarea id="ws-j-action" class="w-full bg-black border border-gray-700 text-white text-xs p-2 rounded h-16">${cardData?.data?.action || ''}</textarea></div>
             </div>`;
     }
 
@@ -368,7 +455,7 @@ window.openWorkstationForm = function(type, rawCardData = null) {
                                         </button>
                                         <label class="flex-1 bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-200 text-[8px] font-black py-1 px-1.5 rounded uppercase flex items-center justify-center gap-1 cursor-pointer">
                                             <i data-lucide="camera" class="w-3 h-3 text-slate-300"></i> UPLOAD
-                                            <input type="file" id="brag-file-${num}" name="brag-file-${num}" aria-label="Upload Brag Board Image" accept="image/*" class="hidden" onchange="window.handleBragFileUpload(${num}, event)">
+                                            <input type="file" accept="image/*" class="hidden" onchange="window.handleBragFileUpload(${num}, event)">
                                         </label>
                                         <button type="button" onclick="window.clearBragSlot(${num})" class="bg-red-950 hover:bg-red-900 border border-red-800 text-red-400 text-[8px] font-black p-1 rounded cursor-pointer" title="Clear Slot ${num}">
                                             <i data-lucide="x" class="w-3 h-3"></i>
@@ -404,6 +491,11 @@ window.openWorkstationForm = function(type, rawCardData = null) {
                 <button onclick="window.clearWorkstationForm()" class="bg-red-950/80 hover:bg-red-900 text-red-400 font-black text-[10px] uppercase tracking-widest px-3 py-2 rounded transition-all border border-red-800 flex items-center gap-1.5 cursor-pointer shadow">
                     <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> CLEAR FORM
                 </button>
+                ${type === 'casefile' ? `
+                <button onclick="window.generateCaseFilePdf()" class="bg-slate-700 hover:bg-slate-600 text-white font-black text-[10px] uppercase tracking-widest px-5 py-2 rounded shadow-[0_0_10px_rgba(255,255,255,0.2)] transition-all flex items-center gap-1.5 cursor-pointer">
+                    <i data-lucide="printer" class="w-3.5 h-3.5"></i> PREVIEW & PRINT PDF
+                </button>
+                ` : ''}
                 <button onclick="saveWorkstationCard('${type}', ${id})" class="bg-blue-600 hover:bg-blue-500 text-white font-black text-[10px] uppercase tracking-widest px-5 py-2 rounded shadow-[0_0_10px_rgba(37,99,235,0.5)] transition-all flex items-center gap-1.5 cursor-pointer">
                     <i data-lucide="save" class="w-3.5 h-3.5"></i> 💾 SAVE CARD
                 </button>
@@ -611,13 +703,14 @@ window.generateWorkstationCompositeCard = async function(type, title, data, atta
     return new Promise(async (resolve) => {
         try {
             const canvas = document.createElement('canvas');
-            canvas.width = 800;
-            canvas.height = 600;
-            const ctx = canvas.getContext('2d');
+            canvas.width = 1200;
+            canvas.height = 700;
+            const ctx = canvas.getContext('2d', { willReadFrequently: true });
 
             let accentColor = '#3b82f6';
             if (type === 'medevac') accentColor = '#ef4444';
             else if (type === 'scorecard') accentColor = '#eab308';
+            else if (type === 'casefile') accentColor = '#cbd5e1';
             else if (type === 'logistics') accentColor = '#10b981';
             else if (type === 'roster') accentColor = '#3b82f6';
             else if (type === 'bragboard') accentColor = '#a855f7';
@@ -680,6 +773,14 @@ window.generateWorkstationCompositeCard = async function(type, title, data, atta
                 drawField('Hits / Points', data.hits);
                 drawField('Penalties', data.penalties);
                 drawField('Stage Notes', data.notes);
+            } else if (type === 'casefile') {
+                drawField('Operator Name / Callsign', data.op_name);
+                drawField('Agency / Company', data.op_agency);
+                drawField('License / ID Number', data.op_license);
+                drawField('Qualifications', data.op_quals);
+                drawField('Job Amount / Bounty ($)', data.bounty);
+                drawField('Expenses / Fuel ($)', data.expenses);
+                drawField('Additional Invoice Notes', data.invoice_notes);
             } else if (type === 'logistics') {
                 drawField('Ammo Expended', data.ammo);
                 drawField('Gear Damaged/Lost', data.gear);
@@ -819,6 +920,19 @@ window.saveWorkstationCard = async function(type, id) {
             notes: document.getElementById('ws-notes')?.value || ''
         };
         title = "SCORECARD: " + (data.match || 'UNTITLED');
+    } else if (type === 'casefile') {
+        data = {
+            op_name: document.getElementById('ws-op_name')?.value || '',
+            op_agency: document.getElementById('ws-op_agency')?.value || '',
+            op_license: document.getElementById('ws-op_license')?.value || '',
+            op_quals: document.getElementById('ws-op_quals')?.value || '',
+            case_number: document.getElementById('ws-case_number')?.value || '',
+            invoice_type: document.getElementById('ws-invoice_type')?.value || '',
+            bounty: document.getElementById('ws-bounty')?.value || '',
+            expenses: document.getElementById('ws-expenses')?.value || '',
+            invoice_notes: document.getElementById('ws-invoice_notes')?.value || ''
+        };
+        title = "CASE FILE: " + (data.case_number || data.op_name || 'UNTITLED');
     } else if (type === 'logistics') {
         data = {
             ammo: document.getElementById('ws-ammo')?.value || '',
@@ -1005,25 +1119,25 @@ window.openBragBoardStudio = async function() {
     } else if (count === 2) {
         collageHtml = `
             <div class="grid grid-cols-2 gap-1 w-full h-[300px] bg-black p-1 rounded overflow-hidden">
-                <div class="bg-gray-900 h-full flex items-center justify-center">${selectedCards[0].image ? `<img src="${selectedCards[0].image}" class="w-full h-full object-cover">` : '<span class="text-xs text-gray-400 font-bold">NO IMAGE</span>'}</div>
-                <div class="bg-gray-900 h-full flex items-center justify-center">${selectedCards[1].image ? `<img src="${selectedCards[1].image}" class="w-full h-full object-cover">` : '<span class="text-xs text-gray-400 font-bold">NO IMAGE</span>'}</div>
+                <div class="bg-gray-900 h-full flex items-center justify-center">${selectedCards[0].image ? `<img src="${selectedCards[0].image}" class="w-full h-full object-cover">` : '<span class="text-xs text-gray-600 font-bold">NO IMAGE</span>'}</div>
+                <div class="bg-gray-900 h-full flex items-center justify-center">${selectedCards[1].image ? `<img src="${selectedCards[1].image}" class="w-full h-full object-cover">` : '<span class="text-xs text-gray-600 font-bold">NO IMAGE</span>'}</div>
             </div>`;
     } else if (count === 3) {
         collageHtml = `
             <div class="grid grid-rows-2 gap-1 w-full h-[350px] bg-black p-1 rounded overflow-hidden">
-                <div class="bg-gray-900 w-full h-full flex items-center justify-center">${selectedCards[0].image ? `<img src="${selectedCards[0].image}" class="w-full h-full object-cover">` : '<span class="text-xs text-gray-400 font-bold">NO IMAGE</span>'}</div>
+                <div class="bg-gray-900 w-full h-full flex items-center justify-center">${selectedCards[0].image ? `<img src="${selectedCards[0].image}" class="w-full h-full object-cover">` : '<span class="text-xs text-gray-600 font-bold">NO IMAGE</span>'}</div>
                 <div class="grid grid-cols-2 gap-1 w-full h-full">
-                    <div class="bg-gray-900 h-full flex items-center justify-center">${selectedCards[1].image ? `<img src="${selectedCards[1].image}" class="w-full h-full object-cover">` : '<span class="text-xs text-gray-400 font-bold">NO IMAGE</span>'}</div>
-                    <div class="bg-gray-900 h-full flex items-center justify-center">${selectedCards[2].image ? `<img src="${selectedCards[2].image}" class="w-full h-full object-cover">` : '<span class="text-xs text-gray-400 font-bold">NO IMAGE</span>'}</div>
+                    <div class="bg-gray-900 h-full flex items-center justify-center">${selectedCards[1].image ? `<img src="${selectedCards[1].image}" class="w-full h-full object-cover">` : '<span class="text-xs text-gray-600 font-bold">NO IMAGE</span>'}</div>
+                    <div class="bg-gray-900 h-full flex items-center justify-center">${selectedCards[2].image ? `<img src="${selectedCards[2].image}" class="w-full h-full object-cover">` : '<span class="text-xs text-gray-600 font-bold">NO IMAGE</span>'}</div>
                 </div>
             </div>`;
     } else if (count === 4) {
         collageHtml = `
             <div class="grid grid-cols-2 grid-rows-2 gap-1 w-full h-[400px] bg-black p-1 rounded overflow-hidden">
-                <div class="bg-gray-900 h-full flex items-center justify-center">${selectedCards[0].image ? `<img src="${selectedCards[0].image}" class="w-full h-full object-cover">` : '<span class="text-xs text-gray-400 font-bold">NO IMAGE</span>'}</div>
-                <div class="bg-gray-900 h-full flex items-center justify-center">${selectedCards[1].image ? `<img src="${selectedCards[1].image}" class="w-full h-full object-cover">` : '<span class="text-xs text-gray-400 font-bold">NO IMAGE</span>'}</div>
-                <div class="bg-gray-900 h-full flex items-center justify-center">${selectedCards[2].image ? `<img src="${selectedCards[2].image}" class="w-full h-full object-cover">` : '<span class="text-xs text-gray-400 font-bold">NO IMAGE</span>'}</div>
-                <div class="bg-gray-900 h-full flex items-center justify-center">${selectedCards[3].image ? `<img src="${selectedCards[3].image}" class="w-full h-full object-cover">` : '<span class="text-xs text-gray-400 font-bold">NO IMAGE</span>'}</div>
+                <div class="bg-gray-900 h-full flex items-center justify-center">${selectedCards[0].image ? `<img src="${selectedCards[0].image}" class="w-full h-full object-cover">` : '<span class="text-xs text-gray-600 font-bold">NO IMAGE</span>'}</div>
+                <div class="bg-gray-900 h-full flex items-center justify-center">${selectedCards[1].image ? `<img src="${selectedCards[1].image}" class="w-full h-full object-cover">` : '<span class="text-xs text-gray-600 font-bold">NO IMAGE</span>'}</div>
+                <div class="bg-gray-900 h-full flex items-center justify-center">${selectedCards[2].image ? `<img src="${selectedCards[2].image}" class="w-full h-full object-cover">` : '<span class="text-xs text-gray-600 font-bold">NO IMAGE</span>'}</div>
+                <div class="bg-gray-900 h-full flex items-center justify-center">${selectedCards[3].image ? `<img src="${selectedCards[3].image}" class="w-full h-full object-cover">` : '<span class="text-xs text-gray-600 font-bold">NO IMAGE</span>'}</div>
             </div>`;
     }
 
@@ -1058,7 +1172,7 @@ window.openBragBoardStudio = async function() {
 
                     <!-- User Summary Input Overlay -->
                     <div class="mt-3">
-                        <div class="flex justify-between items-center mb-1"><span class="text-[9px] text-gray-400 font-bold uppercase tracking-wider">AAR / NOTES</span><span class="text-[9px] text-gray-400 font-mono" id="brag-board-summary-counter">0 / 1000</span></div><textarea maxlength="1000" id="brag-board-summary-input" oninput="document.getElementById('brag-board-summary-counter').textContent = this.value.length + ' / 1000'" class="w-full bg-black/50 border border-gray-800 rounded text-xs text-gray-300 p-3 h-24 focus:border-purple-500 focus:outline-none transition-colors placeholder-gray-500" placeholder="Type your AAR, notes, or master summary here..."></textarea>
+                        <textarea id="brag-board-summary-input" class="w-full bg-black/50 border border-gray-800 rounded text-xs text-gray-300 p-3 h-24 focus:border-purple-500 focus:outline-none transition-colors placeholder-gray-500" placeholder="Type your AAR, notes, or master summary here..."></textarea>
                     </div>
                 </div>
             </div>
@@ -1147,4 +1261,303 @@ window.saveBragBoardToVault = async function() {
 
 
 
+// ============================================================
+// EXECUTIVE CASE FILE PDF GENERATOR
+// ============================================================
+window.generateCaseFilePdf = async function() {
+    try {
 
+    // 1. Gather form data
+    const op_name = document.getElementById('ws-op_name')?.value || 'UNKNOWN';
+    const op_agency = document.getElementById('ws-op_agency')?.value || 'N/A';
+    const op_license = document.getElementById('ws-op_license')?.value || 'N/A';
+    const op_quals = document.getElementById('ws-op_quals')?.value || 'N/A';
+    const case_number = document.getElementById('ws-case_number')?.value || 'N/A';
+    const invoice_type = document.getElementById('ws-invoice_type')?.value || 'N/A';
+    const bountyStr = document.getElementById('ws-bounty')?.value || '0';
+    const expensesStr = document.getElementById('ws-expenses')?.value || '0';
+    const invoiceNotes = document.getElementById('ws-invoice_notes')?.value || '';
+    const mainAttachedImage = document.getElementById('ws-image-data')?.value || '';
+    
+    const bounty = window.parseCurrencyValue(bountyStr);
+    const expenses = window.parseCurrencyValue(expensesStr);
+    const total = bounty + expenses;
+    
+    // 2. Fetch Vault Data
+    let vaultItems = [];
+    if (window.TRC_IDB) {
+        let allVaultItems = Object.values(await window.TRC_IDB.getAll('intelVault') || {});
+        
+        // CHECK FOR SELECTED VAULT ITEMS
+        const checkedBoxes = document.querySelectorAll('.vault-export-checkbox:checked');
+        if (checkedBoxes.length > 0) {
+            const selectedIds = Array.from(checkedBoxes).map(cb => cb.dataset.vaultId || cb.value);
+            vaultItems = allVaultItems.filter(v => selectedIds.includes(v.id.toString()));
+        } else {
+            vaultItems = allVaultItems; // Fallback: if they didn't check any, just print the whole vault
+        }
+    }
+    
+    // Sort vault items by timestamp
+    vaultItems.sort((a,b) => new Date(a.timestamp) - new Date(b.timestamp));
+    
+    // 3. Build HTML
+    const dateStr = new Date().toLocaleString();
+    
+    let html = `
+        <div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #111; max-width: 800px; margin: 0 auto; line-height: 1.4;">
+            
+            <!-- HEADER -->
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 4px solid #111; padding-bottom: 12px; margin-bottom: 20px; page-break-inside: avoid; break-inside: avoid;">
+                <div>
+                    <h1 style="margin: 0; font-size: 24px; font-weight: 900; letter-spacing: 2px; text-transform: uppercase;">EXECUTIVE CASE FILE</h1>
+                    <h2 style="margin: 4px 0 0; font-size: 13px; font-weight: bold; color: #475569; text-transform: uppercase;">OFFICIAL INCIDENT REPORT & INVOICE</h2>
+                    <p style="margin: 4px 0 0; font-size: 11px; color: #64748b; font-family: monospace;">DATE GENERATED: ${dateStr}</p>
+                </div>
+                <div style="text-align: right; border-left: 2px solid #cbd5e1; padding-left: 20px;">
+                    <div style="font-size: 10px; font-weight: bold; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em;">Invoice Summary</div>
+                    <div style="font-size: 13px; margin-top: 4px;">Job / Bounty: <b>$${bounty.toFixed(2)}</b></div>
+                    <div style="font-size: 13px; margin-top: 2px;">Expenses: <b>$${expenses.toFixed(2)}</b></div>
+                    <div style="font-size: 18px; font-weight: 900; margin-top: 8px; border-top: 2px solid #111; padding-top: 4px; color: #0f172a;">TOTAL: $${total.toFixed(2)}</div>
+                </div>
+            </div>
+            
+            <!-- OFFICER & CASE INFO -->
+            <div style="margin-bottom: 24px; border: 1px solid #cbd5e1; border-radius: 6px; overflow: hidden; page-break-inside: avoid; break-inside: avoid;">
+                <div style="font-size: 12px; font-weight: 900; background: #0f172a; color: #ffffff; padding: 6px 12px; text-transform: uppercase; letter-spacing: 0.05em;">
+                    LEAD OPERATOR / CASE DETAILS
+                </div>
+                <div style="display: flex; gap: 20px; padding: 12px; background: #ffffff;">
+                    <div style="flex: 1; font-size: 12px; line-height: 1.7;">
+                        <div><b>Name / Callsign:</b> <span style="text-transform: uppercase;">${op_name}</span></div>
+                        <div><b>Agency / Company:</b> ${op_agency}</div>
+                        <div><b>License / ID:</b> <span style="font-family: monospace;">${op_license}</span></div>
+                        <div><b>Qualifications:</b> ${op_quals}</div>
+                        <div><b>Case Number:</b> <span style="font-family: monospace; font-weight: bold;">${case_number}</span></div>
+                        <div><b>Invoice For:</b> ${invoice_type}</div>
+                    </div>
+                    ${mainAttachedImage ? `
+                    <div style="width: 140px; text-align: center; border: 1px solid #e2e8f0; border-radius: 4px; padding: 4px; background: #f8fafc;">
+                        <img src="${mainAttachedImage}" style="max-width: 100%; max-height: 120px; object-fit: contain; display: block; margin: 0 auto;">
+                        <div style="font-size: 8px; color: #64748b; margin-top: 4px; font-weight: bold; text-transform: uppercase;">PRIMARY PHOTO</div>
+                    </div>
+                    ` : ''}
+                </div>
+            </div>
+            
+            <!-- PAYMENT TERMS & NOTES -->
+            ${invoiceNotes ? `
+            <div style="margin-bottom: 24px; border: 1px solid #cbd5e1; border-radius: 6px; overflow: hidden; page-break-inside: avoid; break-inside: avoid;">
+                <div style="font-size: 12px; font-weight: 900; background: #0f172a; color: #ffffff; padding: 6px 12px; text-transform: uppercase; letter-spacing: 0.05em;">
+                    INVOICE NOTES & TERMS
+                </div>
+                <div style="font-size: 12px; padding: 12px; background: #f8fafc; white-space: pre-wrap; line-height: 1.5;">
+                    ${invoiceNotes}
+                </div>
+            </div>` : ''}
+            
+            <!-- EVIDENCE & INTEL EXHIBITS -->
+            <div style="margin-bottom: 30px;">
+                <div style="font-size: 12px; font-weight: 900; background: #0f172a; color: #ffffff; padding: 6px 12px; text-transform: uppercase; letter-spacing: 0.05em; border-radius: 6px 6px 0 0; margin-bottom: 12px;">
+                    CHRONOLOGICAL EVIDENCE & VAULT EXHIBITS (${vaultItems.length})
+                </div>
+    `;
+    
+    if (vaultItems.length === 0) {
+        html += `
+            <div style="padding: 20px; text-align: center; color: #64748b; border: 1px dashed #cbd5e1; border-radius: 6px; font-size: 12px;">
+                No Intel Vault records attached to this operation.
+            </div>
+        `;
+    } else {
+        vaultItems.forEach((v, idx) => {
+            const time = new Date(v.timestamp).toLocaleTimeString();
+            const date = new Date(v.timestamp).toLocaleDateString();
+            const attachedImg = v.image || v.data || (v.contact ? v.contact.cardImageUrl : null);
+            
+            html += `
+                <div style="page-break-inside: avoid; break-inside: avoid; margin-bottom: 16px; border: 1px solid #cbd5e1; border-radius: 6px; overflow: hidden; background: #ffffff;">
+                    <div style="background: #f1f5f9; padding: 8px 12px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #cbd5e1; font-size: 11px;">
+                        <div>
+                            <span style="font-weight: 900; color: #0f172a; text-transform: uppercase;">EXHIBIT ${idx + 1}: ${v.label || 'UNTITLED RECORD'}</span>
+                            <span style="color: #64748b; margin-left: 8px; font-weight: bold; text-transform: uppercase;">[${(v.type || 'EVIDENCE').replace('-', ' ')}]</span>
+                        </div>
+                        <div style="color: #475569; font-family: monospace; font-size: 10px;">
+                            ${date} ${time}
+                        </div>
+                    </div>
+                    <div style="padding: 12px;">
+                        ${v.notes ? `<div style="font-size: 11px; color: #334155; margin-bottom: 8px; font-style: italic;">"${v.notes}"</div>` : ''}
+                        ${attachedImg ? `
+                        <div style="text-align: center; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 4px; padding: 8px; margin-top: 4px;">
+                            <img src="${attachedImg}" style="max-width: 100%; max-height: 360px; object-fit: contain; display: inline-block; border-radius: 3px;">
+                        </div>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+        });
+    }
+    
+    html += `
+            </div>
+            
+            <!-- DIGITAL SIGNATURE BLOCK -->
+            <div style="margin-top: 40px; display: flex; justify-content: space-between; page-break-inside: avoid; break-inside: avoid; gap: 30px;">
+                <div style="flex: 1; text-align: center;">
+                    <div id="sig-operator" onclick="window.openSignaturePad('sig-operator', 'Operator / Agent Signature')" class="print:border-none" style="border-bottom: 2px solid #0f172a; height: 60px; margin-bottom: 6px; cursor: pointer; display: flex; align-items: flex-end; justify-content: center; background: #f8fafc; border-radius: 4px 4px 0 0;" title="Click to sign">
+                        <span class="print:hidden" style="color: #94a3b8; font-size: 9px; padding-bottom: 5px; font-weight: bold;">[ CLICK TO E-SIGN ]</span>
+                    </div>
+                    <div style="font-size: 10px; font-weight: 900; text-transform: uppercase; color: #0f172a; letter-spacing: 0.05em;">Operator / Agent Signature</div>
+                </div>
+                <div style="flex: 1; text-align: center;">
+                    <div id="sig-notary" onclick="window.openSignaturePad('sig-notary', 'Authorizing Official / Notary')" class="print:border-none" style="border-bottom: 2px solid #0f172a; height: 60px; margin-bottom: 6px; cursor: pointer; display: flex; align-items: flex-end; justify-content: center; background: #f8fafc; border-radius: 4px 4px 0 0;" title="Click to sign">
+                        <span class="print:hidden" style="color: #94a3b8; font-size: 9px; padding-bottom: 5px; font-weight: bold;">[ CLICK TO E-SIGN ]</span>
+                    </div>
+                    <div style="font-size: 10px; font-weight: 900; text-transform: uppercase; color: #0f172a; letter-spacing: 0.05em;">Authorizing Official / Notary</div>
+                </div>
+            </div>
+            
+            <div style="margin-top: 40px; padding-top: 12px; border-top: 1px solid #cbd5e1; text-align: center; font-size: 8px; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.1em; page-break-inside: avoid; break-inside: avoid;">
+                OFFICIAL COURT & EXECUTIVE RECORD &bull; GENERATED BY TACTICAL RANGE CARD SYSTEM
+            </div>
+        </div>
+    `;
+    
+    const container = document.getElementById('casefile-printable-area');
+    if (container) {
+        container.innerHTML = html;
+        document.getElementById('modal-casefile-preview').style.display = 'flex';
+        if(window.lucide) window.lucide.createIcons();
+    }
+
+    } catch (e) {
+        console.error("PDF GEN FATAL ERROR", e);
+        alert("PDF GEN ERROR: " + e.message);
+        if (window.pushTacLog) window.pushTacLog("PDF GENERATION FAILED", "ERROR");
+    }
+};
+
+
+
+// ==========================================
+// E-SIGNATURE PAD LOGIC
+// ==========================================
+let sigCanvas, sigCtx, isSigning = false, currentSigTarget = null;
+
+window.openSignaturePad = function(targetId, title) {
+    document.getElementById('sig-pad-title').innerText = title;
+    currentSigTarget = targetId;
+    const modal = document.getElementById('modal-signature-pad');
+    modal.style.display = 'flex';
+    
+    if(!sigCanvas) {
+        sigCanvas = document.getElementById('sig-canvas');
+        sigCtx = sigCanvas.getContext('2d', { willReadFrequently: true });
+        
+        // Resize canvas correctly to its CSS bounds
+        const rect = sigCanvas.parentElement.getBoundingClientRect();
+        sigCanvas.width = rect.width;
+        sigCanvas.height = rect.height;
+        
+        const getPos = (e) => {
+            const r = sigCanvas.getBoundingClientRect();
+            if(e.touches) return { x: e.touches[0].clientX - r.left, y: e.touches[0].clientY - r.top };
+            return { x: e.clientX - r.left, y: e.clientY - r.top };
+        };
+
+        const start = (e) => { e.preventDefault(); isSigning = true; const p = getPos(e); sigCtx.beginPath(); sigCtx.moveTo(p.x, p.y); };
+        const move = (e) => { e.preventDefault(); if(!isSigning) return; const p = getPos(e); sigCtx.lineTo(p.x, p.y); sigCtx.stroke(); };
+        const end = (e) => { e.preventDefault(); isSigning = false; };
+        
+        sigCanvas.addEventListener('mousedown', start);
+        sigCanvas.addEventListener('mousemove', move);
+        sigCanvas.addEventListener('mouseup', end);
+        sigCanvas.addEventListener('touchstart', start, {passive:false});
+        sigCanvas.addEventListener('touchmove', move, {passive:false});
+        sigCanvas.addEventListener('touchend', end);
+    }
+    
+    // Clear and reset context
+    sigCtx.clearRect(0,0,sigCanvas.width, sigCanvas.height);
+    sigCtx.lineWidth = 4;
+    sigCtx.strokeStyle = '#000000';
+    sigCtx.lineCap = 'round';
+    sigCtx.lineJoin = 'round';
+};
+
+window.clearSignature = function() {
+    if(sigCtx && sigCanvas) sigCtx.clearRect(0,0,sigCanvas.width, sigCanvas.height);
+};
+
+window.closeSignaturePad = function() {
+    const modal = document.getElementById('modal-signature-pad');
+    if (modal) modal.style.display = 'none';
+};
+
+window.saveSignature = function() {
+    if(!sigCanvas) return;
+    const dataUrl = sigCanvas.toDataURL('image/png');
+    window.closeSignaturePad();
+    
+    const targetDiv = document.getElementById(currentSigTarget);
+    if(targetDiv) {
+        targetDiv.innerHTML = `<img src="${dataUrl}" style="height: 55px; width: auto; max-width: 100%; object-fit: contain; margin: 0 auto; display: block; mix-blend-mode: multiply;">`;
+        targetDiv.style.background = 'transparent';
+    }
+};
+
+window.printCaseFileDoc = function() {
+    const printableContent = document.getElementById('casefile-printable-area');
+    if (!printableContent) return;
+
+    let printFrame = document.getElementById('trc-print-iframe');
+    if (!printFrame) {
+        printFrame = document.createElement('iframe');
+        printFrame.id = 'trc-print-iframe';
+        printFrame.style.position = 'fixed';
+        printFrame.style.top = '-99999px';
+        printFrame.style.left = '-99999px';
+        printFrame.style.width = '1000px';
+        printFrame.style.height = '1000px';
+        printFrame.style.border = 'none';
+        document.body.appendChild(printFrame);
+    }
+
+    const doc = printFrame.contentWindow.document;
+    doc.open();
+    doc.write(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Executive Case File - Tactical Range Card</title>
+            <style>
+                @page { margin: 12mm; size: portrait; }
+                body { 
+                    margin: 0; 
+                    padding: 0; 
+                    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; 
+                    background: #ffffff; 
+                    color: #111111; 
+                }
+                * { box-sizing: border-box; }
+                img { max-width: 100%; height: auto; }
+            </style>
+        </head>
+        <body>
+            ${printableContent.innerHTML}
+        </body>
+        </html>
+    `);
+    doc.close();
+
+    setTimeout(() => {
+        try {
+            printFrame.contentWindow.focus();
+            printFrame.contentWindow.print();
+        } catch(e) {
+            console.error("Iframe print error, falling back to window.print()", e);
+            window.print();
+        }
+    }, 350);
+};

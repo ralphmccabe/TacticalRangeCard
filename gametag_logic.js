@@ -483,10 +483,12 @@ if (gametagToVaultBtnTop) {
             renderZone.style.position = 'fixed';
             renderZone.style.left = '0';
             renderZone.style.top = '0';
-            renderZone.style.zIndex = '999999';
+            renderZone.style.zIndex = '99999';
+            renderZone.style.opacity = '1';
+            renderZone.style.pointerEvents = 'none';
             document.body.appendChild(renderZone);
             
-            await new Promise(r => setTimeout(r, 150));
+            await new Promise(r => setTimeout(r, 200));
             
             if (!window.html2canvas) {
                 if (typeof window.ensureHtml2Canvas === 'function') {
@@ -505,10 +507,20 @@ if (gametagToVaultBtnTop) {
                 scale: 1.5, 
                 logging: false,
                 useCORS: true,
-                allowTaint: true
+                allowTaint: true,
+                imageTimeout: 8000,
+                removeContainer: true,
+                onclone: (clonedDoc) => {
+                    const clonedZone = clonedDoc.getElementById('gametag-render-zone');
+                    if (clonedZone) {
+                        clonedZone.style.opacity = '1';
+                        clonedZone.style.visibility = 'visible';
+                        clonedZone.style.display = 'block';
+                    }
+                }
             });
             const timeoutPromise = new Promise((_, reject) => 
-                setTimeout(() => reject(new Error('html2canvas render timed out')), 10000)
+                setTimeout(() => reject(new Error('html2canvas render timed out')), 15000)
             );
             
             const canvas = await Promise.race([html2canvasPromise, timeoutPromise]);
