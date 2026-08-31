@@ -231,22 +231,25 @@ if(boloClearBtn) boloClearBtn.addEventListener('click', clearBoloForm);
 // IMAGE UPLOAD
 // ============================================================
 if (boloImageUpload) {
-    boloImageUpload.addEventListener('change', (e) => {
+    boloImageUpload.addEventListener('change', async (e) => {
         const file = e.target.files[0];
         if (!file) return;
-        const reader = new FileReader();
-        reader.onload = (event) => {
-            currentBoloImage = event.target.result;
-            if(boloRenderImg) { boloRenderImg.src = event.target.result; boloRenderImg.style.display = 'block'; }
+        try {
+            const optimized = window.compressAndResizeImage 
+                ? await window.compressAndResizeImage(file, 800, 0.8) 
+                : await new Promise(r => { const fr = new FileReader(); fr.onload = ev => r(ev.target.result); fr.readAsDataURL(file); });
+            currentBoloImage = optimized;
+            if(boloRenderImg) { boloRenderImg.src = currentBoloImage; boloRenderImg.style.display = 'block'; }
             if(boloImagePlaceholder) boloImagePlaceholder.style.display = 'none';
             const previewImg  = document.getElementById('bolo-form-preview-img');
             const previewIcon = document.getElementById('bolo-form-preview-icon');
-            if(previewImg)  { previewImg.src = event.target.result; previewImg.classList.remove('hidden'); }
+            if(previewImg)  { previewImg.src = currentBoloImage; previewImg.classList.remove('hidden'); }
             if(previewIcon) previewIcon.style.opacity = '0.3';
             const lbl = document.getElementById('bolo-image-label');
             if(lbl) { lbl.innerText = 'IMAGE UPLOADED'; lbl.classList.remove('text-gray-400'); lbl.classList.add('text-neon-green'); }
-        };
-        reader.readAsDataURL(file);
+        } catch(err) {
+            console.error("BOLO image process error:", err);
+        }
     });
 }
 
@@ -806,6 +809,8 @@ window.exportBoloToVault = async function(bolo, btnElement = null) {
         
         const canvas = await Promise.race([html2canvasPromise, timeoutPromise]);
         const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+        canvas.width = 0;
+        canvas.height = 0;
         if(window.saveIntelSnapshot) {
             let label = 'BOLO';
             if (isPerson) label = 'BOLO: ' + (bolo.name || 'UNKNOWN SUSPECT');
@@ -866,8 +871,13 @@ window.exportBoloToVault = async function(bolo, btnElement = null) {
 
 if (boloToVaultBtnTop) {
     boloToVaultBtnTop.addEventListener('click', async () => {
-        if(!selectedBoloId) return;
-        const bolo = await window.TRC_IDB.get('boloLibrary', selectedBoloId);
+        if(!selectedBoloId) {
+            alert("Please select a BOLO card from your inventory list below first.");
+            return;
+        }
+        let bolo = await window.TRC_IDB.get('boloLibrary', selectedBoloId);
+        if(!bolo) bolo = await window.TRC_IDB.get('boloLibrary', String(selectedBoloId));
+        if(!bolo) bolo = await window.TRC_IDB.get('boloLibrary', Number(selectedBoloId));
         if(!bolo) return;
         await window.exportBoloToVault(bolo, boloToVaultBtnTop);
     });

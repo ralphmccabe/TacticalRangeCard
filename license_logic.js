@@ -118,20 +118,23 @@ if (licenseClearBtn) {
 // IMAGE UPLOAD
 // ============================================================
 if (licenseImageUpload) {
-    licenseImageUpload.addEventListener('change', function(e) {
+    licenseImageUpload.addEventListener('change', async function(e) {
         const file = e.target.files[0];
         if (!file) return;
-        const reader = new FileReader();
-        reader.onload = function(event) {
-            currentLicenseImage = event.target.result;
+        try {
+            const optimized = window.compressAndResizeImage 
+                ? await window.compressAndResizeImage(file, 800, 0.8) 
+                : await new Promise(r => { const fr = new FileReader(); fr.onload = ev => r(ev.target.result); fr.readAsDataURL(file); });
+            currentLicenseImage = optimized;
             const previewImg   = document.getElementById('license-form-preview-img');
             const previewIcon  = document.getElementById('license-form-preview-icon');
             const previewLabel = document.getElementById('license-image-label');
             if (previewImg)   { previewImg.src = currentLicenseImage; previewImg.classList.remove('hidden'); }
             if (previewIcon)  previewIcon.style.opacity = '0.3';
             if (previewLabel) previewLabel.innerText = 'CHANGE PHOTO';
-        };
-        reader.readAsDataURL(file);
+        } catch(err) {
+            console.error("License image process error:", err);
+        }
     });
 }
 
@@ -346,8 +349,13 @@ if (reworkLicenseBtn) {
 // ============================================================
 if (licenseToVaultBtnTop) {
     licenseToVaultBtnTop.addEventListener('click', async () => {
-        if (!selectedLicenseId) return;
-        const lic = await window.TRC_IDB.get('licenseLibrary', selectedLicenseId);
+        if (!selectedLicenseId) {
+            alert("Please select a license from the inventory list below first.");
+            return;
+        }
+        let lic = await window.TRC_IDB.get('licenseLibrary', selectedLicenseId);
+        if (!lic) lic = await window.TRC_IDB.get('licenseLibrary', String(selectedLicenseId));
+        if (!lic) lic = await window.TRC_IDB.get('licenseLibrary', Number(selectedLicenseId));
         if (!lic) return;
 
         const originalHtml = licenseToVaultBtnTop.innerHTML;
@@ -428,7 +436,9 @@ if (licenseToVaultBtnTop) {
             );
             
             const canvas = await Promise.race([html2canvasPromise, timeoutPromise]);
-            const dataUrl = canvas.toDataURL('image/jpeg', 0.75);
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+            canvas.width = 0;
+            canvas.height = 0;
 
             if (window.saveIntelSnapshot) {
                 // Strip heavy image from licenseData — snapshot already has the visual

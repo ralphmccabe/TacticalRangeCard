@@ -4,6 +4,63 @@ let geoDistanceUnit = 'YDS';
     SECURITY: AES-256 ENCRYPTED COMMS
 */
 
+// === GLOBAL CLIENT-SIDE IMAGE RESIZER & OPTIMIZER ===
+window.compressAndResizeImage = function(file, maxDim = 800, quality = 0.8) {
+    return new Promise((resolve, reject) => {
+        if (!file) { resolve(null); return; }
+        const reader = new FileReader();
+        reader.onerror = reject;
+        reader.onload = (e) => {
+            const img = new Image();
+            img.onerror = () => resolve(e.target.result);
+            img.onload = () => {
+                let w = img.width;
+                let h = img.height;
+                if (w > maxDim || h > maxDim) {
+                    if (w > h) {
+                        h = Math.round((h * maxDim) / w);
+                        w = maxDim;
+                    } else {
+                        w = Math.round((w * maxDim) / h);
+                        h = maxDim;
+                    }
+                }
+                const canvas = document.createElement('canvas');
+                canvas.width = w;
+                canvas.height = h;
+                const ctx = canvas.getContext('2d', { willReadFrequently: true });
+                ctx.drawImage(img, 0, 0, w, h);
+                const compressed = canvas.toDataURL('image/jpeg', quality);
+                canvas.width = 0;
+                canvas.height = 0;
+                resolve(compressed);
+            };
+            img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+    });
+};
+
+// === TACTICAL PDF THUMBNAIL GENERATOR ===
+window.generatePdfThumbnailSvg = function(title) {
+    const safeTitle = (title || 'EXECUTIVE INVOICE').substring(0, 26).toUpperCase();
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300" width="100%" height="100%">
+        <rect width="300" height="300" fill="#090d16"/>
+        <rect x="15" y="15" width="270" height="270" rx="10" fill="#0f172a" stroke="#3b82f6" stroke-width="3"/>
+        <rect x="28" y="28" width="244" height="42" rx="6" fill="#1e293b" stroke="#60a5fa" stroke-width="1.5"/>
+        <text x="150" y="54" fill="#60a5fa" font-size="13" font-family="monospace" font-weight="900" text-anchor="middle" letter-spacing="1">TRC EXECUTIVE INVOICE</text>
+        <circle cx="150" cy="140" r="48" fill="#090d16" stroke="#22c55e" stroke-width="2.5"/>
+        <line x1="150" y1="82" x2="150" y2="198" stroke="#22c55e" stroke-width="2"/>
+        <line x1="92" y1="140" x2="208" y2="140" stroke="#22c55e" stroke-width="2"/>
+        <circle cx="150" cy="140" r="18" fill="none" stroke="#22c55e" stroke-width="1.5"/>
+        <circle cx="150" cy="140" r="5" fill="#22c55e"/>
+        <rect x="30" y="206" width="240" height="26" rx="4" fill="#1e293b"/>
+        <text x="150" y="223" fill="#f8fafc" font-size="11" font-family="monospace" font-weight="bold" text-anchor="middle">${safeTitle}</text>
+        <rect x="75" y="244" width="150" height="24" rx="4" fill="#2563eb"/>
+        <text x="150" y="260" fill="#ffffff" font-size="10" font-family="sans-serif" font-weight="900" text-anchor="middle" letter-spacing="1">TAP TO REWORK</text>
+    </svg>`;
+    return 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
+};
 
 // === TACTICAL CRYPTO ENGINE (AES-256) ===
 
@@ -1202,14 +1259,14 @@ function initializeTacticalDashboard1() {
                 // Parse Angle
                 let ang = parseFloat(ai.value);
                 if (isNaN(ang)) {
-                    const m = ai.value.match(/\d+/);
+                    const m = (ai.value ? String(ai.value) : '').match(/\d+/);
                     if (m) ang = parseFloat(m[0]);
                 }
                 if (isNaN(ang)) return;
 
                 // Parse Range for Scaling (0 - 1000 yds)
                 let rangeVal = 0;
-                const rangeMatch = ri.value.match(/\d+/);
+                const rangeMatch = (ri.value ? String(ri.value) : '').match(/\d+/);
                 if (rangeMatch) rangeVal = parseFloat(rangeMatch[0]);
 
                 // Calculate Radius based on range (Min 15% for visibility, Max 100%)
@@ -1693,7 +1750,7 @@ function initializeTacticalDashboard1() {
                 }
                 Object.keys(formData).forEach(id => {
                     const input = document.getElementById(id);
-                    if (input) {
+                    if (input && input.type !== 'file') {
                         input.value = formData[id];
                         input.dispatchEvent(new Event('input'));
                     }
@@ -3094,6 +3151,10 @@ function initializeTacticalDashboard2() {
                 refreshVaultGrid();
             } else if (panelId === 'panel-comms') {
                 setTimeout(() => { if(commsMapInstance) commsMapInstance.invalidateSize(); }, 600);
+            } else if (panelId === 'panel-workstation') {
+                if (typeof window.renderWorkstationMenu === 'function') {
+                    window.renderWorkstationMenu();
+                }
             }
         } else {
             // === CLEANUP SPECIFIC PANEL LOGIC ON CLOSE ===
@@ -4815,7 +4876,19 @@ function initializeTacticalDashboard2() {
         if (!container) return;
         container.innerHTML = '';
 
-        const listToRender = customList || vaultCache;
+        const rawList = customList || vaultCache || [];
+        
+        // Strict deduplication by unique ID
+        const seenIds = new Set();
+        const listToRender = [];
+        for (const item of rawList) {
+            if (!item) continue;
+            const itemIdStr = (item.id || item.timestamp || Math.random()).toString();
+            if (!seenIds.has(itemIdStr)) {
+                seenIds.add(itemIdStr);
+                listToRender.push(item);
+            }
+        }
 
         if (listToRender.length === 0) {
             container.innerHTML = `<div class="col-span-full p-10 text-center border border-dashed border-gray-800 text-gray-400 font-mono text-xs uppercase flex flex-col items-center gap-2">
@@ -4829,6 +4902,7 @@ function initializeTacticalDashboard2() {
             if (item.type === 'bolo-card') itemColor = 'orange-500';
             else if (item.type === 'gametag-card') itemColor = 'amber-500';
             else if (item.type === 'license-card') itemColor = 'green-400';
+            else if (item.type === 'casefile-pdf' || item.casefileData || (item.workstationData && item.workstationData.type === 'casefile')) itemColor = 'blue-400';
             else if (item.label && (item.label.startsWith('GEO_') || item.label.startsWith('ROUTE'))) itemColor = 'blue-500';
             else if (item.type === 'video') itemColor = 'purple-500';
             else if (item.type === 'workstation-card') itemColor = 'fbbf24'; // Yellow-ish
@@ -5021,7 +5095,7 @@ function initializeTacticalDashboard2() {
             } else if (attachedPhoto) {
                 imgContent = `
                     <div style="background-color: #030712; width: 100%; height: 100%; position: relative;" class="opacity-95 group-hover:opacity-100 transition-all pointer-events-none flex items-center justify-center">
-                        <img src="${attachedPhoto}" loading="lazy" decoding="async" style="max-width:100%; max-height:100%; object-fit:contain;" class="pointer-events-none" alt="">
+                        <img src="${attachedPhoto}" style="max-width:100%; max-height:100%; object-fit:contain;" class="pointer-events-none" alt="">
                         ${isContact ? `
                         <div class="absolute top-1 left-1 bg-purple-950/90 text-purple-300 border border-purple-500/60 px-1 py-0.5 rounded text-[6px] font-black uppercase tracking-wider shadow z-10">
                             TRC OPERATOR
@@ -5100,13 +5174,37 @@ function initializeTacticalDashboard2() {
                     <i data-lucide="camera" class="w-3 h-3"></i>
                 </button>
                 ` : ''}
+
+                ${(item.type === 'casefile-pdf' || item.casefileData || (item.workstationData && item.workstationData.type === 'casefile')) ? `
+                <button class="rework-casefile-btn absolute bottom-7 right-1.5 bg-blue-600 text-white p-1.5 rounded border border-blue-400 shadow-lg hover:bg-blue-400 hover:text-black transition-all z-30 flex items-center gap-1" title="Rework Casefile & Invoice">
+                    <i data-lucide="file-check-2" class="w-3 h-3"></i>
+                </button>
+                ` : ''}
             `;
             
             el.addEventListener('click', (e) => {
                 if(e.target.closest('.delete-vault-btn') || e.target.closest('.vault-export-checkbox') || e.target.closest('.load-note-btn') || e.target.closest('.load-map-btn') || e.target.closest('.load-video-btn') || e.target.closest('.load-snapshot-btn')) return;
                 e.stopPropagation();
+                if (item.type === 'casefile-pdf' || item.casefileData || (item.workstationData && item.workstationData.type === 'casefile')) {
+                    const data = item.casefileData || (item.workstationData && item.workstationData.data) || item;
+                    if (window.loadCaseFileBackToEditor) {
+                        window.loadCaseFileBackToEditor(data);
+                        return;
+                    }
+                }
                 selectVaultItem(item);
             });
+
+            const reworkCaseBtn = el.querySelector('.rework-casefile-btn');
+            if (reworkCaseBtn) {
+                reworkCaseBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const data = item.casefileData || (item.workstationData && item.workstationData.data) || item;
+                    if (window.loadCaseFileBackToEditor) {
+                        window.loadCaseFileBackToEditor(data);
+                    }
+                });
+            }
 
             const loadBtn = el.querySelector('.load-note-btn');
             if(loadBtn) {
@@ -5155,13 +5253,19 @@ function initializeTacticalDashboard2() {
     }
 
     async function deleteVaultEntry(id) {
-        if(!confirm("PERMANENTLY WIPE THIS INTEL FROM CACHE?")) return;
-        
-        vaultCache = vaultCache.filter(x => x.id !== id);
+        vaultCache = vaultCache.filter(x => x.id != id && x.id?.toString() !== id?.toString());
         if (window.TRC_IDB) {
-            await TRC_IDB.delete('intelVault', id.toString());
+            const stores = ['intelVault', 'workstationLibrary', 'gameTagLibrary', 'licenseLibrary', 'boloLibrary'];
+            for (const s of stores) {
+                try {
+                    await TRC_IDB.delete(s, id.toString());
+                    if (!isNaN(parseInt(id))) await TRC_IDB.delete(s, parseInt(id));
+                } catch(e) {}
+            }
         }
         refreshVaultGrid();
+        if (window.showToast) window.showToast('🗑️ Card deleted.');
+        if (window.pushTacLog) window.pushTacLog(`INTEL VAULT: CARD REMOVED`, 'WARN');
     }
 
     function selectVaultItem(item) {
@@ -5183,9 +5287,13 @@ function initializeTacticalDashboard2() {
 
         if (isVideo) {
             mediaHtml = `<i data-lucide="video" class="w-20 h-20 text-purple-500 opacity-80"></i>`;
+        } else if (item.type === 'casefile-pdf' || item.casefileData || (item.workstationData && item.workstationData.type === 'casefile')) {
+            if (item.image) {
+                mediaHtml = `<img src="${item.image}" class="w-full h-full object-contain cursor-pointer" onclick="if(window.loadCaseFileBackToEditor) window.loadCaseFileBackToEditor(window.vaultCache.find(x => x.id == '${item.id}')?.casefileData || window.vaultCache.find(x => x.id == '${item.id}'))">`;
+            } else {
+                mediaHtml = `<div class="flex items-center justify-center w-full h-full text-slate-400 font-mono text-[10px]">CASEFILE INVOICE</div>`;
+            }
         } else if (item.type === 'officer_sitrep' || item.workstationData?.type === 'officer' || item.type === 'workstation') {
-            // For officer and workstation cards, if we have a snapshot, just show the visual card!
-            // This prevents the raw HTML from overflowing and getting cropped in the small Window #4
             if (item.image) {
                 mediaHtml = `<img src="${item.image}" class="w-full h-full object-contain">`;
             } else {
@@ -5266,6 +5374,26 @@ function initializeTacticalDashboard2() {
                     ${item.type === 'operational_calendar' ? `
                     <button class="bg-blue-600 text-white border border-blue-400 p-1.5 rounded hover:bg-blue-500 transition-all shadow-[0_0_10px_rgba(59,130,246,0.5)] flex items-center gap-1 font-black text-[7px]" onclick="event.stopPropagation(); window.loadCalendarBackToEditorById('${item.id}')" title="Load back to Form">
                         <i data-lucide="calendar" class="w-2.5 h-2.5"></i> REWORK CALENDAR
+                    </button>
+                    ` : ''}
+                    ${(item.type === 'gametag-card' || item.gametagData || (item.label && item.label.startsWith('HARVEST:'))) ? `
+                    <button class="bg-amber-600 text-white border border-amber-400 p-1.5 rounded hover:bg-amber-500 transition-all shadow-[0_0_10px_rgba(245,158,11,0.5)] flex items-center gap-1 font-black text-[7px]" onclick="event.stopPropagation(); if(window.reworkGameTag) window.reworkGameTag('${item.id}')" title="Rework Field Harvest Tag">
+                        <i data-lucide="tag" class="w-2.5 h-2.5"></i> REWORK HARVEST TAG
+                    </button>
+                    ` : ''}
+                    ${(item.type === 'bolo-card' || item.boloData || (item.label && item.label.startsWith('BOLO:'))) ? `
+                    <button class="bg-orange-600 text-white border border-orange-400 p-1.5 rounded hover:bg-orange-500 transition-all shadow-[0_0_10px_rgba(234,88,12,0.5)] flex items-center gap-1 font-black text-[7px]" onclick="event.stopPropagation(); if(window.reworkBolo) window.reworkBolo('${item.id}')" title="Rework BOLO Alert">
+                        <i data-lucide="shield-alert" class="w-2.5 h-2.5"></i> REWORK BOLO
+                    </button>
+                    ` : ''}
+                    ${(item.type === 'license-card' || item.licenseData || (item.label && item.label.startsWith('LICENSE:'))) ? `
+                    <button class="bg-emerald-600 text-white border border-emerald-400 p-1.5 rounded hover:bg-emerald-500 transition-all shadow-[0_0_10px_rgba(16,185,129,0.5)] flex items-center gap-1 font-black text-[7px]" onclick="event.stopPropagation(); if(window.reworkLicense) window.reworkLicense('${item.id}')" title="Rework License">
+                        <i data-lucide="badge-check" class="w-2.5 h-2.5"></i> REWORK LICENSE
+                    </button>
+                    ` : ''}
+                    ${(item.type === 'casefile-pdf' || (item.workstationData && item.workstationData.type === 'casefile') || (item.label && item.label.includes('INVOICE'))) ? `
+                    <button class="bg-blue-600 text-white border border-blue-400 p-1.5 rounded hover:bg-blue-500 transition-all shadow-[0_0_10px_rgba(59,130,246,0.5)] flex items-center gap-1 font-black text-[7px]" onclick="event.stopPropagation(); if(window.loadCaseFileBackToEditor) window.loadCaseFileBackToEditor(window.vaultCache.find(x => x.id == '${item.id}')?.casefileData || window.vaultCache.find(x => x.id == '${item.id}'))" title="Rework Invoice / Case">
+                        <i data-lucide="file-check-2" class="w-2.5 h-2.5"></i> REWORK INVOICE
                     </button>
                     ` : ''}
                     ${item.type === 'workstation' ? `
@@ -6572,8 +6700,144 @@ function initializeTacticalDashboard2() {
     const vaultImportBtn = document.getElementById('vault-import-btn');
     const vaultImportInput = document.getElementById('vault-import-input');
 
+    async function getVaultItemExportUri(item) {
+        if (!item) return null;
+        // 1. If it's already a base64 data URI
+        if (typeof item.image === 'string' && item.image.startsWith('data:image')) {
+            return item.image;
+        }
+        if (typeof item.data === 'string' && item.data.startsWith('data:image')) {
+            return item.data;
+        }
+
+        // 2. If it has a remote HTTP image (e.g. Supabase hosted image)
+        const remoteUrl = (typeof item.image === 'string' && item.image.startsWith('http')) ? item.image :
+                          (item.contact && typeof item.contact.cardImageUrl === 'string' && item.contact.cardImageUrl.startsWith('http')) ? item.contact.cardImageUrl : null;
+
+        if (remoteUrl) {
+            try {
+                const resp = await fetch(remoteUrl, { mode: 'cors' });
+                if (resp.ok) {
+                    const blob = await resp.blob();
+                    return await new Promise((resolve) => {
+                        const reader = new FileReader();
+                        reader.onloadend = () => resolve(reader.result);
+                        reader.readAsDataURL(blob);
+                    });
+                }
+            } catch (e) {
+                console.warn("Could not fetch remote image for export, falling back to canvas renderer", e);
+            }
+        }
+
+        // 3. Render high-res tactical card canvas for contact/intel/text cards
+        const canvas = document.createElement('canvas');
+        canvas.width = 900;
+        canvas.height = 1200;
+        const ctx = canvas.getContext('2d');
+
+        // Background
+        ctx.fillStyle = '#030712';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Outer border
+        ctx.strokeStyle = '#a855f7';
+        ctx.lineWidth = 14;
+        ctx.strokeRect(20, 20, 860, 1160);
+
+        // Inner border
+        ctx.strokeStyle = '#3b0764';
+        ctx.lineWidth = 4;
+        ctx.strokeRect(34, 34, 832, 1132);
+
+        // Header bar
+        ctx.fillStyle = '#1e1b4b';
+        ctx.fillRect(40, 40, 820, 120);
+
+        ctx.fillStyle = '#c084fc';
+        ctx.font = 'bold 36px monospace';
+        ctx.textAlign = 'left';
+        ctx.fillText('TRC OPERATOR INTEL', 60, 115);
+
+        ctx.fillStyle = '#10b981';
+        ctx.font = 'bold 24px monospace';
+        ctx.textAlign = 'right';
+        ctx.fillText('VERIFIED // CARD', 830, 115);
+
+        // Outfitter / Biz name
+        const c = item.contact || {};
+        const bizname = c.bizname || item.name || item.author || 'TRC OPERATOR';
+        ctx.fillStyle = '#f8fafc';
+        ctx.font = 'bold 50px sans-serif';
+        ctx.textAlign = 'left';
+        ctx.fillText(bizname.toUpperCase().slice(0, 28), 60, 235);
+
+        // Author / Unit
+        ctx.fillStyle = '#a855f7';
+        ctx.font = 'bold 36px sans-serif';
+        ctx.fillText((item.author || c.author || 'OPERATOR').toUpperCase(), 60, 295);
+
+        if (c.unit) {
+            ctx.fillStyle = '#94a3b8';
+            ctx.font = 'bold 28px monospace';
+            ctx.fillText(`UNIT: ${c.unit.toUpperCase()}`, 60, 345);
+        }
+
+        // Divider line
+        ctx.strokeStyle = '#475569';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(60, 375);
+        ctx.lineTo(840, 375);
+        ctx.stroke();
+
+        // Body Content / Intel Text
+        ctx.fillStyle = '#e2e8f0';
+        ctx.font = '28px monospace';
+        const text = item.content || c.details || 'VERIFIED TACTICAL OUTFITTER CONTACT // SAVED TO INTEL VAULT';
+        const words = text.split(/\s+/);
+        let line = '', y = 430;
+        for (let n = 0; n < words.length; n++) {
+            const testLine = line + words[n] + ' ';
+            const metrics = ctx.measureText(testLine);
+            if (metrics.width > 740 && n > 0) {
+                ctx.fillText(line, 60, y);
+                line = words[n] + ' ';
+                y += 42;
+                if (y > 900) break;
+            } else {
+                line = testLine;
+            }
+        }
+        ctx.fillText(line, 60, y);
+
+        // Footer contact bar
+        ctx.fillStyle = '#0f172a';
+        ctx.fillRect(40, 950, 820, 190);
+        ctx.strokeStyle = '#a855f7';
+        ctx.lineWidth = 3;
+        ctx.strokeRect(40, 950, 820, 190);
+
+        ctx.fillStyle = '#10b981';
+        ctx.font = 'bold 28px monospace';
+        ctx.fillText(`TEL: ${c.phone || '--'}`, 60, 1010);
+
+        ctx.fillStyle = '#38bdf8';
+        ctx.fillText(`WEB: ${c.web || '--'}`, 60, 1060);
+
+        if (c.gps || (item.targetLat && item.targetLon)) {
+            ctx.fillStyle = '#f59e0b';
+            ctx.fillText(`GPS: ${c.gps || (item.targetLat + ', ' + item.targetLon)}`, 60, 1105);
+        } else if (item.date) {
+            ctx.fillStyle = '#94a3b8';
+            ctx.fillText(`LOGGED: ${item.date}`, 60, 1105);
+        }
+
+        return canvas.toDataURL('image/png');
+    }
+
     if (vaultExportBtn) {
-        vaultExportBtn.addEventListener('click', (e) => {
+        vaultExportBtn.addEventListener('click', async (e) => {
             e.stopPropagation();
             const checkedBoxes = document.querySelectorAll('.vault-export-checkbox:checked');
             if (checkedBoxes.length === 0) {
@@ -6581,26 +6845,78 @@ function initializeTacticalDashboard2() {
                 return;
             }
 
-            const selectedIds = Array.from(checkedBoxes).map(cb => cb.dataset.vaultId);
-            const itemsToExport = vaultCache.filter(item => selectedIds.includes(item.id.toString()));
+            const selectedIds = Array.from(checkedBoxes).map(cb => cb.dataset.vaultId || cb.name || cb.value);
+            let itemsToExport = vaultCache.filter(item => selectedIds.includes(item.id?.toString()) || selectedIds.includes(String(item.id)));
 
-            // Export as native image files
-            itemsToExport.forEach((item, index) => {
-                setTimeout(() => {
-                    const a = document.createElement('a');
-                    a.href = item.image; // This is the base64 data URI
-                    // Embed metadata directly into the filename so it can be parsed on import
-                    const distStr = item.distance ? `${item.distance}yds_` : '';
-                    a.download = `trc_snap_${distStr}${item.timestamp}.png`;
-                    document.body.appendChild(a);
-                    a.click();
-                    document.body.removeChild(a);
-                }, index * 400); // 400ms delay between downloads to prevent browser multi-download blocking
-            });
+            // If some items were not found in memory cache, look them up from IndexedDB
+            if (itemsToExport.length < selectedIds.length && window.TRC_IDB) {
+                for (const id of selectedIds) {
+                    if (!itemsToExport.some(it => it.id?.toString() === id.toString())) {
+                        const dbItem = await window.TRC_IDB.get('intelVault', id.toString());
+                        if (dbItem) itemsToExport.push(dbItem);
+                    }
+                }
+            }
+
+            if (itemsToExport.length === 0) {
+                alert('Could not find selected cards to export.');
+                return;
+            }
+
+            let exportCount = 0;
+            for (let i = 0; i < itemsToExport.length; i++) {
+                const item = itemsToExport[i];
+                try {
+                    const dataUrl = await getVaultItemExportUri(item);
+                    if (dataUrl) {
+                        const a = document.createElement('a');
+                        a.href = dataUrl;
+                        const distStr = item.distance ? `${item.distance}yds_` : '';
+                        const nameStr = (item.author || item.name || item.label || 'card').replace(/[^a-zA-Z0-9_-]/g, '_');
+                        a.download = `TRC_INTEL_${nameStr}_${distStr}${item.timestamp || Date.now()}.png`;
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        exportCount++;
+                    }
+                } catch(err) {
+                    console.error("Export error for item:", item, err);
+                }
+                await new Promise(r => setTimeout(r, 350));
+            }
             
             // Uncheck boxes after export
             checkedBoxes.forEach(cb => cb.checked = false);
-            window.pushTacLog(`EXPORTED ${itemsToExport.length} NATIVE IMAGES TO SECURE LOCAL STORAGE`, "SUCCESS");
+            if (window.showToast) window.showToast(`💾 Exported ${exportCount} card(s) to local device!`);
+            window.pushTacLog(`EXPORTED ${exportCount} NATIVE IMAGES TO SECURE LOCAL STORAGE`, "SUCCESS");
+        });
+    }
+
+    const vaultDeleteBtn = document.getElementById('vault-delete-btn');
+    if (vaultDeleteBtn) {
+        vaultDeleteBtn.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            const checkedBoxes = document.querySelectorAll('.vault-export-checkbox:checked');
+            if (checkedBoxes.length === 0) {
+                alert('Please select at least one card to delete using the checkboxes [✓].');
+                return;
+            }
+            if (!confirm(`PERMANENTLY DELETE ${checkedBoxes.length} SELECTED CARD(S) FROM INTEL VAULT?`)) return;
+
+            const selectedIds = Array.from(checkedBoxes).map(cb => cb.dataset.vaultId || cb.name || cb.value);
+            vaultCache = vaultCache.filter(item => !selectedIds.includes(item.id?.toString()) && !selectedIds.includes(String(item.id)));
+
+            if (window.TRC_IDB) {
+                for (const id of selectedIds) {
+                    await TRC_IDB.delete('intelVault', id.toString());
+                    if (!isNaN(parseInt(id))) await TRC_IDB.delete('intelVault', parseInt(id));
+                    await TRC_IDB.delete('workstationLibrary', id.toString());
+                    if (!isNaN(parseInt(id))) await TRC_IDB.delete('workstationLibrary', parseInt(id));
+                }
+            }
+            refreshVaultGrid();
+            if (window.showToast) window.showToast(`🗑️ ${selectedIds.length} card(s) permanently deleted.`);
+            if (window.pushTacLog) window.pushTacLog(`INTEL VAULT: DELETED ${selectedIds.length} CARDS`, 'WARN');
         });
     }
     const vaultToBriefBtn = document.getElementById('vault-to-brief-btn');
@@ -6769,8 +7085,30 @@ function initializeTacticalDashboard2() {
                     checkedBoxes.forEach(cb => cb.checked = false);
                 }
             } else {
-                alert('The selected snapshot does not contain route tracking data.\nYou can only load snapshots that were taken using the [ TRACK ] tool.');
             }
+        });
+    }
+
+    const vaultToWorkstationBtn = document.getElementById('vault-to-workstation-btn');
+    if (vaultToWorkstationBtn) {
+        vaultToWorkstationBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const checkedBoxes = document.querySelectorAll('.vault-export-checkbox:checked');
+            if (checkedBoxes.length === 0) {
+                alert('Please select a card to send to Workstation using the checkboxes [✓].');
+                return;
+            }
+            const selectedId = checkedBoxes[0].dataset.vaultId || checkedBoxes[0].name || checkedBoxes[0].value;
+            const item = vaultCache.find(v => v && (v.id == selectedId || v.id == selectedId.toString()));
+            if (item) {
+                const caseData = item.casefileData || (item.workstationData && item.workstationData.data) || item;
+                if (window.loadCaseFileBackToEditor) {
+                    window.loadCaseFileBackToEditor(caseData);
+                } else if (window.loadWorkstationBackToEditorById) {
+                    window.loadWorkstationBackToEditorById(selectedId);
+                }
+            }
+            checkedBoxes.forEach(cb => cb.checked = false);
         });
     }
 
@@ -7140,32 +7478,128 @@ function initializeTacticalDashboard2() {
             let importCount = 0;
             let processed = 0;
 
-            files.forEach(file => {
+            files.forEach(async (file) => {
+                const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
                 const reader = new FileReader();
-                reader.onload = (event) => {
+                reader.onload = async (event) => {
                     const dataUrl = event.target.result;
                     
                     // Parse metadata natively from our custom filename structure
-                    // Expected format: trc_snap_600yds_168432323.png
                     let distMatch = file.name.match(/(\d+)yds_/);
-                    let tsMatch = file.name.match(/_(\d+)\.(png|jpe?g)/i);
+                    let tsMatch = file.name.match(/_(\d+)\.(png|jpe?g|pdf)/i);
                     
                     let distance = distMatch ? parseInt(distMatch[1]) : 0;
                     let timestamp = tsMatch ? parseInt(tsMatch[1]) : Date.now();
                     
-                    const newItem = {
-                        id: 'import_' + Math.random().toString(36).substr(2, 9),
-                        timestamp: timestamp,
-                        label: `IMPORTED IMG ${distance ? '@ ' + distance + ' YDS' : ''}`,
-                        image: dataUrl,
-                        distance: distance
-                    };
+                    let newItem;
+                    if (isPdf) {
+                        const cleanName = file.name.replace(/\.pdf$/i, '');
+                        let caseData = {
+                            case_number: cleanName,
+                            invoice_type: 'Executive Case File',
+                            billed_to: '',
+                            paid_by: '',
+                            op_name: '',
+                            op_agency: '',
+                            op_license: '',
+                            op_quals: '',
+                            services_performed: '',
+                            invoice_notes: '',
+                            bounty: '0.00',
+                            expenses: '0.00',
+                            status: 'UNPAID',
+                            is_paid: false
+                        };
 
-                    vaultCache.push(newItem);
+                        try {
+                            const rawBinary = atob((dataUrl.split(',')[1] || ''));
+                            
+                            // Check for embedded JSON payload
+                            const metaMatch = rawBinary.match(/TRC_CASEFILE_DATA_START:\s*([^\s:]+)\s*:TRC_CASEFILE_DATA_END/);
+                            if (metaMatch) {
+                                try {
+                                    const parsed = JSON.parse(decodeURIComponent(metaMatch[1]));
+                                    if (parsed && typeof parsed === 'object') {
+                                        caseData = { ...caseData, ...parsed };
+                                    }
+                                } catch(eMeta) {}
+                            }
+
+                            // Fallback regex parsing on raw PDF text stream
+                            const getMatch = (re) => {
+                                const m = rawBinary.match(re);
+                                return m ? m[1].trim() : '';
+                            };
+
+                            if (!caseData.op_name) caseData.op_name = getMatch(/Operator\s*\/\s*Callsign:\s*([^\n\r\(\)]+)/i);
+                            if (!caseData.op_agency) caseData.op_agency = getMatch(/Agency\s*\/\s*Company:\s*([^\n\r\(\)]+)/i);
+                            if (!caseData.op_license) caseData.op_license = getMatch(/License\s*\/\s*ID:\s*([^\n\r\(\)]+)/i);
+                            if (!caseData.op_quals) caseData.op_quals = getMatch(/Qualifications:\s*([^\n\r\(\)]+)/i);
+                            if (!caseData.case_number || caseData.case_number === cleanName) {
+                                const cn = getMatch(/Case Number:\s*([^\n\r\(\)]+)/i);
+                                if (cn) caseData.case_number = cn;
+                            }
+                            if (!caseData.billed_to) {
+                                const bm = rawBinary.match(/BILLED TO[^\n\r]*[\r\n\s]+([^\r\n\(\)<>]+)/i);
+                                if (bm && !bm[1].includes('PAYMENT')) caseData.billed_to = bm[1].trim();
+                            }
+                            if (!caseData.paid_by) {
+                                const pm = rawBinary.match(/PAYMENT DETAILS[^\n\r]*[\r\n\s]+([^\r\n\(\)<>]+)/i);
+                                if (pm && !pm[1].includes('LEAD')) caseData.paid_by = pm[1].trim();
+                            }
+                            if (!caseData.services_performed) {
+                                const sm = rawBinary.match(/SERVICES PERFORMED[^\n\r]*[\r\n\s]+([^\r\n\(\)<>]+)/i);
+                                if (sm && !sm[1].includes('INVOICE NOTES')) caseData.services_performed = sm[1].trim();
+                            }
+                            if (!caseData.invoice_notes) {
+                                const nm = rawBinary.match(/INVOICE NOTES[^\n\r]*[\r\n\s]+([^\r\n\(\)<>]+)/i);
+                                if (nm && !nm[1].includes('CHRONOLOGICAL')) caseData.invoice_notes = nm[1].trim();
+                            }
+
+                            if (/PAID IN FULL/i.test(rawBinary) && !/UNPAID/i.test(rawBinary)) {
+                                caseData.status = 'PAID';
+                                caseData.is_paid = true;
+                            }
+                        } catch(eParse) {}
+
+                        // Generate composite hard copy card snapshot
+                        let compositeThumb = '';
+                        if (typeof window.generateWorkstationCompositeCard === 'function') {
+                            try {
+                                compositeThumb = await window.generateWorkstationCompositeCard('casefile', `INVOICE / CASE: ${caseData.case_number || cleanName}`, caseData, caseData.mainAttachedImage || '');
+                            } catch(eComp) {}
+                        }
+                        if (!compositeThumb && window.generatePdfThumbnailSvg) {
+                            compositeThumb = window.generatePdfThumbnailSvg(cleanName);
+                        }
+
+                        newItem = {
+                            id: 'import_pdf_' + Math.random().toString(36).substr(2, 9),
+                            timestamp: timestamp,
+                            label: `INVOICE / CASE: ${caseData.case_number || cleanName}`,
+                            image: compositeThumb,
+                            pdfData: dataUrl,
+                            fileName: file.name,
+                            type: 'casefile-pdf',
+                            distance: distance,
+                            casefileData: caseData
+                        };
+                    } else {
+                        newItem = {
+                            id: 'import_' + Math.random().toString(36).substr(2, 9),
+                            timestamp: timestamp,
+                            label: `IMPORTED IMG ${distance ? '@ ' + distance + ' YDS' : ''}`,
+                            image: dataUrl,
+                            distance: distance,
+                            type: 'image'
+                        };
+                    }
+
+                    vaultCache.unshift(newItem);
                     importCount++;
                     processed++;
 
-                    // Once all files are processed into base64 strings
+                    // Once all files are processed
                     if (processed === files.length) {
                         // Re-sort so newest is first
                         vaultCache.sort((a, b) => b.timestamp - a.timestamp);
@@ -7182,13 +7616,14 @@ function initializeTacticalDashboard2() {
                             });
                         }
                         refreshVaultGrid();
-                        window.pushTacLog(`IMPORTED ${importCount} IMAGES INTO VAULT CACHE`, "SUCCESS");
+                        window.pushTacLog(`IMPORTED ${importCount} FILES INTO VAULT CACHE`, "SUCCESS");
+                        if(window.showToast) window.showToast(`✅ Imported ${importCount} file(s) into Intel Vault`);
                         
                         // Reset input
                         vaultImportInput.value = '';
                     }
                 };
-                reader.readAsDataURL(file); // Read as native image data
+                reader.readAsDataURL(file); // Read as data URI
             });
         });
     }
@@ -8069,6 +8504,34 @@ function initializeTacticalDashboard2() {
                     if (statusEl) { statusEl.className = "text-[8px] text-red-400 mt-1"; statusEl.innerText = "DECRYPTION FAILED"; }
                 }
             }, 100);
+        } else if (tapeMetadata && (tapeMetadata.type === 'casefile' || tapeMetadata.type === 'casefile-pdf' || tapeMetadata.casefileData)) {
+            const cData = tapeMetadata.casefileData || tapeMetadata;
+            const chatKey = `case_${Math.random().toString(36).substring(2, 9)}`;
+            window.chatPayloadStore = window.chatPayloadStore || {};
+            window.chatPayloadStore[chatKey] = cData;
+            const isPaid = cData.status === 'PAID' || cData.is_paid === true;
+
+            contentHtml += `
+                <div class="mt-2 p-3 bg-slate-900 border-2 border-blue-500/80 rounded-xl text-left text-xs text-white max-w-full space-y-2 shadow-[0_0_20px_rgba(59,130,246,0.3)]">
+                    <div class="font-black text-blue-300 text-[10px] uppercase tracking-wider flex items-center justify-between border-b border-slate-800 pb-1.5">
+                        <span class="flex items-center gap-1.5"><i data-lucide="file-check-2" class="w-4 h-4 text-blue-400"></i> INVOICE: ${cData.case_number || 'OFFICIAL'}</span>
+                        <span class="text-[8px] px-1.5 py-0.5 rounded font-black font-mono uppercase ${isPaid ? 'bg-emerald-950 text-emerald-300 border border-emerald-500/50' : 'bg-red-950 text-red-300 border border-red-500/50'}">${isPaid ? '✔ PAID' : '⏳ UNPAID'}</span>
+                    </div>
+                    <div class="text-[10px] font-mono text-slate-300 grid grid-cols-2 gap-1.5">
+                        <div><span class="text-slate-500">BILLED TO:</span> <b class="text-amber-300">${cData.billed_to || 'N/A'}</b></div>
+                        <div><span class="text-slate-500">PAID BY:</span> <b class="text-emerald-300">${cData.paid_by || 'N/A'}</b></div>
+                    </div>
+                    ${cData.services_performed ? `<div class="text-[9.5px] font-mono p-1.5 bg-black/40 rounded border border-slate-800 text-purple-300">${cData.services_performed}</div>` : ''}
+                    <div class="flex items-center gap-2 pt-1">
+                        <button type="button" onclick="event.stopPropagation(); if(window.saveCasefileFromChatToVault) window.saveCasefileFromChatToVault('${chatKey}');" class="bg-purple-900 hover:bg-purple-800 text-purple-200 text-[9px] font-black px-2.5 py-1.5 rounded border border-purple-500/60 uppercase flex items-center gap-1 cursor-pointer shadow">
+                            <i data-lucide="folder-plus" class="w-3 h-3"></i> SAVE TO VAULT
+                        </button>
+                        <button type="button" onclick="event.stopPropagation(); if(window.loadCaseFileBackToEditor) window.loadCaseFileBackToEditor(window.chatPayloadStore['${chatKey}']);" class="bg-blue-600 hover:bg-blue-500 text-white text-[9px] font-black px-2.5 py-1.5 rounded uppercase flex items-center gap-1 cursor-pointer shadow">
+                            <i data-lucide="edit-3" class="w-3 h-3"></i> REWORK INVOICE
+                        </button>
+                    </div>
+                </div>
+            `;
         } else if (tapeMetadata && (tapeMetadata.type === 'officer_sitrep' || tapeMetadata.type === 'officer' || tapeMetadata.workstationData?.type === 'officer' || tapeMetadata.workstationData)) {
             const cardObj = tapeMetadata.workstationData || tapeMetadata;
             const chatKey = `card_${Math.random().toString(36).substring(2, 9)}`;
@@ -8236,6 +8699,27 @@ function initializeTacticalDashboard2() {
             }
         }
     }
+
+    window.saveCasefileFromChatToVault = async function(chatKey) {
+        const data = window.chatPayloadStore ? window.chatPayloadStore[chatKey] : null;
+        if (!data) return;
+        const cleanName = data.case_number || data.billed_to || 'INVOICE';
+        const vaultItem = {
+            id: 'case_' + Date.now(),
+            timestamp: Date.now(),
+            label: `INVOICE: ${cleanName}`,
+            image: window.generatePdfThumbnailSvg ? window.generatePdfThumbnailSvg(cleanName) : '',
+            type: 'casefile-pdf',
+            casefileData: data
+        };
+        if (typeof vaultCache !== 'undefined') {
+            vaultCache.unshift(vaultItem);
+            if (window.TRC_IDB) await window.TRC_IDB.set('intelVault', vaultItem.id.toString(), vaultItem);
+            if (typeof refreshVaultGrid === 'function') refreshVaultGrid();
+        }
+        if (window.showToast) window.showToast(`✅ Saved ${cleanName} to Intel Vault!`);
+        if (window.pushTacLog) window.pushTacLog(`SAVED CASEFILE FROM CHAT TO VAULT`, 'SUCCESS');
+    };
 
     // COMMS NOTIFICATION SYSTEM
     let chatAlertState = 0; // 0: Off, 1: Flash, 2: Vibrate, 3: Chime
@@ -8554,12 +9038,13 @@ function initializeTacticalDashboard2() {
             if (geoWatchId) navigator.geolocation.clearWatch(geoWatchId);
             let lastTrackTime = 0;
             const fallbackIpGeo = async () => {
+                if (window.location.protocol === 'file:') return;
                 try {
                     window.pushTacLog("CONNECTING TO SATELLITE IP GEOLOCATION...", "SYS");
-                    const res = await fetch('https://ipapi.co/json/');
-                    if (res.ok) {
-                        const data = await res.json();
-                        if (data.latitude && data.longitude) {
+                    const res = await fetch('https://ipapi.co/json/').catch(() => null);
+                    if (res && res.ok) {
+                        const data = await res.json().catch(() => null);
+                        if (data && data.latitude && data.longitude) {
                             lastLat = data.latitude;
                             lastLng = data.longitude;
                             window.myLatestCoords = { lat: lastLat, lng: lastLng };
@@ -9397,44 +9882,21 @@ function initializeTacticalDashboard2() {
         const label = document.getElementById('feed-label-source');
         const hud = document.getElementById('surveillance-hud');
         const captureBtn = document.getElementById('surveillance-capture-btn');
+        const cardViewer = document.getElementById('surveillance-card-viewer');
         
         if (videoEl) videoEl.classList.add('hidden');
         if (placeholder) placeholder.classList.add('hidden');
         if (hud) hud.classList.add('hidden');
         if (captureBtn) captureBtn.classList.add('hidden');
         
-        const cardViewer = document.getElementById('surveillance-card-viewer');
         const isContactCard = item.contact || item.type === 'intel_report' || item.type === 'contact';
         const isOfficerCard = item.type === 'officer_sitrep' || item.workstationData?.type === 'officer';
+        const isCasefile = item.type === 'casefile-pdf' || Boolean(item.casefileData) || (item.workstationData && item.workstationData.type === 'casefile');
         const isWsCard = item.type === 'workstation' || Boolean(item.workstationData) || ['medevac', 'scorecard', 'logistics', 'roster', 'bragboard', 'officer'].includes(item.type);
 
         if (isOfficerCard && cardViewer && typeof window.generateOfficerCardHTML === 'function') {
             cardViewer.innerHTML = window.generateOfficerCardHTML(item.workstationData || item);
             cardViewer.className = "w-full h-full max-h-full overflow-y-auto custom-scrollbar p-2 relative";
-            if (window.lucide) window.lucide.createIcons();
-            cardViewer.classList.remove('hidden');
-            if (imgViewer) imgViewer.classList.add('hidden');
-        } else if (isWsCard && cardViewer) {
-            const wsData = item.workstationData || item;
-            cardViewer.innerHTML = `
-                <div class="w-full h-full bg-slate-950 border-2 border-cyan-500 rounded-xl p-3 flex flex-col justify-between overflow-y-auto custom-scrollbar relative text-left">
-                    <div class="pb-2 border-b border-slate-800 flex justify-between items-center gap-2 shrink-0 flex-wrap">
-                        <span class="font-black text-xs sm:text-sm text-cyan-300 uppercase tracking-widest flex items-center gap-1.5">
-                            <i data-lucide="monitor" class="w-4 h-4 text-cyan-400"></i> WORKSTATION INTEL CARD (${(wsData.title || wsData.type || 'WORKSTATION').toUpperCase()})
-                        </span>
-                        <div class="flex items-center gap-2">
-                            <button onclick="event.stopPropagation(); window.loadWorkstationBackToEditorById('${item.id}');" class="bg-cyan-600 hover:bg-cyan-500 text-white font-black text-[10px] sm:text-xs px-3 py-1 rounded.full uppercase tracking-wider transition-all flex items-center gap-1 cursor-pointer shadow-lg z-30">
-                                <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> 🔄 REWORK IN WORKSTATION #6
-                            </button>
-                            <button onclick="event.stopPropagation(); if(window.closeSurveillanceReview) window.closeSurveillanceReview();" class="bg-red-800 hover:bg-red-700 text-white font-black text-[10px] sm:text-xs px-3 py-1 rounded-full uppercase tracking-wider transition-all flex items-center gap-1 cursor-pointer z-30">
-                                <i data-lucide="x" class="w-3.5 h-3.5"></i> CLOSE
-                            </button>
-                        </div>
-                    </div>
-                    <div class="flex-1 my-2 bg-black rounded-lg border border-slate-800 overflow-hidden flex items-center justify-center p-1">
-                        <img src="${item.image || wsData.image || ''}" class="max-h-full max-w-full object-contain rounded shadow">
-                    </div>
-                </div>`;
             if (window.lucide) window.lucide.createIcons();
             cardViewer.classList.remove('hidden');
             if (imgViewer) imgViewer.classList.add('hidden');
@@ -9910,6 +10372,7 @@ function initializeTacticalDashboard2() {
                 const safeImage = async (imgSrc, maxDim = 1100, q = 0.88) => {
                     if (!imgSrc || typeof imgSrc !== 'string') return '';
                     if (imgSrc.startsWith('http://') || imgSrc.startsWith('https://')) return imgSrc;
+                    if (imgSrc.startsWith('data:image/svg+xml')) return imgSrc;
                     if (imgSrc.startsWith('data:image')) return await compressFn(imgSrc, maxDim, q);
                     return '';
                 };
@@ -10021,35 +10484,43 @@ ${cardImgHtml}
                 // General Intel / First Responder / Workstation / Blog Report Transmission
                 window.pushTacLog("SECURING INTEL FOR TRANSMISSION...", "SYS");
 
-                const compressedImg = await safeImage(item.image, 1000, 0.80);
+                let compressedImg = await safeImage(item.image, 850, 0.75);
                 const itemLabel = item.name || item.label || (item.title ? `WORKSTATION: ${item.title}` : `INTEL REPORT: ${item.category || item.type?.toUpperCase() || 'SNAPSHOT'}`);
                 
                 // Build clean lightweight metadata payload
                 const payloadItem = JSON.parse(JSON.stringify(item));
                 delete payloadItem.image; // DO NOT DUPLICATE MAIN IMAGE IN METADATA!
+                if (payloadItem.pdfData) delete payloadItem.pdfData; // Strip raw binary PDF so payload stays under WebRTC broadcast limits
                 if (payloadItem.snapshot) delete payloadItem.snapshot; // Strip duplicate dope card image
                 if (payloadItem.gametagData) delete payloadItem.gametagData.image; // Strip duplicate gametag image
                 if (payloadItem.officerCardData) delete payloadItem.officerCardData.image;
+                if (payloadItem.exhibitImages) delete payloadItem.exhibitImages;
+                if (payloadItem.casefileData) {
+                    if (payloadItem.casefileData.exhibitImages) delete payloadItem.casefileData.exhibitImages;
+                    if (payloadItem.casefileData.mainAttachedImage) delete payloadItem.casefileData.mainAttachedImage;
+                }
 
                 // Compress heavy nested base64 image duplicates to keep payload under limits for broadcast, but DO NOT delete them!
                 if (payloadItem.data) {
-                    delete payloadItem.data.image; // this one is a duplicate of top-level image
+                    delete payloadItem.data.image; // duplicate
+                    if (payloadItem.data.exhibitImages) delete payloadItem.data.exhibitImages;
                     if (payloadItem.data.sketchImage) {
-                        payloadItem.data.sketchImage = await safeImage(payloadItem.data.sketchImage, 750, 0.72);
+                        payloadItem.data.sketchImage = await safeImage(payloadItem.data.sketchImage, 600, 0.65);
                     }
                     if (payloadItem.data.scenePhotos && payloadItem.data.scenePhotos.length > 0) {
-                        payloadItem.data.scenePhotos = await Promise.all(payloadItem.data.scenePhotos.map(p => safeImage(p, 700, 0.70)));
+                        payloadItem.data.scenePhotos = await Promise.all(payloadItem.data.scenePhotos.map(p => safeImage(p, 550, 0.60)));
                     }
                 }
                 if (payloadItem.workstationData) {
                     delete payloadItem.workstationData.image; // duplicate
                     if (payloadItem.workstationData.data) {
                         delete payloadItem.workstationData.data.image; // duplicate
+                        if (payloadItem.workstationData.data.exhibitImages) delete payloadItem.workstationData.data.exhibitImages;
                         if (payloadItem.workstationData.data.sketchImage) {
-                            payloadItem.workstationData.data.sketchImage = await safeImage(payloadItem.workstationData.data.sketchImage, 750, 0.72);
+                            payloadItem.workstationData.data.sketchImage = await safeImage(payloadItem.workstationData.data.sketchImage, 600, 0.65);
                         }
                         if (payloadItem.workstationData.data.scenePhotos && payloadItem.workstationData.data.scenePhotos.length > 0) {
-                            payloadItem.workstationData.data.scenePhotos = await Promise.all(payloadItem.workstationData.data.scenePhotos.map(p => safeImage(p, 700, 0.70)));
+                            payloadItem.workstationData.data.scenePhotos = await Promise.all(payloadItem.workstationData.data.scenePhotos.map(p => safeImage(p, 550, 0.60)));
                         }
                     }
                 }
@@ -10064,32 +10535,24 @@ ${cardImgHtml}
                     };
                     encryptedImage = TacticalCrypto.encrypt(cryptoPayload);
 
-                    if (new Blob([encryptedImage]).size > 220000) {
+                    if (new Blob([encryptedImage]).size > 200000) {
                         if (payloadItem.data) delete payloadItem.data.scenePhotos;
                         if (payloadItem.workstationData && payloadItem.workstationData.data) {
                             delete payloadItem.workstationData.data.scenePhotos;
                         }
+                        compressedImg = await safeImage(compressedImg, 600, 0.60);
+                        cryptoPayload.image = compressedImg;
                         encryptedImage = TacticalCrypto.encrypt(cryptoPayload);
                     }
                     
-                    if (new Blob([encryptedImage]).size > 220000) {
+                    if (new Blob([encryptedImage]).size > 200000) {
                         if (payloadItem.data) delete payloadItem.data.sketchImage;
                         if (payloadItem.workstationData && payloadItem.workstationData.data) {
                             delete payloadItem.workstationData.data.sketchImage;
                         }
+                        compressedImg = await safeImage(compressedImg, 450, 0.50);
+                        cryptoPayload.image = compressedImg;
                         encryptedImage = TacticalCrypto.encrypt(cryptoPayload);
-                    }
-                    
-                    // Emergency main-image shrink if it's STILL too huge
-                    if (new Blob([encryptedImage]).size > 220000) {
-                        const emergencyCompressed = await safeImage(compressedImg, 600, 0.6);
-                        cryptoPayload.image = emergencyCompressed;
-                        encryptedImage = TacticalCrypto.encrypt(cryptoPayload);
-                    }
-                    
-                    if (new Blob([encryptedImage]).size > 250000) {
-                        window.pushTacLog("VAULT CARD ERROR: ENCRYPTED SIZE (" + Math.round(new Blob([encryptedImage]).size/1024) + "KB) EXCEEDS 250KB LIMIT.", "ERROR");
-                        return;
                     }
 
                     const msgId = Math.random().toString(36).substring(2, 9);
@@ -12242,5 +12705,17 @@ HTMLCanvasElement.prototype.toDataURL = function() {
         }, 5000);
     }
     return result;
+};
+
+// GLOBAL FIX: Prevent html2canvas 'willReadFrequently' Lighthouse warnings and improve getImageData performance
+const originalGetContext = HTMLCanvasElement.prototype.getContext;
+HTMLCanvasElement.prototype.getContext = function(type, options) {
+    if (type === '2d') {
+        options = options || {};
+        if (options.willReadFrequently === undefined) {
+            options.willReadFrequently = true;
+        }
+    }
+    return originalGetContext.call(this, type, options);
 };
 

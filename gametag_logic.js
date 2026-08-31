@@ -78,13 +78,15 @@ window.setGameTagType = function(type) {
 }
 
 if (gametagImageUpload) {
-    gametagImageUpload.addEventListener('change', function(e) {
+    gametagImageUpload.addEventListener('change', async function(e) {
         const file = e.target.files[0];
         if(!file) return;
         
-        const reader = new FileReader();
-        reader.onload = function(event) {
-            currentGametagImage = event.target.result;
+        try {
+            const optimized = window.compressAndResizeImage 
+                ? await window.compressAndResizeImage(file, 800, 0.8) 
+                : await new Promise(r => { const fr = new FileReader(); fr.onload = ev => r(ev.target.result); fr.readAsDataURL(file); });
+            currentGametagImage = optimized;
             const previewImg = document.getElementById('gametag-form-preview-img');
             const previewIcon = document.getElementById('gametag-form-preview-icon');
             const previewLabel = document.getElementById('gametag-image-label');
@@ -95,8 +97,9 @@ if (gametagImageUpload) {
             }
             if (previewIcon) previewIcon.style.opacity = '0.3';
             if (previewLabel) previewLabel.innerText = 'CHANGE PHOTO';
-        };
-        reader.readAsDataURL(file);
+        } catch(err) {
+            console.error("Gametag image process error:", err);
+        }
     });
 }
 
@@ -355,8 +358,13 @@ if(reworkGametagBtn) {
 
 if (gametagToVaultBtnTop) {
     gametagToVaultBtnTop.addEventListener('click', async () => {
-        if(!selectedGametagId) return;
-        const tag = await window.TRC_IDB.get('gameTagLibrary', selectedGametagId);
+        if(!selectedGametagId) {
+            alert("Please select a field harvest tag from your inventory list below first.");
+            return;
+        }
+        let tag = await window.TRC_IDB.get('gameTagLibrary', selectedGametagId);
+        if(!tag) tag = await window.TRC_IDB.get('gameTagLibrary', String(selectedGametagId));
+        if(!tag) tag = await window.TRC_IDB.get('gameTagLibrary', Number(selectedGametagId));
         if(!tag) return;
         
         const originalBtnHtml = gametagToVaultBtnTop.innerHTML;
@@ -525,7 +533,9 @@ if (gametagToVaultBtnTop) {
             
             const canvas = await Promise.race([html2canvasPromise, timeoutPromise]);
             
-            const dataUrl = canvas.toDataURL('image/jpeg', 0.75);
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+            canvas.width = 0;
+            canvas.height = 0;
             
             if (window.saveIntelSnapshot) {
                 // Strip heavy image from gametagData — snapshot already has the visual

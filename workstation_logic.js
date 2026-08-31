@@ -29,25 +29,6 @@ window.parseCurrencyValue = function(val) {
     return parseFloat(String(val).replace(/[^0-9.]/g, '')) || 0;
 };
 
-document.addEventListener('DOMContentLoaded', () => {
-    // Inject the main menu when panel is loaded
-    setTimeout(() => {
-        if (document.getElementById('workstation-container')) {
-            renderWorkstationMenu();
-        }
-    }, 500);
-
-    const vaultToWorkstationBtn = document.getElementById('vault-to-workstation-btn');
-    if (vaultToWorkstationBtn) {
-        vaultToWorkstationBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            if (typeof toggleFullscreen === 'function') {
-                toggleFullscreen('panel-workstation');
-            }
-        });
-    }
-});
-
 // Helper to rework checked workstation card from the library
 window.reworkCheckedWsCard = async function() {
     const checkedBoxes = document.querySelectorAll('.ws-library-checkbox:checked');
@@ -77,13 +58,14 @@ window.sendCheckedWsCardsToVault = async function() {
                         id: card.id,
                         timestamp: card.timestamp,
                         image: card.image || '',
-                        label: `WORKSTATION: ${card.title || card.type}`,
-                        type: 'workstation',
-                        workstationData: card
+                        label: card.title || card.type,
+                        type: card.type === 'casefile' ? 'casefile-pdf' : 'workstation',
+                        workstationData: card,
+                        casefileData: card.type === 'casefile' ? card.data : null
                     };
                     await window.TRC_IDB.set('intelVault', card.id.toString(), vaultMetadata);
                     if (window.vaultCache) {
-                        window.vaultCache = window.vaultCache.filter(v => v.id.toString() !== card.id.toString());
+                        window.vaultCache = window.vaultCache.filter(v => v && v.id?.toString() !== card.id.toString() && v.label !== `WORKSTATION: ${card.title}` && v.label !== card.title);
                         window.vaultCache.unshift(vaultMetadata);
                     }
                     count++;
@@ -96,7 +78,7 @@ window.sendCheckedWsCardsToVault = async function() {
     checkedBoxes.forEach(cb => cb.checked = false);
     if (typeof refreshVaultGrid === 'function') refreshVaultGrid();
     if (window.pushTacLog) window.pushTacLog(`SENT ${count} WORKSTATION CARD(S) TO INTEL VAULT`, "SUCCESS");
-    alert(`${count} Workstation Card(s) successfully sent to Intel Vault!`);
+    if (window.showToast) window.showToast(`📁 ${count} Card(s) synced to Intel Vault.`);
 };
 
 // Main menu renderer
@@ -109,7 +91,7 @@ window.renderWorkstationMenu = async function() {
     if (window.TRC_IDB) {
         try {
             const cards = await window.TRC_IDB.getAll('workstationLibrary');
-            const cardArray = Object.values(cards).sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp));
+            const cardArray = Object.values(cards || {}).sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp));
             
             if (cardArray.length > 0) {
                 savedCardsHtml = `
@@ -123,7 +105,7 @@ window.renderWorkstationMenu = async function() {
                                 <button id="ws-to-vault-btn" onclick="window.sendCheckedWsCardsToVault()" class="bg-purple-900/90 hover:bg-purple-800 text-purple-200 text-[9px] font-black px-2.5 py-1 rounded border border-purple-500/60 uppercase flex items-center gap-1 cursor-pointer shadow">
                                     <i data-lucide="folder-plus" class="w-3 h-3 text-purple-300"></i> 📁 SEND TO INTEL VAULT
                                 </button>
-                                <button id="ws-brag-btn" onclick="openBragBoardStudio()" class="hidden bg-purple-600 text-white text-[9px] font-black px-2.5 py-1 rounded hover:bg-purple-500 transition-all shadow-[0_0_10px_rgba(147,51,234,0.5)] items-center gap-1">
+                                <button id="ws-brag-btn" onclick="window.openWorkstationForm('bragboard')" class="hidden bg-purple-600 text-white text-[9px] font-black px-2.5 py-1 rounded hover:bg-purple-500 transition-all shadow-[0_0_10px_rgba(147,51,234,0.5)] items-center gap-1">
                                     <i data-lucide="camera" class="w-3 h-3"></i> BRAG BOARD (<span id="ws-brag-count">0</span>)
                                 </button>
                             </div>
@@ -139,6 +121,8 @@ window.renderWorkstationMenu = async function() {
                     else if (card.type === 'roster') { icon = 'users'; color = 'text-blue-500'; }
                     else if (card.type === 'bragboard') { icon = 'camera'; color = 'text-purple-500'; }
                     else if (card.type === 'officer') { icon = 'shield-alert'; color = 'text-cyan-400'; }
+                    else if (card.type === 'casefile') { icon = 'file-check-2'; color = 'text-slate-300'; }
+                    else if (card.type === 'journal') { icon = 'book-open'; color = 'text-indigo-500'; }
 
                     const thumbHtml = card.image 
                         ? `<img src="${card.image}" class="w-10 h-10 object-cover rounded border border-slate-700 shrink-0">`
@@ -175,7 +159,7 @@ window.renderWorkstationMenu = async function() {
             <div id="ws-top-action-area" class="w-full shrink-0">
                 <div class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-8 gap-2 w-full mt-1">
                     <!-- 1. MEDEVAC / INCIDENT -->
-                    <button onclick="openWorkstationForm('medevac')" class="bg-slate-900/90 border border-red-500/50 rounded-lg p-2.5 flex flex-col items-center justify-center gap-1.5 hover:bg-slate-800 hover:border-red-500 transition-all group">
+                    <button onclick="window.openWorkstationForm('medevac')" class="bg-slate-900/90 border border-red-500/50 rounded-lg p-2.5 flex flex-col items-center justify-center gap-1.5 hover:bg-slate-800 hover:border-red-500 transition-all group cursor-pointer">
                         <i data-lucide="activity" class="w-5 h-5 text-red-500 group-hover:scale-110 transition-transform"></i>
                         <div class="text-center">
                             <div class="text-[9px] font-black text-white uppercase leading-tight">9-Line MEDEVAC</div>
@@ -184,7 +168,7 @@ window.renderWorkstationMenu = async function() {
                     </button>
 
                     <!-- 2. SCORECARD -->
-                    <button onclick="openWorkstationForm('scorecard')" class="bg-slate-900/90 border border-yellow-500/50 rounded-lg p-2.5 flex flex-col items-center justify-center gap-1.5 hover:bg-slate-800 hover:border-yellow-500 transition-all group">
+                    <button onclick="window.openWorkstationForm('scorecard')" class="bg-slate-900/90 border border-yellow-500/50 rounded-lg p-2.5 flex flex-col items-center justify-center gap-1.5 hover:bg-slate-800 hover:border-yellow-500 transition-all group cursor-pointer">
                         <i data-lucide="crosshair" class="w-5 h-5 text-yellow-500 group-hover:scale-110 transition-transform"></i>
                         <div class="text-center">
                             <div class="text-[9px] font-black text-white uppercase leading-tight">Scorecard</div>
@@ -193,7 +177,7 @@ window.renderWorkstationMenu = async function() {
                     </button>
 
                     <!-- 3. LOGISTICS -->
-                    <button onclick="openWorkstationForm('logistics')" class="bg-slate-900/90 border border-emerald-500/50 rounded-lg p-2.5 flex flex-col items-center justify-center gap-1.5 hover:bg-slate-800 hover:border-emerald-500 transition-all group">
+                    <button onclick="window.openWorkstationForm('logistics')" class="bg-slate-900/90 border border-emerald-500/50 rounded-lg p-2.5 flex flex-col items-center justify-center gap-1.5 hover:bg-slate-800 hover:border-emerald-500 transition-all group cursor-pointer">
                         <i data-lucide="clipboard-list" class="w-5 h-5 text-emerald-500 group-hover:scale-110 transition-transform"></i>
                         <div class="text-center">
                             <div class="text-[9px] font-black text-white uppercase leading-tight">Logistics</div>
@@ -202,7 +186,7 @@ window.renderWorkstationMenu = async function() {
                     </button>
 
                     <!-- 4. ACCOUNTABILITY -->
-                    <button onclick="openWorkstationForm('roster')" class="bg-slate-900/90 border border-blue-500/50 rounded-lg p-2.5 flex flex-col items-center justify-center gap-1.5 hover:bg-slate-800 hover:border-blue-500 transition-all group">
+                    <button onclick="window.openWorkstationForm('roster')" class="bg-slate-900/90 border border-blue-500/50 rounded-lg p-2.5 flex flex-col items-center justify-center gap-1.5 hover:bg-slate-800 hover:border-blue-500 transition-all group cursor-pointer">
                         <i data-lucide="users" class="w-5 h-5 text-blue-500 group-hover:scale-110 transition-transform"></i>
                         <div class="text-center">
                             <div class="text-[9px] font-black text-white uppercase leading-tight">Accountability</div>
@@ -211,7 +195,7 @@ window.renderWorkstationMenu = async function() {
                     </button>
 
                     <!-- 5. BRAG BOARD -->
-                    <button onclick="openWorkstationForm('bragboard')" class="bg-slate-900/90 border border-purple-500/50 rounded-lg p-2.5 flex flex-col items-center justify-center gap-1.5 hover:bg-slate-800 hover:border-purple-500 transition-all group">
+                    <button onclick="window.openWorkstationForm('bragboard')" class="bg-slate-900/90 border border-purple-500/50 rounded-lg p-2.5 flex flex-col items-center justify-center gap-1.5 hover:bg-slate-800 hover:border-purple-500 transition-all group cursor-pointer">
                         <i data-lucide="camera" class="w-5 h-5 text-purple-500 group-hover:scale-110 transition-transform"></i>
                         <div class="text-center">
                             <div class="text-[9px] font-black text-white uppercase leading-tight">Media Summary</div>
@@ -220,7 +204,7 @@ window.renderWorkstationMenu = async function() {
                     </button>
 
                     <!-- 6. OFFICER SITREP (FIRST RESPONDER) -->
-                    <button onclick="openWorkstationForm('officer')" class="bg-blue-950/80 border-2 border-cyan-400 rounded-lg p-2.5 flex flex-col items-center justify-center gap-1.5 hover:bg-blue-900/90 hover:border-cyan-300 transition-all group shadow-[0_0_15px_rgba(56,189,248,0.3)]">
+                    <button onclick="window.openWorkstationForm('officer')" class="bg-blue-950/80 border-2 border-cyan-400 rounded-lg p-2.5 flex flex-col items-center justify-center gap-1.5 hover:bg-blue-900/90 hover:border-cyan-300 transition-all group shadow-[0_0_15px_rgba(56,189,248,0.3)] cursor-pointer">
                         <i data-lucide="shield-alert" class="w-5 h-5 text-cyan-400 group-hover:scale-110 transition-transform animate-pulse"></i>
                         <div class="text-center">
                             <div class="text-[9px] font-black text-cyan-300 uppercase leading-tight">OFFICER SITREP</div>
@@ -229,7 +213,7 @@ window.renderWorkstationMenu = async function() {
                     </button>
 
                     <!-- 7. TACTICAL JOURNAL -->
-                    <button onclick="openWorkstationForm('journal')" style="border-color: var(--accent-color, #6366f1); box-shadow: 0 0 15px rgba(0,0,0,0.3);" onmouseover="this.style.boxShadow='0 0 15px var(--accent-color, #6366f1)';" onmouseout="this.style.boxShadow='0 0 15px rgba(0,0,0,0.3)';" class="bg-slate-900/90 border-2 rounded-lg p-2.5 flex flex-col items-center justify-center gap-1.5 hover:bg-slate-800 transition-all group">
+                    <button onclick="window.openWorkstationForm('journal')" style="border-color: var(--accent-color, #6366f1); box-shadow: 0 0 15px rgba(0,0,0,0.3);" onmouseover="this.style.boxShadow='0 0 15px var(--accent-color, #6366f1)';" onmouseout="this.style.boxShadow='0 0 15px rgba(0,0,0,0.3)';" class="bg-slate-900/90 border-2 rounded-lg p-2.5 flex flex-col items-center justify-center gap-1.5 hover:bg-slate-800 transition-all group cursor-pointer">
                         <i data-lucide="book-open" style="color: var(--accent-color, #6366f1);" class="w-5 h-5 group-hover:scale-110 transition-transform"></i>
                         <div class="text-center">
                             <div class="text-[9px] font-black uppercase leading-tight" style="color: var(--accent-color, #6366f1);">TACTICAL JOURNAL</div>
@@ -238,7 +222,7 @@ window.renderWorkstationMenu = async function() {
                     </button>
 
                     <!-- 8. MASTER OP-PLAN -->
-                    <button onclick="window.openMasterOpForm ? window.openMasterOpForm() : alert('Master Op-Plan module not loaded.')" class="bg-amber-950/80 border-2 border-amber-500 rounded-lg p-2.5 flex flex-col items-center justify-center gap-1.5 hover:bg-amber-900/90 hover:border-amber-400 transition-all group shadow-[0_0_15px_rgba(245,158,11,0.3)]">
+                    <button onclick="window.openMasterOpForm ? window.openMasterOpForm() : (window.openWorkstationForm ? window.openWorkstationForm('master_op') : alert('Master Op-Plan module not loaded.'))" class="bg-amber-950/80 border-2 border-amber-500 rounded-lg p-2.5 flex flex-col items-center justify-center gap-1.5 hover:bg-amber-900/90 hover:border-amber-400 transition-all group shadow-[0_0_15px_rgba(245,158,11,0.3)] cursor-pointer">
                         <i data-lucide="map" class="w-5 h-5 text-amber-500 group-hover:scale-110 transition-transform animate-pulse"></i>
                         <div class="text-center">
                             <div class="text-[9px] font-black text-amber-400 uppercase leading-tight">OP-PLAN</div>
@@ -247,13 +231,20 @@ window.renderWorkstationMenu = async function() {
                     </button>
                 </div>
                 
-                <!-- 9. EXECUTIVE CASE FILE -->
-                <div class="mt-2 w-full">
-                    <button onclick="openWorkstationForm('casefile')" class="w-full bg-slate-900 border-2 border-slate-700 rounded-lg p-3 flex items-center justify-center gap-3 hover:bg-slate-800 hover:border-slate-400 transition-all shadow-[0_0_20px_rgba(255,255,255,0.1)] group">
+                <!-- 9. EXECUTIVE CASE FILE & 10. TRC SUPPLY DEPOT -->
+                <div class="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-2 w-full">
+                    <button onclick="window.openWorkstationForm('casefile')" class="w-full bg-slate-900 border-2 border-slate-700 rounded-lg p-3 flex items-center justify-center gap-3 hover:bg-slate-800 hover:border-slate-400 transition-all shadow-[0_0_20px_rgba(255,255,255,0.1)] group cursor-pointer">
                         <i data-lucide="file-check-2" class="w-6 h-6 text-slate-300 group-hover:scale-110 transition-transform"></i>
                         <div class="text-left">
                             <div class="text-[12px] font-black text-white uppercase leading-tight tracking-widest">EXECUTIVE CASE FILE</div>
-                            <div class="text-[8px] text-slate-400 uppercase mt-0.5 tracking-wider">Final PDF Invoice & Intel Report</div>
+                            <div class="text-[8px] text-slate-400 uppercase mt-0.5 tracking-wider">Final PDF Invoice &amp; Intel Report</div>
+                        </div>
+                    </button>
+                    <button onclick="if(window.openSupplyDepotModal) window.openSupplyDepotModal()" class="w-full bg-amber-950/90 border-2 border-amber-500 rounded-lg p-3 flex items-center justify-center gap-3 hover:bg-amber-900 hover:border-amber-400 transition-all shadow-[0_0_20px_rgba(245,158,11,0.25)] group cursor-pointer">
+                        <i data-lucide="shopping-bag" class="w-6 h-6 text-amber-400 group-hover:scale-110 transition-transform animate-pulse"></i>
+                        <div class="text-left">
+                            <div class="text-[12px] font-black text-amber-300 uppercase leading-tight tracking-widest">SUPPLY DEPOT &amp; ARMORY</div>
+                            <div class="text-[8px] text-amber-400/80 uppercase mt-0.5 tracking-wider font-bold">Dropship Gear, Merch &amp; Free DIY Stickers</div>
                         </div>
                     </button>
                 </div>
@@ -269,11 +260,20 @@ window.renderWorkstationMenu = async function() {
 };
 
 window.openWorkstationForm = function(type, rawCardData = null) {
-    const container = document.getElementById('ws-top-action-area') || document.getElementById('workstation-container');
-    if (!container) return;
+    try {
+        console.log('[TRC-WS] Opening form:', type);
+        if (window.pushTacLog) window.pushTacLog(`WORKSTATION: OPENING [${(type || 'FORM').toUpperCase()}]`, 'SYS');
+        if (window.showToast) window.showToast(`🛠️ Opening ${(type || 'Card').toUpperCase()}...`);
 
-    // Normalize cardData unwrapping if passed from vaultCache / intelVault wrapper
-    const cardData = (rawCardData && rawCardData.workstationData) ? rawCardData.workstationData : rawCardData;
+        const container = document.getElementById('workstation-container');
+        if (!container) {
+            console.error('[TRC-WS] workstation-container not found in DOM');
+            if (window.pushTacLog) window.pushTacLog('ERROR: WORKSTATION CONTAINER NOT FOUND', 'ERROR');
+            return;
+        }
+
+        // Normalize cardData unwrapping if passed from vaultCache / intelVault wrapper
+        const cardData = (rawCardData && rawCardData.workstationData) ? rawCardData.workstationData : rawCardData;
 
     if (type === 'officer' || type === 'first_responder' || type === 'sitrep') {
         if (typeof window.renderOfficerForm === 'function') {
@@ -298,7 +298,7 @@ window.openWorkstationForm = function(type, rawCardData = null) {
     let formFields = '';
 
     const id = cardData ? cardData.id : Date.now();
-    const existingImage = cardData ? cardData.image : '';
+    const existingImage = cardData?.data?.attachedPhoto || cardData?.data?.mainAttachedImage || cardData?.casefileData?.mainAttachedImage || '';
 
     if (type === 'medevac') {
         headerIcon = 'activity'; headerColor = 'text-red-500'; headerTitle = '9-LINE MEDEVAC / INCIDENT REPORT';
@@ -322,53 +322,104 @@ window.openWorkstationForm = function(type, rawCardData = null) {
             </div>`;
     } else if (type === 'casefile') {
         headerIcon = 'file-check-2'; headerColor = 'text-slate-300'; headerTitle = 'EXECUTIVE CASE FILE & INVOICE';
-        const invoiceNotesVal = cardData?.data?.invoice_notes || '';
+        const cData = cardData?.data || cardData?.casefileData || cardData?.workstationData?.data || cardData?.workstationData?.casefileData || cardData || {};
+        const invoiceNotesVal = cData.invoice_notes || '';
+        const servicesPerformedVal = cData.services_performed || '';
+        const isPaid = cData.is_paid === true || cData.status === 'PAID';
+        const isUnpaid = cData.is_paid === false || cData.status === 'UNPAID' || !cData.status;
+
         formFields = `
               <div class="grid grid-cols-2 gap-4 mb-4">
                   <div>
                       <label class="text-[10px] text-blue-400 uppercase tracking-widest font-black">Operator Name / Callsign</label>
-                      <input type="text" id="ws-op_name" maxlength="20" value="${cardData?.data?.op_name || window.commsUser?.callsign || window.userObj?.callsign || ''}" class="w-full bg-black border border-gray-700 text-white text-xs p-2 rounded focus:border-slate-400 mt-1" placeholder="e.g. John Doe / GHOST_01">
+                      <input type="text" id="ws-op_name" maxlength="30" value="${cData.op_name || window.commsUser?.callsign || window.userObj?.callsign || ''}" class="w-full bg-black border border-gray-700 text-white text-xs p-2 rounded focus:border-slate-400 mt-1" placeholder="e.g. John Doe / GHOST_01">
                   </div>
                   <div>
                       <label class="text-[10px] text-blue-400 uppercase tracking-widest font-black">Agency / Company</label>
-                      <input type="text" id="ws-op_agency" maxlength="20" value="${cardData?.data?.op_agency || ''}" class="w-full bg-black border border-gray-700 text-white text-xs p-2 rounded focus:border-slate-400 mt-1" placeholder="e.g. Apex Recovery LLC">
+                      <input type="text" id="ws-op_agency" maxlength="40" value="${cData.op_agency || ''}" class="w-full bg-black border border-gray-700 text-white text-xs p-2 rounded focus:border-slate-400 mt-1" placeholder="e.g. Apex Tactical Recovery LLC">
                   </div>
                   <div>
                       <label class="text-[10px] text-blue-400 uppercase tracking-widest font-black">License / ID Number</label>
-                      <input type="text" id="ws-op_license" maxlength="20" value="${cardData?.data?.op_license || ''}" class="w-full bg-black border border-gray-700 text-white text-xs p-2 rounded focus:border-slate-400 mt-1" placeholder="e.g. BEA-559281">
+                      <input type="text" id="ws-op_license" maxlength="30" value="${cData.op_license || ''}" class="w-full bg-black border border-gray-700 text-white text-xs p-2 rounded focus:border-slate-400 mt-1" placeholder="e.g. BEA-559281">
                   </div>
                   <div>
                       <label class="text-[10px] text-blue-400 uppercase tracking-widest font-black">Qualifications</label>
-                      <input type="text" id="ws-op_quals" maxlength="20" value="${cardData?.data?.op_quals || ''}" class="w-full bg-black border border-gray-700 text-white text-xs p-2 rounded focus:border-slate-400 mt-1" placeholder="e.g. Bail Enforcement Agent">
+                      <input type="text" id="ws-op_quals" maxlength="40" value="${cData.op_quals || ''}" class="w-full bg-black border border-gray-700 text-white text-xs p-2 rounded focus:border-slate-400 mt-1" placeholder="e.g. Bail Enforcement Agent">
                   </div>
               </div>
               
               <div class="grid grid-cols-2 gap-4 border-t border-slate-700 pt-4 mb-4">
                   <div>
-                      <label class="text-[10px] text-blue-400 uppercase tracking-widest font-black">Case Number</label>
-                      <input type="text" id="ws-case_number" maxlength="20" value="${cardData?.data?.case_number || ''}" class="w-full bg-black border border-gray-700 text-white text-xs p-2 rounded focus:border-slate-400 mt-1" placeholder="e.g. CR-2026-04821">
+                      <label class="text-[10px] text-amber-400 uppercase tracking-widest font-black">Billed To (Client / Agency / Unit)</label>
+                      <input type="text" id="ws-billed_to" maxlength="60" value="${cData.billed_to || ''}" class="w-full bg-black border border-gray-700 text-white text-xs p-2 rounded focus:border-amber-400 mt-1" placeholder="e.g. Continental Surety / District Court">
                   </div>
                   <div>
-                      <label class="text-[10px] text-blue-400 uppercase tracking-widest font-black">Invoice For (Bail, Court, etc.)</label>
-                      <input type="text" id="ws-invoice_type" maxlength="20" value="${cardData?.data?.invoice_type || ''}" class="w-full bg-black border border-gray-700 text-white text-xs p-2 rounded focus:border-slate-400 mt-1" placeholder="e.g. Bail Recovery">
+                      <label class="text-[10px] text-emerald-400 uppercase tracking-widest font-black">Paid By (Payer Name / Method)</label>
+                      <input type="text" id="ws-paid_by" maxlength="60" value="${cData.paid_by || ''}" class="w-full bg-black border border-gray-700 text-white text-xs p-2 rounded focus:border-emerald-400 mt-1" placeholder="e.g. Direct Wire / Corporate Card / ACH">
+                  </div>
+              </div>
+
+              <div class="grid grid-cols-2 gap-4 border-t border-slate-700 pt-4 mb-4">
+                  <div>
+                      <label class="text-[10px] text-blue-400 uppercase tracking-widest font-black">Case / Invoice Number</label>
+                      <input type="text" id="ws-case_number" maxlength="30" value="${cData.case_number || ''}" class="w-full bg-black border border-gray-700 text-white text-xs p-2 rounded focus:border-slate-400 mt-1" placeholder="e.g. INV-2026-04821">
+                  </div>
+                  <div>
+                      <label class="text-[10px] text-blue-400 uppercase tracking-widest font-black">Invoice For (Subject / Purpose)</label>
+                      <input type="text" id="ws-invoice_type" maxlength="40" value="${cData.invoice_type || ''}" class="w-full bg-black border border-gray-700 text-white text-xs p-2 rounded focus:border-slate-400 mt-1" placeholder="e.g. Guided Outfitting / Asset Recovery">
+                  </div>
+                  <div class="col-span-2">
+                      <label class="text-[10px] text-purple-400 uppercase tracking-widest font-black">Services Performed (Scope of Work)</label>
+                      <textarea id="ws-services_performed" maxlength="800" class="w-full bg-black border border-gray-700 text-white text-xs p-2 rounded focus:border-purple-400 mt-1 h-16" placeholder="e.g. 3-day guided long-range reconnaissance, ballistic telemetry mapping, and field logistics.">${servicesPerformedVal}</textarea>
+                  </div>
+              </div>
+
+              <!-- Payment Status Checkboxes -->
+              <div class="border-t border-slate-700 pt-4 mb-4 bg-slate-950/60 p-3 rounded-lg border border-slate-800">
+                  <label class="text-[10px] text-gray-300 uppercase tracking-widest font-black block mb-2">Invoice Payment Status</label>
+                  <div class="flex items-center gap-6">
+                      <label class="flex items-center gap-2 cursor-pointer">
+                          <input type="radio" name="ws_casefile_status" id="ws-status-paid" value="PAID" ${isPaid ? 'checked' : ''} class="w-4 h-4 accent-emerald-500 cursor-pointer">
+                          <span class="text-xs font-black uppercase text-emerald-400 tracking-wider flex items-center gap-1"><i data-lucide="check-circle" class="w-3.5 h-3.5"></i> PAID</span>
+                      </label>
+                      <label class="flex items-center gap-2 cursor-pointer">
+                          <input type="radio" name="ws_casefile_status" id="ws-status-unpaid" value="UNPAID" ${isUnpaid ? 'checked' : ''} class="w-4 h-4 accent-red-500 cursor-pointer">
+                          <span class="text-xs font-black uppercase text-red-400 tracking-wider flex items-center gap-1"><i data-lucide="clock" class="w-3.5 h-3.5"></i> UNPAID / PENDING</span>
+                      </label>
                   </div>
               </div>
               
               <div class="grid grid-cols-2 gap-4 border-t border-slate-700 pt-4">
                   <div>
                       <label class="text-[10px] text-gray-400 uppercase tracking-widest font-black">Job Amount / Bounty ($)</label>
-                      <input type="text" inputmode="decimal" id="ws-bounty" value="${cardData?.data?.bounty || ''}" class="w-full bg-black border border-gray-700 text-white text-xs p-2 rounded focus:border-slate-400 mt-1" placeholder="$ 0.00" oninput="this.value = window.formatCurrencyInput(this.value)">
+                      <input type="text" inputmode="decimal" id="ws-bounty" value="${cData.bounty || ''}" class="w-full bg-black border border-gray-700 text-white text-xs p-2 rounded focus:border-slate-400 mt-1" placeholder="$ 0.00" oninput="this.value = window.formatCurrencyInput(this.value)">
                   </div>
                   <div>
                       <label class="text-[10px] text-gray-400 uppercase tracking-widest font-black">Expenses / Fuel ($)</label>
-                      <input type="text" inputmode="decimal" id="ws-expenses" value="${cardData?.data?.expenses || ''}" class="w-full bg-black border border-gray-700 text-white text-xs p-2 rounded focus:border-slate-400 mt-1" placeholder="$ 0.00" oninput="this.value = window.formatCurrencyInput(this.value)">
+                      <input type="text" inputmode="decimal" id="ws-expenses" value="${cData.expenses || ''}" class="w-full bg-black border border-gray-700 text-white text-xs p-2 rounded focus:border-slate-400 mt-1" placeholder="$ 0.00" oninput="this.value = window.formatCurrencyInput(this.value)">
                   </div>
                   <div class="col-span-2">
-                      <div class="flex justify-between items-end mb-1">
+                        <div class="flex justify-between items-end mb-1">
                           <label class="text-[10px] text-gray-400 uppercase tracking-widest font-black">Additional Invoice Notes / Payment Terms</label>
                           <span id="ws-invoice-notes-counter" class="text-[9px] font-mono text-slate-400">${invoiceNotesVal.length} / 1000</span>
                       </div>
                       <textarea id="ws-invoice_notes" maxlength="1000" oninput="document.getElementById('ws-invoice-notes-counter').textContent = this.value.length + ' / 1000'" class="w-full bg-black border border-gray-700 text-white text-xs p-2 rounded h-16 focus:border-slate-400 mt-1" placeholder="e.g. Due upon receipt. Make checks payable to...">${invoiceNotesVal}</textarea>
+                                <!-- INTEL VAULT EXHIBITS SELECTOR -->
+                   <div class="col-span-2 border-t border-slate-700 pt-3 mt-1">
+                       <div class="flex justify-between items-center mb-2 flex-wrap gap-1">
+                           <label class="text-[10px] text-cyan-400 uppercase tracking-widest font-black flex items-center gap-1.5">
+                               <i data-lucide="archive" class="w-4 h-4 text-cyan-400"></i> ATTACHED INTEL VAULT EXHIBITS &amp; EVIDENCE
+                           </label>
+                           <div class="flex items-center gap-2">
+                               <button type="button" onclick="window.selectAllCasefileExhibits()" class="text-[8px] text-blue-400 hover:text-blue-300 uppercase font-mono font-bold cursor-pointer">[SELECT ALL]</button>
+                               <button type="button" onclick="window.clearAllCasefileExhibits()" class="text-[8px] text-slate-400 hover:text-slate-300 uppercase font-mono font-bold cursor-pointer">[CLEAR ALL]</button>
+                               <button type="button" onclick="window.deleteSelectedCasefileExhibits()" class="text-[8px] text-amber-400 hover:text-amber-300 uppercase font-mono font-bold cursor-pointer flex items-center gap-1 bg-amber-950/60 border border-amber-800/80 px-1.5 py-0.5 rounded"><i data-lucide="link-2-off" class="w-2.5 h-2.5"></i> [DETACH SELECTED]</button>
+                           </div>
+                       </div>
+                       <div id="ws-casefile-exhibits-list" class="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto custom-scrollbar p-1.5 bg-black/50 border border-slate-800 rounded-lg">
+                           <div class="col-span-full py-2 text-center text-slate-500 font-mono text-[9px]">Loading Intel Vault evidence...</div>
+                       </div>
+                   </div>               </div>
                   </div>
               </div>`;
     } else if (type === 'logistics') {
@@ -419,7 +470,7 @@ window.openWorkstationForm = function(type, rawCardData = null) {
     container.innerHTML = `
         <div class="h-full flex flex-col w-full max-w-4xl mx-auto relative overflow-hidden">
             <div class="flex items-center justify-between mb-3 pb-2 border-b border-gray-800 shrink-0 flex-wrap gap-1 bg-slate-950/95 sticky top-0 z-30 pt-1">
-                <button onclick="renderWorkstationMenu()" style="color: var(--accent-color, #38bdf8);" class="hover:brightness-150 flex items-center gap-1 text-[10px] uppercase font-bold transition-all">
+                <button type="button" onclick="window.renderWorkstationMenu()" style="color: var(--accent-color, #38bdf8);" class="hover:brightness-150 flex items-center gap-1 text-[10px] uppercase font-bold transition-all cursor-pointer">
                     <i data-lucide="chevron-left" class="w-4 h-4"></i> BACK
                 </button>
                 <div class="flex items-center gap-1.5">
@@ -430,7 +481,7 @@ window.openWorkstationForm = function(type, rawCardData = null) {
             </div>
 
             <!-- FORM SCROLL AREA -->
-            <div class="flex-1 overflow-y-auto custom-scrollbar pr-1 pb-16">
+            <div class="flex-1 overflow-y-auto custom-scrollbar pr-1 pb-28">
                 <div class="space-y-4">
                     ${formFields}
 
@@ -476,27 +527,30 @@ window.openWorkstationForm = function(type, rawCardData = null) {
                                 <input type="file" accept="image/*" class="hidden" id="ws-image-upload">
                             </label>
                             <div id="ws-image-preview-container" class="${existingImage ? 'block' : 'hidden'} relative w-24 h-24 border border-gray-700 rounded overflow-hidden shadow">
-                                <img id="ws-image-preview" src="${existingImage}" class="w-full h-full object-cover">
+                                <img id="ws-image-preview" ${existingImage ? `src="${existingImage}"` : ''} class="w-full h-full object-cover">
                                 <button onclick="clearWsImage()" class="absolute top-1 right-1 bg-red-600 rounded-full p-1 hover:bg-red-500"><i data-lucide="x" class="w-3 h-3 text-white"></i></button>
                             </div>
                         </div>
-                        <input type="hidden" id="ws-image-data" value="${existingImage}">
+                        <input type="hidden" id="ws-image-data" value="${existingImage || ''}">
                     </div>
                     `}
                 </div>
             </div>
 
             <!-- STICKY ALWAYS-VISIBLE BOTTOM ACTION BAR -->
-            <div class="pt-3 pb-3 border-t border-gray-800 flex justify-between items-center shrink-0 flex-wrap gap-2 bg-slate-950/95 sticky bottom-0 z-30 px-1">
-                <button onclick="window.clearWorkstationForm()" class="bg-red-950/80 hover:bg-red-900 text-red-400 font-black text-[10px] uppercase tracking-widest px-3 py-2 rounded transition-all border border-red-800 flex items-center gap-1.5 cursor-pointer shadow">
+            <div class="pt-2.5 pb-3 border-t border-gray-800 grid grid-cols-2 sm:flex sm:justify-between items-center shrink-0 gap-2 bg-slate-950/95 sticky bottom-0 z-30 px-1">
+                <button onclick="window.clearWorkstationForm()" class="w-full sm:w-auto bg-red-950/80 hover:bg-red-900 text-red-400 font-black text-[9.5px] sm:text-[10px] uppercase tracking-widest px-3 py-2 rounded transition-all border border-red-800 flex items-center justify-center gap-1.5 cursor-pointer shadow">
                     <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> CLEAR FORM
                 </button>
                 ${type === 'casefile' ? `
-                <button onclick="window.generateCaseFilePdf()" class="bg-slate-700 hover:bg-slate-600 text-white font-black text-[10px] uppercase tracking-widest px-5 py-2 rounded shadow-[0_0_10px_rgba(255,255,255,0.2)] transition-all flex items-center gap-1.5 cursor-pointer">
-                    <i data-lucide="printer" class="w-3.5 h-3.5"></i> PREVIEW & PRINT PDF
+                <button onclick="window.transmitCurrentCaseFileToComms()" class="w-full sm:w-auto bg-purple-950/90 hover:bg-purple-900 border border-purple-500/60 text-purple-300 font-black text-[9.5px] sm:text-[10px] uppercase tracking-widest px-3 py-2 rounded transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow">
+                    <i data-lucide="radio" class="w-3.5 h-3.5 text-purple-400"></i> TRANSMIT
+                </button>
+                <button onclick="window.generateCaseFilePdf()" class="w-full sm:w-auto bg-slate-700 hover:bg-slate-600 text-white font-black text-[9.5px] sm:text-[10px] uppercase tracking-widest px-3 py-2 rounded shadow-[0_0_10px_rgba(255,255,255,0.2)] transition-all flex items-center justify-center gap-1.5 cursor-pointer">
+                    <i data-lucide="printer" class="w-3.5 h-3.5"></i> PDF PREVIEW
                 </button>
                 ` : ''}
-                <button onclick="saveWorkstationCard('${type}', ${id})" class="bg-blue-600 hover:bg-blue-500 text-white font-black text-[10px] uppercase tracking-widest px-5 py-2 rounded shadow-[0_0_10px_rgba(37,99,235,0.5)] transition-all flex items-center gap-1.5 cursor-pointer">
+                <button onclick="window.saveWorkstationCard('${type}', '${id}')" class="w-full sm:w-auto bg-blue-600 hover:bg-blue-500 text-white font-black text-[9.5px] sm:text-[10px] uppercase tracking-widest px-4 py-2 rounded shadow-[0_0_10px_rgba(37,99,235,0.5)] transition-all flex items-center justify-center gap-1.5 cursor-pointer">
                     <i data-lucide="save" class="w-3.5 h-3.5"></i> 💾 SAVE CARD
                 </button>
             </div>
@@ -521,6 +575,111 @@ window.openWorkstationForm = function(type, rawCardData = null) {
             }
         });
     }
+
+    if (type === 'casefile') {
+        const cData = cardData?.data || cardData?.casefileData || cardData?.workstationData?.data || cardData?.workstationData?.casefileData || cardData || {};
+        window.renderCasefileExhibitsSelector(cData.attachedExhibits);
+    }
+    } catch(err) {
+        console.error('[TRC-WS] Error inside openWorkstationForm:', err);
+        if (window.showToast) window.showToast('Error opening form: ' + err.message);
+    }
+};
+
+window.renderCasefileExhibitsSelector = async function(preselectedIds = null) {
+    const listEl = document.getElementById('ws-casefile-exhibits-list');
+    if (!listEl) return;
+
+    let vaultItems = [];
+    if (window.vaultCache && Array.isArray(window.vaultCache) && window.vaultCache.length > 0) {
+        vaultItems = [...window.vaultCache];
+    } else if (window.TRC_IDB) {
+        try {
+            const items = await window.TRC_IDB.getAll('intelVault');
+            vaultItems = Object.values(items || {});
+        } catch(e) {}
+    }
+
+    // Filter out recursive generic PDF placeholders without real image content
+    const eligibleItems = vaultItems.filter(v => v && (v.image || v.cardImageUrl || v.imageUrl) && v.type !== 'casefile-pdf');
+
+    if (eligibleItems.length === 0) {
+        listEl.innerHTML = `
+            <div class="col-span-full py-3 px-2 text-center text-slate-500 font-mono text-[9px] border border-dashed border-slate-800 rounded">
+                NO SAVED CARDS / EVIDENCE IN INTEL VAULT (WINDOW #4).<br>
+                <span class="text-slate-400">Save Range Cards, Dope Cards, or Snapshots to attach them as Exhibits.</span>
+            </div>
+        `;
+        return;
+    }
+
+    listEl.innerHTML = eligibleItems.map((item, idx) => {
+        const isChecked = (Array.isArray(preselectedIds) && preselectedIds.length > 0) ? preselectedIds.includes(item.id.toString()) : true;
+        const thumb = item.image || item.cardImageUrl || item.imageUrl || '';
+        return `
+            <div class="bg-slate-900/90 border ${isChecked ? 'border-cyan-400 bg-cyan-950/40 shadow-[0_0_12px_rgba(6,182,212,0.35)]' : 'border-slate-800'} hover:border-cyan-500 rounded p-2 flex items-center gap-3 transition-all shadow overflow-hidden" style="max-height: 62px;">
+                <input type="checkbox" class="ws-casefile-exhibit-checkbox w-4 h-4 accent-cyan-500 rounded cursor-pointer shrink-0" value="${item.id}" ${isChecked ? 'checked' : ''} onchange="this.parentElement.classList.toggle('border-cyan-400', this.checked); this.parentElement.classList.toggle('bg-cyan-950/40', this.checked); this.parentElement.classList.toggle('shadow-[0_0_12px_rgba(6,182,212,0.35)]', this.checked);">
+                ${thumb ? `<img src="${thumb}" style="width: 46px !important; height: 46px !important; min-width: 46px !important; min-height: 46px !important; max-width: 46px !important; max-height: 46px !important; object-fit: cover !important; border-radius: 4px; flex-shrink: 0;" class="bg-black border border-slate-700">` : `<div style="width: 46px; height: 46px; min-width: 46px;" class="rounded bg-black border border-slate-700 flex items-center justify-center text-[7px] text-slate-500 shrink-0">NO IMG</div>`}
+                <div class="flex-1 min-w-0 cursor-pointer" onclick="const cb = this.parentElement.querySelector('.ws-casefile-exhibit-checkbox'); cb.checked = !cb.checked; cb.dispatchEvent(new Event('change'));">
+                    <div class="text-[10px] font-bold text-slate-200 truncate uppercase flex items-center gap-1.5">
+                        <span class="text-cyan-400">●</span> ${item.label || item.type || ('EXHIBIT ' + (idx + 1))}
+                    </div>
+                    <div class="text-[8px] text-slate-400 font-mono">${new Date(item.timestamp || Date.now()).toLocaleDateString()}</div>
+                </div>
+                <button type="button" onclick="event.stopPropagation(); window.deleteCasefileExhibit('${item.id}')" class="p-1.5 rounded bg-slate-950 hover:bg-amber-900/90 text-amber-400 hover:text-amber-200 border border-slate-800 hover:border-amber-500 transition-all shrink-0 ml-auto cursor-pointer" title="Detach Exhibit">
+                    <i data-lucide="link-2-off" class="w-3.5 h-3.5 text-amber-400"></i>
+                </button>
+            </div>
+        `;
+    }).join('');
+    if (window.lucide) window.lucide.createIcons({ root: listEl });
+};
+
+window.deleteCasefileExhibit = function(id) {
+    if (!id) return;
+    // ONLY uncheck and visually detach the exhibit from this casefile — do NOT delete from IDB
+    const cb = document.querySelector(`.ws-casefile-exhibit-checkbox[value="${id}"]`);
+    if (cb) {
+        cb.checked = false;
+        const cardEl = cb.closest('[class*="bg-slate-900"]') || cb.parentElement;
+        if (cardEl) {
+            cardEl.classList.remove('border-cyan-400', 'bg-cyan-950/40');
+            cardEl.classList.add('border-slate-800', 'opacity-40');
+        }
+    }
+    if (window.showToast) window.showToast("Exhibit detached from this invoice.");
+};
+
+window.deleteSelectedCasefileExhibits = function() {
+    const checked = Array.from(document.querySelectorAll('.ws-casefile-exhibit-checkbox:checked'));
+    if (checked.length === 0) {
+        if (window.showToast) window.showToast("No exhibits checked to detach.");
+        return;
+    }
+    
+    // Only uncheck and dim — do NOT delete from any IDB store
+    checked.forEach(cb => {
+        cb.checked = false;
+        const cardEl = cb.closest('[class*="bg-slate-900"]') || cb.parentElement;
+        if (cardEl) {
+            cardEl.classList.remove('border-cyan-400', 'bg-cyan-950/40');
+            cardEl.classList.add('border-slate-800', 'opacity-40');
+        }
+    });
+
+    if (window.showToast) window.showToast(`${checked.length} exhibit(s) detached from this invoice.`);
+};
+
+window.selectAllCasefileExhibits = function() {
+    const cbs = document.querySelectorAll('.ws-casefile-exhibit-checkbox');
+    cbs.forEach(c => c.checked = true);
+    if (window.showToast) window.showToast(`Selected all ${cbs.length} exhibits.`);
+};
+
+window.clearAllCasefileExhibits = function() {
+    const cbs = document.querySelectorAll('.ws-casefile-exhibit-checkbox');
+    cbs.forEach(c => c.checked = false);
+    if (window.showToast) window.showToast(`Cleared all exhibits.`);
 };
 
 window.clearWsImage = function() {
@@ -668,8 +827,6 @@ window.selectBragVaultCardByIndex = function(slotNum, idx) {
 
 window.selectBragVaultCard = window.selectBragVaultCardByIndex;
 
-window.selectBragVaultCard = window.selectBragVaultCardByIndex;
-
 window.handleBragFileUpload = function(slotNum, event) {
     const file = event.target.files[0];
     if (file) {
@@ -774,13 +931,24 @@ window.generateWorkstationCompositeCard = async function(type, title, data, atta
                 drawField('Penalties', data.penalties);
                 drawField('Stage Notes', data.notes);
             } else if (type === 'casefile') {
-                drawField('Operator Name / Callsign', data.op_name);
-                drawField('Agency / Company', data.op_agency);
-                drawField('License / ID Number', data.op_license);
-                drawField('Qualifications', data.op_quals);
-                drawField('Job Amount / Bounty ($)', data.bounty);
-                drawField('Expenses / Fuel ($)', data.expenses);
-                drawField('Additional Invoice Notes', data.invoice_notes);
+                // Top Status Stamp
+                const isPaid = data.status === 'PAID' || data.is_paid === true;
+                ctx.fillStyle = isPaid ? '#10b981' : '#f59e0b';
+                ctx.font = 'black 14px monospace';
+                ctx.fillText(`STATUS: [${isPaid ? '✔ PAID IN FULL' : '⏳ UNPAID / PENDING'}]`, 20, y);
+                y += 24;
+
+                drawField('Case / Invoice #', data.case_number || 'INV-PENDING');
+                drawField('Billed To (Client)', data.billed_to);
+                drawField('Paid By (Method)', data.paid_by);
+                drawField('Lead Operator', `${data.op_name || 'N/A'} [${data.op_agency || 'APEX TACTICAL'}]`);
+                drawField('Services Performed', data.services_performed);
+                
+                const bVal = window.parseCurrencyValue(data.bounty);
+                const eVal = window.parseCurrencyValue(data.expenses);
+                const tVal = (bVal + eVal).toFixed(2);
+                drawField('Financial Balance', `Bounty: $${bVal.toFixed(2)} | Exp: $${eVal.toFixed(2)} | TOTAL: $${tVal}`);
+                drawField('Payment Notes', data.invoice_notes);
             } else if (type === 'logistics') {
                 drawField('Ammo Expended', data.ammo);
                 drawField('Gear Damaged/Lost', data.gear);
@@ -827,6 +995,96 @@ window.generateWorkstationCompositeCard = async function(type, title, data, atta
                         ctx.fillStyle = '#c084fc';
                         ctx.font = 'bold 11px monospace';
                         ctx.fillText(`MEDIA BRAG BOARD (${validImgs.length} CARDS/PHOTOS)`, px + 15, py + 22);
+
+                        if (validImgs.length === 1) {
+                            const img = validImgs[0];
+                            const ratio = Math.min((pw - 20) / img.width, (ph - 40) / img.height);
+                            const nw = img.width * ratio, nh = img.height * ratio;
+                            ctx.drawImage(img, px + 10 + ((pw - 20) - nw)/2, py + 30 + ((ph - 40) - nh)/2, nw, nh);
+                        } else if (validImgs.length === 2) {
+                            const subH = (ph - 45) / 2;
+                            validImgs.forEach((img, idx) => {
+                                const sy = py + 30 + idx * (subH + 5);
+                                const ratio = Math.min((pw - 20) / img.width, subH / img.height);
+                                const nw = img.width * ratio, nh = img.height * ratio;
+                                ctx.drawImage(img, px + 10 + ((pw - 20) - nw)/2, sy + (subH - nh)/2, nw, nh);
+                            });
+                        } else {
+                            const subW = (pw - 25) / 2;
+                            const subH = (ph - 45) / 2;
+                            validImgs.slice(0, 4).forEach((img, idx) => {
+                                const col = idx % 2;
+                                const row = Math.floor(idx / 2);
+                                const sx = px + 10 + col * (subW + 5);
+                                const sy = py + 30 + row * (subH + 5);
+                                const ratio = Math.min(subW / img.width, subH / img.height);
+                                const nw = img.width * ratio, nh = img.height * ratio;
+                                ctx.drawImage(img, sx + (subW - nw)/2, sy + (subH - nh)/2, nw, nh);
+                            });
+                        }
+                        resolve(canvas.toDataURL('image/jpeg', 0.85));
+                        return;
+                    }
+                }
+            }
+
+            if (type === 'casefile') {
+                let exhibitImgs = [];
+                if (Array.isArray(data.exhibitImages) && data.exhibitImages.length > 0) {
+                    exhibitImgs = [...data.exhibitImages];
+                }
+                const attachedIds = Array.isArray(data.attachedExhibits) ? data.attachedExhibits : [];
+
+                if (window.vaultCache && exhibitImgs.length < attachedIds.length) {
+                    attachedIds.forEach(id => {
+                        const found = window.vaultCache.find(v => v && (v.id == id || v.id == id.toString()));
+                        const src = found?.image || found?.cardImageUrl || found?.imageUrl;
+                        if (src && typeof src === 'string' && (src.startsWith('data:image') || src.startsWith('blob:') || src.startsWith('http')) && !exhibitImgs.includes(src)) {
+                            exhibitImgs.push(src);
+                        }
+                    });
+                }
+
+                if (window.TRC_IDB && exhibitImgs.length < attachedIds.length) {
+                    const stores = ['intelVault', 'gameTagLibrary', 'licenseLibrary', 'boloLibrary', 'workstationLibrary'];
+                    for (const id of attachedIds) {
+                        for (const s of stores) {
+                            try {
+                                const item = await window.TRC_IDB.get(s, id.toString()) || await window.TRC_IDB.get(s, parseInt(id));
+                                const src = item?.image || item?.cardImageUrl || item?.imageUrl;
+                                if (src && typeof src === 'string' && (src.startsWith('data:image') || src.startsWith('blob:') || src.startsWith('http')) && !exhibitImgs.includes(src)) {
+                                    exhibitImgs.push(src);
+                                }
+                            } catch(eDb) {}
+                        }
+                    }
+                }
+
+                if (hasPhoto && !exhibitImgs.includes(attachedPhotoUrl)) {
+                    exhibitImgs.unshift(attachedPhotoUrl);
+                }
+
+                if (exhibitImgs.length > 0) {
+                    const loadedImages = await Promise.all(exhibitImgs.slice(0, 4).map(src => new Promise(res => {
+                        const img = new Image();
+                        img.crossOrigin = 'Anonymous';
+                        img.onload = () => res(img);
+                        img.onerror = () => res(null);
+                        img.src = src;
+                    })));
+
+                    const validImgs = loadedImages.filter(Boolean);
+                    if (validImgs.length > 0) {
+                        const px = 430, py = 75, pw = 350, ph = 490;
+                        ctx.fillStyle = '#020617';
+                        ctx.fillRect(px, py, pw, ph);
+                        ctx.strokeStyle = '#38bdf8';
+                        ctx.lineWidth = 2;
+                        ctx.strokeRect(px, py, pw, ph);
+
+                        ctx.fillStyle = '#38bdf8';
+                        ctx.font = 'bold 11px monospace';
+                        ctx.fillText(`ATTACHED EVIDENCE EXHIBIT (${validImgs.length})`, px + 15, py + 22);
 
                         if (validImgs.length === 1) {
                             const img = validImgs[0];
@@ -921,18 +1179,52 @@ window.saveWorkstationCard = async function(type, id) {
         };
         title = "SCORECARD: " + (data.match || 'UNTITLED');
     } else if (type === 'casefile') {
+        const isPaidChecked = document.getElementById('ws-status-paid')?.checked;
+        let checkedExhibits = Array.from(document.querySelectorAll('.ws-casefile-exhibit-checkbox:checked')).map(cb => cb.value);
+        if (checkedExhibits.length === 0) {
+            checkedExhibits = Array.from(document.querySelectorAll('.ws-casefile-exhibit-checkbox')).map(cb => cb.value);
+        }
+        let exhibitImages = [];
+        if (window.vaultCache) {
+            checkedExhibits.forEach(eid => {
+                const found = window.vaultCache.find(v => v && (v.id == eid || v.id == eid.toString()));
+                const src = found?.image || found?.cardImageUrl || found?.imageUrl;
+                if (src && typeof src === 'string') exhibitImages.push(src);
+            });
+        }
+        if (window.TRC_IDB && exhibitImages.length < checkedExhibits.length) {
+            const stores = ['intelVault', 'gameTagLibrary', 'licenseLibrary', 'boloLibrary', 'workstationLibrary'];
+            for (const eid of checkedExhibits) {
+                for (const s of stores) {
+                    try {
+                        const item = await window.TRC_IDB.get(s, eid.toString()) || await window.TRC_IDB.get(s, parseInt(eid));
+                        const src = item?.image || item?.cardImageUrl || item?.imageUrl;
+                        if (src && typeof src === 'string' && !exhibitImages.includes(src)) exhibitImages.push(src);
+                    } catch(e) {}
+                }
+            }
+        }
+
         data = {
             op_name: document.getElementById('ws-op_name')?.value || '',
             op_agency: document.getElementById('ws-op_agency')?.value || '',
             op_license: document.getElementById('ws-op_license')?.value || '',
             op_quals: document.getElementById('ws-op_quals')?.value || '',
+            billed_to: document.getElementById('ws-billed_to')?.value || '',
+            paid_by: document.getElementById('ws-paid_by')?.value || '',
             case_number: document.getElementById('ws-case_number')?.value || '',
             invoice_type: document.getElementById('ws-invoice_type')?.value || '',
+            services_performed: document.getElementById('ws-services_performed')?.value || '',
+            status: isPaidChecked ? 'PAID' : 'UNPAID',
+            is_paid: !!isPaidChecked,
             bounty: document.getElementById('ws-bounty')?.value || '',
             expenses: document.getElementById('ws-expenses')?.value || '',
-            invoice_notes: document.getElementById('ws-invoice_notes')?.value || ''
+            invoice_notes: document.getElementById('ws-invoice_notes')?.value || '',
+            mainAttachedImage: document.getElementById('ws-image-data')?.value || '',
+            attachedExhibits: checkedExhibits,
+            exhibitImages: exhibitImages
         };
-        title = "CASE FILE: " + (data.case_number || data.op_name || 'UNTITLED');
+        title = "INVOICE / CASE: " + (data.case_number || data.billed_to || data.op_name || 'UNTITLED');
     } else if (type === 'logistics') {
         data = {
             ammo: document.getElementById('ws-ammo')?.value || '',
@@ -971,6 +1263,7 @@ window.saveWorkstationCard = async function(type, id) {
 
     // Generate full high-contrast composite visual Range Card snapshot combining text fields AND attached photo
     const attachedPhoto = document.getElementById('ws-image-data')?.value || '';
+    if (data) data.attachedPhoto = attachedPhoto;
     const compositeImage = await window.generateWorkstationCompositeCard(type, title, data, attachedPhoto);
 
     const cardData = {
@@ -984,7 +1277,26 @@ window.saveWorkstationCard = async function(type, id) {
 
     try {
         await window.TRC_IDB.set('workstationLibrary', cardData.id, cardData);
-        window.pushTacLog("WORKSTATION CARD SAVED TO LIBRARY", "SUCCESS");
+
+        // Auto-sync into Intel Vault (Window #4)
+        const vaultMetadata = {
+            id: cardData.id,
+            timestamp: Date.now(),
+            label: cardData.title,
+            image: cardData.image || '',
+            type: type === 'casefile' ? 'casefile-pdf' : 'workstation',
+            workstationData: cardData,
+            casefileData: type === 'casefile' ? cardData.data : null
+        };
+        await window.TRC_IDB.set('intelVault', cardData.id.toString(), vaultMetadata);
+        if (typeof vaultCache !== 'undefined' && Array.isArray(vaultCache)) {
+            vaultCache = vaultCache.filter(v => v && v.id?.toString() !== cardData.id.toString() && v.label !== cardData.title && v.label !== `WORKSTATION: ${cardData.title}`);
+            vaultCache.unshift(vaultMetadata);
+            if (typeof refreshVaultGrid === 'function') refreshVaultGrid();
+        }
+
+        window.pushTacLog("WORKSTATION CARD SAVED & SYNCED TO VAULT", "SUCCESS");
+        if (window.showToast) window.showToast('💾 Card Saved & Synced to Intel Vault!');
         renderWorkstationMenu();
     } catch (e) {
         console.error("Failed to save workstation card:", e);
@@ -1040,32 +1352,46 @@ window.loadWorkstationBackToEditorById = async function(id) {
 window.clearWorkstationForm = function() {
     const container = document.getElementById('workstation-container');
     if (!container) return;
-    const inputs = container.querySelectorAll('input[type="text"], textarea');
-    inputs.forEach(input => input.value = '');
+    const textInputs = container.querySelectorAll('input[type="text"], input[inputmode="decimal"], textarea, select');
+    textInputs.forEach(input => input.value = '');
+    const checkboxes = container.querySelectorAll('input[type="checkbox"]');
+    checkboxes.forEach(cb => {
+        cb.checked = false;
+        if (cb.parentElement) {
+            cb.parentElement.classList.remove('border-cyan-400', 'bg-cyan-950/40', 'shadow-[0_0_12px_rgba(6,182,212,0.35)]');
+        }
+    });
+    const unpaidRadio = document.getElementById('ws-status-unpaid');
+    if (unpaidRadio) unpaidRadio.checked = true;
+    const paidRadio = document.getElementById('ws-status-paid');
+    if (paidRadio) paidRadio.checked = false;
+    const counter = document.getElementById('ws-invoice-notes-counter');
+    if (counter) counter.textContent = '0 / 1000';
     if (typeof window.clearWsImage === 'function') window.clearWsImage();
+    if (window.renderCasefileExhibitsSelector) window.renderCasefileExhibitsSelector([]);
+    if (window.showToast) window.showToast('🧹 Form completely cleared!');
 };
 
 window.deleteWorkstationCard = async function(id) {
     if (!confirm('Are you sure you want to permanently delete this card?')) return;
     
     if (window.TRC_IDB) {
-        // Try deleting as number AND string to cover all bases
         await window.TRC_IDB.delete('workstationLibrary', parseInt(id));
         await window.TRC_IDB.delete('workstationLibrary', id.toString());
-        
-        // Also remove from Vault if it exists
-        if (typeof vaultCache !== 'undefined') {
-            const vaultIdx = vaultCache.findIndex(v => v.type === 'workstation' && v.id == id);
-            if (vaultIdx !== -1) {
-                vaultCache.splice(vaultIdx, 1);
-                await window.TRC_IDB.delete('intelVault', parseInt(id));
-                await window.TRC_IDB.delete('intelVault', id.toString());
-                if (typeof refreshVaultGrid === 'function') refreshVaultGrid();
-            }
-        }
-        
-        window.renderWorkstationMenu();
+        await window.TRC_IDB.delete('intelVault', parseInt(id));
+        await window.TRC_IDB.delete('intelVault', id.toString());
     }
+
+    if (typeof vaultCache !== 'undefined' && Array.isArray(vaultCache)) {
+        const vaultIdx = vaultCache.findIndex(v => v && (v.id == id || v.id == id.toString()));
+        if (vaultIdx !== -1) {
+            vaultCache.splice(vaultIdx, 1);
+            if (typeof refreshVaultGrid === 'function') refreshVaultGrid();
+        }
+    }
+    
+    window.renderWorkstationMenu();
+    if (window.showToast) window.showToast('🗑️ Card permanently deleted.');
 };
 
 window.checkWsCheckboxes = function() {
@@ -1144,7 +1470,7 @@ window.openBragBoardStudio = async function() {
     container.innerHTML = `
         <div class="h-full flex flex-col w-full max-w-4xl mx-auto">
             <div class="flex items-center justify-between mb-4 pb-2 border-b border-gray-800 shrink-0">
-                <button onclick="renderWorkstationMenu()" class="text-gray-400 hover:text-white flex items-center gap-1 text-[10px] uppercase font-bold transition-colors">
+                <button type="button" onclick="window.renderWorkstationMenu()" class="text-gray-400 hover:text-white flex items-center gap-1 text-[10px] uppercase font-bold transition-colors cursor-pointer">
                     <i data-lucide="chevron-left" class="w-4 h-4"></i> BACK
                 </button>
                 <div class="flex items-center gap-2">
@@ -1272,8 +1598,13 @@ window.generateCaseFilePdf = async function() {
     const op_agency = document.getElementById('ws-op_agency')?.value || 'N/A';
     const op_license = document.getElementById('ws-op_license')?.value || 'N/A';
     const op_quals = document.getElementById('ws-op_quals')?.value || 'N/A';
+    const billed_to = document.getElementById('ws-billed_to')?.value || 'N/A';
+    const paid_by = document.getElementById('ws-paid_by')?.value || 'N/A';
     const case_number = document.getElementById('ws-case_number')?.value || 'N/A';
     const invoice_type = document.getElementById('ws-invoice_type')?.value || 'N/A';
+    const services_performed = document.getElementById('ws-services_performed')?.value || '';
+    const isPaidChecked = document.getElementById('ws-status-paid')?.checked;
+    const status = isPaidChecked ? 'PAID' : 'UNPAID';
     const bountyStr = document.getElementById('ws-bounty')?.value || '0';
     const expensesStr = document.getElementById('ws-expenses')?.value || '0';
     const invoiceNotes = document.getElementById('ws-invoice_notes')?.value || '';
@@ -1282,54 +1613,109 @@ window.generateCaseFilePdf = async function() {
     const bounty = window.parseCurrencyValue(bountyStr);
     const expenses = window.parseCurrencyValue(expensesStr);
     const total = bounty + expenses;
-    
-    // 2. Fetch Vault Data
+
+    // 2. Fetch Attached Exhibits & Evidence
     let vaultItems = [];
-    if (window.TRC_IDB) {
-        let allVaultItems = Object.values(await window.TRC_IDB.getAll('intelVault') || {});
-        
-        // CHECK FOR SELECTED VAULT ITEMS
-        const checkedBoxes = document.querySelectorAll('.vault-export-checkbox:checked');
-        if (checkedBoxes.length > 0) {
-            const selectedIds = Array.from(checkedBoxes).map(cb => cb.dataset.vaultId || cb.value);
-            vaultItems = allVaultItems.filter(v => selectedIds.includes(v.id.toString()));
-        } else {
-            vaultItems = allVaultItems; // Fallback: if they didn't check any, just print the whole vault
+    const wsCheckedBoxes = document.querySelectorAll('.ws-casefile-exhibit-checkbox:checked');
+    const selectedIds = Array.from(wsCheckedBoxes).map(cb => cb.value);
+
+    if (window.vaultCache && window.vaultCache.length > 0) {
+        vaultItems = window.vaultCache.filter(v => v && selectedIds.includes(v.id?.toString()));
+    }
+    if (window.TRC_IDB && vaultItems.length < selectedIds.length) {
+        const stores = ['intelVault', 'gameTagLibrary', 'licenseLibrary', 'boloLibrary', 'workstationLibrary'];
+        for (const sid of selectedIds) {
+            for (const s of stores) {
+                try {
+                    const item = await window.TRC_IDB.get(s, sid) || await window.TRC_IDB.get(s, parseInt(sid));
+                    if (item && !vaultItems.some(v => v && v.id == item.id)) vaultItems.push(item);
+                } catch(e) {}
+            }
         }
     }
     
     // Sort vault items by timestamp
-    vaultItems.sort((a,b) => new Date(a.timestamp) - new Date(b.timestamp));
+    vaultItems.sort((a,b) => new Date(a.timestamp || 0) - new Date(b.timestamp || 0));
+    const exhibitImages = vaultItems.map(v => v.image || v.cardImageUrl || v.imageUrl).filter(Boolean);
+    
+    // Store full casefile data for rework / export
+    window.currentCaseFileData = {
+        op_name, op_agency, op_license, op_quals,
+        billed_to, paid_by, case_number, invoice_type,
+        services_performed, status, is_paid: !!isPaidChecked,
+        bounty: bountyStr, expenses: expensesStr,
+        invoice_notes: invoiceNotes,
+        mainAttachedImage,
+        attachedExhibits: selectedIds,
+        exhibitImages: exhibitImages.slice(0, 4)
+    };
     
     // 3. Build HTML
     const dateStr = new Date().toLocaleString();
     
     let html = `
+        <!-- TRC_CASEFILE_DATA_START: ${encodeURIComponent(JSON.stringify(window.currentCaseFileData))} :TRC_CASEFILE_DATA_END -->
         <div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #111; max-width: 800px; margin: 0 auto; line-height: 1.4;">
             
-            <!-- HEADER -->
-            <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 4px solid #111; padding-bottom: 12px; margin-bottom: 20px; page-break-inside: avoid; break-inside: avoid;">
-                <div>
-                    <h1 style="margin: 0; font-size: 24px; font-weight: 900; letter-spacing: 2px; text-transform: uppercase;">EXECUTIVE CASE FILE</h1>
-                    <h2 style="margin: 4px 0 0; font-size: 13px; font-weight: bold; color: #475569; text-transform: uppercase;">OFFICIAL INCIDENT REPORT & INVOICE</h2>
-                    <p style="margin: 4px 0 0; font-size: 11px; color: #64748b; font-family: monospace;">DATE GENERATED: ${dateStr}</p>
+            <!-- HEADER WITH TRC LOGO & INVOICE STATUS -->
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 4px solid #111; padding-bottom: 14px; margin-bottom: 20px; page-break-inside: avoid; break-inside: avoid;">
+                <div style="display: flex; align-items: center; gap: 14px;">
+                    <!-- OFFICIAL TRC CREST LOGO -->
+                    <div style="width: 48px; height: 48px; background: #0f172a; border-radius: 8px; display: flex; align-items: center; justify-content: center; border: 2px solid #22c55e; flex-shrink: 0; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                        <svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="#22c55e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="22" y1="12" x2="18" y2="12"></line>
+                            <line x1="6" y1="12" x2="2" y2="12"></line>
+                            <line x1="12" y1="6" x2="12" y2="2"></line>
+                            <line x1="12" y1="22" x2="12" y2="18"></line>
+                            <circle cx="12" cy="12" r="4"></circle>
+                            <circle cx="12" cy="12" r="1" fill="#22c55e"></circle>
+                        </svg>
+                    </div>
+                    <div>
+                        <h1 style="margin: 0; font-size: 22px; font-weight: 900; letter-spacing: 1.5px; text-transform: uppercase; color: #0f172a;">TACTICAL RANGE CARD</h1>
+                        <h2 style="margin: 2px 0 0; font-size: 12px; font-weight: 800; color: #475569; text-transform: uppercase; letter-spacing: 0.8px;">EXECUTIVE CASE FILE &bull; OFFICIAL INVOICE</h2>
+                        <p style="margin: 2px 0 0; font-size: 10px; color: #64748b; font-family: monospace;">DATE GENERATED: ${dateStr}</p>
+                    </div>
                 </div>
-                <div style="text-align: right; border-left: 2px solid #cbd5e1; padding-left: 20px;">
-                    <div style="font-size: 10px; font-weight: bold; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em;">Invoice Summary</div>
-                    <div style="font-size: 13px; margin-top: 4px;">Job / Bounty: <b>$${bounty.toFixed(2)}</b></div>
-                    <div style="font-size: 13px; margin-top: 2px;">Expenses: <b>$${expenses.toFixed(2)}</b></div>
-                    <div style="font-size: 18px; font-weight: 900; margin-top: 8px; border-top: 2px solid #111; padding-top: 4px; color: #0f172a;">TOTAL: $${total.toFixed(2)}</div>
+                <div style="text-align: right; border-left: 2px solid #cbd5e1; padding-left: 18px;">
+                    <div style="display: inline-block; padding: 4px 10px; border-radius: 4px; font-size: 11px; font-weight: 900; text-transform: uppercase; letter-spacing: 1px; ${status === 'PAID' ? 'background: #dcfce7; color: #15803d; border: 1.5px solid #22c55e;' : 'background: #fee2e2; color: #b91c1c; border: 1.5px solid #ef4444;'}">
+                        ${status === 'PAID' ? '✔ PAID IN FULL' : '⏳ UNPAID / PENDING'}
+                    </div>
+                    <div style="font-size: 11px; margin-top: 6px;">Job Amount: <b>$${bounty.toFixed(2)}</b></div>
+                    <div style="font-size: 11px; margin-top: 2px;">Expenses: <b>$${expenses.toFixed(2)}</b></div>
+                    <div style="font-size: 16px; font-weight: 900; margin-top: 6px; border-top: 2px solid #111; padding-top: 4px; color: #0f172a;">TOTAL: $${total.toFixed(2)}</div>
                 </div>
             </div>
             
+            <!-- CLIENT & BILLING DETAILS -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 18px; page-break-inside: avoid; break-inside: avoid;">
+                <div style="border: 1px solid #cbd5e1; border-radius: 6px; overflow: hidden; background: #ffffff;">
+                    <div style="font-size: 11px; font-weight: 900; background: #0f172a; color: #f59e0b; padding: 5px 10px; text-transform: uppercase; letter-spacing: 0.05em;">
+                        BILLED TO (CLIENT / UNIT)
+                    </div>
+                    <div style="padding: 10px; font-size: 12px; line-height: 1.5; color: #1e293b;">
+                        <b>${billed_to}</b>
+                    </div>
+                </div>
+                <div style="border: 1px solid #cbd5e1; border-radius: 6px; overflow: hidden; background: #ffffff;">
+                    <div style="font-size: 11px; font-weight: 900; background: #0f172a; color: #10b981; padding: 5px 10px; text-transform: uppercase; letter-spacing: 0.05em;">
+                        PAYMENT DETAILS / PAID BY
+                    </div>
+                    <div style="padding: 10px; font-size: 12px; line-height: 1.5; color: #1e293b;">
+                        <b>${paid_by}</b>
+                    </div>
+                </div>
+            </div>
+
             <!-- OFFICER & CASE INFO -->
-            <div style="margin-bottom: 24px; border: 1px solid #cbd5e1; border-radius: 6px; overflow: hidden; page-break-inside: avoid; break-inside: avoid;">
-                <div style="font-size: 12px; font-weight: 900; background: #0f172a; color: #ffffff; padding: 6px 12px; text-transform: uppercase; letter-spacing: 0.05em;">
+            <div style="margin-bottom: 18px; border: 1px solid #cbd5e1; border-radius: 6px; overflow: hidden; page-break-inside: avoid; break-inside: avoid;">
+                <div style="font-size: 11px; font-weight: 900; background: #0f172a; color: #ffffff; padding: 5px 10px; text-transform: uppercase; letter-spacing: 0.05em;">
                     LEAD OPERATOR / CASE DETAILS
                 </div>
                 <div style="display: flex; gap: 20px; padding: 12px; background: #ffffff;">
-                    <div style="flex: 1; font-size: 12px; line-height: 1.7;">
-                        <div><b>Name / Callsign:</b> <span style="text-transform: uppercase;">${op_name}</span></div>
+                    <div style="flex: 1; font-size: 11.5px; line-height: 1.7;">
+                        <div><b>Operator / Callsign:</b> <span style="text-transform: uppercase;">${op_name}</span></div>
                         <div><b>Agency / Company:</b> ${op_agency}</div>
                         <div><b>License / ID:</b> <span style="font-family: monospace;">${op_license}</span></div>
                         <div><b>Qualifications:</b> ${op_quals}</div>
@@ -1337,24 +1723,32 @@ window.generateCaseFilePdf = async function() {
                         <div><b>Invoice For:</b> ${invoice_type}</div>
                     </div>
                     ${mainAttachedImage ? `
-                    <div style="width: 140px; text-align: center; border: 1px solid #e2e8f0; border-radius: 4px; padding: 4px; background: #f8fafc;">
-                        <img src="${mainAttachedImage}" style="max-width: 100%; max-height: 120px; object-fit: contain; display: block; margin: 0 auto;">
+                    <div style="width: 140px; text-align: center; border: 1px solid #e2e8f0; border-radius: 4px; padding: 4px; background: #f8fafc; flex-shrink: 0;">
+                        <img src="${mainAttachedImage}" style="max-width: 100%; max-height: 110px; object-fit: contain; display: block; margin: 0 auto;">
                         <div style="font-size: 8px; color: #64748b; margin-top: 4px; font-weight: bold; text-transform: uppercase;">PRIMARY PHOTO</div>
                     </div>
                     ` : ''}
                 </div>
             </div>
-            
-            <!-- PAYMENT TERMS & NOTES -->
+
+            <!-- SERVICES PERFORMED -->
+            ${services_performed ? `
+            <div style="margin-bottom: 18px; border: 1px solid #cbd5e1; border-radius: 6px; overflow: hidden; page-break-inside: avoid; break-inside: avoid;">
+                <div style="font-size: 11px; font-weight: 900; background: #0f172a; color: #c084fc; padding: 5px 10px; text-transform: uppercase; letter-spacing: 0.05em;">
+                    SERVICES PERFORMED &bull; SCOPE OF WORK
+                </div>
+                <div style="padding: 10px 12px; background: #f8fafc; font-size: 11.5px; line-height: 1.6; color: #1e293b; white-space: pre-wrap;">${services_performed}</div>
+            </div>
+            ` : ''}
+            <!-- INVOICE NOTES & TERMS -->
             ${invoiceNotes ? `
-            <div style="margin-bottom: 24px; border: 1px solid #cbd5e1; border-radius: 6px; overflow: hidden; page-break-inside: avoid; break-inside: avoid;">
-                <div style="font-size: 12px; font-weight: 900; background: #0f172a; color: #ffffff; padding: 6px 12px; text-transform: uppercase; letter-spacing: 0.05em;">
+            <div style="margin-bottom: 18px; border: 1px solid #cbd5e1; border-radius: 6px; overflow: hidden; page-break-inside: avoid; break-inside: avoid;">
+                <div style="font-size: 11px; font-weight: 900; background: #0f172a; color: #ffffff; padding: 5px 10px; text-transform: uppercase; letter-spacing: 0.05em;">
                     INVOICE NOTES & TERMS
                 </div>
-                <div style="font-size: 12px; padding: 12px; background: #f8fafc; white-space: pre-wrap; line-height: 1.5;">
-                    ${invoiceNotes}
-                </div>
-            </div>` : ''}
+                <div style="padding: 10px 12px; background: #f8fafc; font-size: 11.5px; line-height: 1.6; color: #1e293b; white-space: pre-wrap;">${invoiceNotes}</div>
+            </div>
+            ` : ''}
             
             <!-- EVIDENCE & INTEL EXHIBITS -->
             <div style="margin-bottom: 30px;">
@@ -1561,3 +1955,146 @@ window.printCaseFileDoc = function() {
         }
     }, 350);
 };
+
+// ============================================================
+// LOAD CASE FILE / INVOICE BACK TO WORKSTATION (REWORK)
+// ============================================================
+window.loadCaseFileBackToEditor = function(rawInput) {
+    if (!rawInput) return;
+    
+    // Normalize caseData from any nesting level (vaultItem, workstationData, or direct data)
+    let caseData = rawInput;
+    if (rawInput.casefileData) caseData = rawInput.casefileData;
+    else if (rawInput.workstationData && rawInput.workstationData.data) caseData = rawInput.workstationData.data;
+    else if (rawInput.workstationData && rawInput.workstationData.casefileData) caseData = rawInput.workstationData.casefileData;
+    else if (rawInput.data && rawInput.data.casefileData) caseData = rawInput.data.casefileData;
+    else if (rawInput.data) caseData = rawInput.data;
+    
+    // Close Surveillance review if open
+    if (typeof window.closeSurveillanceReview === 'function') {
+        window.closeSurveillanceReview();
+    }
+
+    // Maximize / Open Workstation Panel
+    if (typeof window.toggleFullscreen === 'function') {
+        const wsPanel = document.getElementById('panel-workstation');
+        if (wsPanel && !wsPanel.classList.contains('is-maximized')) {
+            window.toggleFullscreen('panel-workstation');
+        }
+    }
+    
+    // Open Casefile Form with restored data
+    window.openWorkstationForm('casefile', { data: caseData });
+    
+    // Populate form fields
+    setTimeout(() => {
+        if (document.getElementById('ws-op_name')) document.getElementById('ws-op_name').value = caseData.op_name || '';
+        if (document.getElementById('ws-op_agency')) document.getElementById('ws-op_agency').value = caseData.op_agency || '';
+        if (document.getElementById('ws-op_license')) document.getElementById('ws-op_license').value = caseData.op_license || '';
+        if (document.getElementById('ws-op_quals')) document.getElementById('ws-op_quals').value = caseData.op_quals || '';
+        if (document.getElementById('ws-billed_to')) document.getElementById('ws-billed_to').value = caseData.billed_to || '';
+        if (document.getElementById('ws-paid_by')) document.getElementById('ws-paid_by').value = caseData.paid_by || '';
+        if (document.getElementById('ws-case_number')) document.getElementById('ws-case_number').value = caseData.case_number || '';
+        if (document.getElementById('ws-invoice_type')) document.getElementById('ws-invoice_type').value = caseData.invoice_type || '';
+        if (document.getElementById('ws-services_performed')) document.getElementById('ws-services_performed').value = caseData.services_performed || '';
+        if (document.getElementById('ws-bounty')) document.getElementById('ws-bounty').value = caseData.bounty || '';
+        if (document.getElementById('ws-expenses')) document.getElementById('ws-expenses').value = caseData.expenses || '';
+        if (document.getElementById('ws-invoice_notes')) {
+            document.getElementById('ws-invoice_notes').value = caseData.invoice_notes || '';
+            const counter = document.getElementById('ws-invoice-notes-counter');
+            if (counter) counter.textContent = (caseData.invoice_notes || '').length + ' / 1000';
+        }
+        
+        const isPaid = caseData.status === 'PAID' || caseData.is_paid === true;
+        if (document.getElementById('ws-status-paid')) document.getElementById('ws-status-paid').checked = isPaid;
+        if (document.getElementById('ws-status-unpaid')) document.getElementById('ws-status-unpaid').checked = !isPaid;
+        
+        const mainImg = caseData.mainAttachedImage || '';
+        if (mainImg && document.getElementById('ws-image-data')) {
+            document.getElementById('ws-image-data').value = mainImg;
+            const prev = document.getElementById('ws-image-preview');
+            if (prev) prev.src = mainImg;
+            const prevContainer = document.getElementById('ws-image-preview-container');
+            if (prevContainer) prevContainer.classList.remove('hidden');
+        }
+
+        if (window.renderCasefileExhibitsSelector) {
+            window.renderCasefileExhibitsSelector(caseData.attachedExhibits);
+        }
+    }, 120);
+
+    // Close Vault Panel if open
+    const vaultPanel = document.getElementById('panel-vault');
+    if (vaultPanel) vaultPanel.classList.add('hidden');
+    
+    if (window.pushTacLog) window.pushTacLog(`CASE FILE LOADED FOR REWORK: ${caseData.case_number || caseData.billed_to || 'INVOICE'}`, 'SUCCESS');
+    if (window.showToast) window.showToast('📋 Case File loaded for Rework.');
+};
+
+window.transmitCurrentCaseFileToComms = async function() {
+    const isPaidChecked = document.getElementById('ws-status-paid')?.checked;
+    const caseData = {
+        op_name: document.getElementById('ws-op_name')?.value || window.commsUser?.callsign || window.userObj?.callsign || 'OPERATOR',
+        op_agency: document.getElementById('ws-op_agency')?.value || 'N/A',
+        op_license: document.getElementById('ws-op_license')?.value || 'N/A',
+        op_quals: document.getElementById('ws-op_quals')?.value || 'N/A',
+        billed_to: document.getElementById('ws-billed_to')?.value || 'N/A',
+        paid_by: document.getElementById('ws-paid_by')?.value || 'N/A',
+        case_number: document.getElementById('ws-case_number')?.value || ('INV-' + Date.now().toString().slice(-6)),
+        invoice_type: document.getElementById('ws-invoice_type')?.value || 'Executive Case File',
+        services_performed: document.getElementById('ws-services_performed')?.value || '',
+        status: isPaidChecked ? 'PAID' : 'UNPAID',
+        is_paid: !!isPaidChecked,
+        bounty: document.getElementById('ws-bounty')?.value || '0.00',
+        expenses: document.getElementById('ws-expenses')?.value || '0.00',
+        invoice_notes: document.getElementById('ws-invoice_notes')?.value || '',
+        mainAttachedImage: document.getElementById('ws-image-data')?.value || '',
+        attachedExhibits: Array.from(document.querySelectorAll('.ws-casefile-exhibit-checkbox:checked')).map(cb => cb.value)
+    };
+
+    if (window.broadcastCommsMessage) {
+        window.broadcastCommsMessage({
+            type: 'casefile',
+            casefileData: caseData,
+            text: `📄 [EXECUTIVE INVOICE / CASE]: ${caseData.case_number} | Billed to: ${caseData.billed_to} | Status: ${caseData.status}`
+        });
+        if (window.pushTacLog) window.pushTacLog(`TRANSMITTED INVOICE ${caseData.case_number} TO SQUAD COMMS`, 'SUCCESS');
+        if (window.showToast) window.showToast(`📡 Transmitted Invoice ${caseData.case_number} to Team Comms!`);
+    } else if (window.sendCommsMessage) {
+        window.sendCommsMessage({
+            type: 'casefile',
+            casefileData: caseData,
+            text: `📄 [EXECUTIVE INVOICE / CASE]: ${caseData.case_number} | Billed to: ${caseData.billed_to} | Status: ${caseData.status}`
+        });
+        if (window.pushTacLog) window.pushTacLog(`TRANSMITTED INVOICE ${caseData.case_number} TO SQUAD COMMS`, 'SUCCESS');
+        if (window.showToast) window.showToast(`📡 Transmitted Invoice ${caseData.case_number} to Team Comms!`);
+    } else {
+        if (window.showToast) window.showToast(`⚠️ Please connect to Window 5 Comms to broadcast.`);
+        else alert("Please connect to Window 5 Comms first.");
+    }
+};
+
+function initWorkstation() {
+    if (typeof window.renderWorkstationMenu === 'function') {
+        window.renderWorkstationMenu();
+    }
+    const vaultToWorkstationBtn = document.getElementById('vault-to-workstation-btn');
+    if (vaultToWorkstationBtn && !vaultToWorkstationBtn._bound) {
+        vaultToWorkstationBtn._bound = true;
+        vaultToWorkstationBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (typeof toggleFullscreen === 'function') {
+                toggleFullscreen('panel-workstation');
+            }
+        });
+    }
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initWorkstation);
+} else {
+    initWorkstation();
+}
+setTimeout(initWorkstation, 100);
+setTimeout(initWorkstation, 500);
+setTimeout(initWorkstation, 1200);

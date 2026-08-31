@@ -2,9 +2,11 @@
 
 function getSupabaseClient() {
     if (window.supabaseClient) return window.supabaseClient;
-    if (window.supabase && window.SUPABASE_URL && window.SUPABASE_KEY) {
+    const url = window.SUPABASE_URL || 'https://nvnwqcfgpwzheekninle.supabase.co';
+    const key = window.SUPABASE_KEY || 'sb_publishable_si9fg-bURw3K5yprgAgifw_Eez79zU0';
+    if (window.supabase && typeof window.supabase.createClient === 'function') {
         try {
-            window.supabaseClient = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_KEY);
+            window.supabaseClient = window.supabase.createClient(url, key);
             return window.supabaseClient;
         } catch(e) {
             console.error("Supabase client creation error:", e);
@@ -1075,14 +1077,24 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-// --- 8. Fetching, Rendering, and Interactivity ---
-async function fetchWirePosts() {
+async function fetchWirePosts(retryCount = 0) {
     const feedContainer = document.getElementById('wire-feed-container');
     if (!feedContainer) return;
 
-    const client = getSupabaseClient();
+    let client = getSupabaseClient();
+    if (!client && retryCount < 5) {
+        feedContainer.innerHTML = `<div class="w-full text-center mt-12 text-black font-black uppercase tracking-widest flex items-center justify-center gap-3">
+            <i data-lucide="loader" class="w-6 h-6 animate-spin"></i> CONNECTING TO WIRE...
+        </div>`;
+        if (window.lucide) window.lucide.createIcons();
+        setTimeout(() => fetchWirePosts(retryCount + 1), 350);
+        return;
+    }
     if (!client) {
-        feedContainer.innerHTML = `<div class="text-black bg-red-200 p-4 font-bold border-2 border-red-700 w-full max-w-2xl text-center mx-auto">SUPABASE CLIENT NOT INITIALIZED.</div>`;
+        feedContainer.innerHTML = `<div class="text-black bg-amber-100 p-4 font-bold border-2 border-amber-600 w-full max-w-2xl text-center mx-auto rounded-lg shadow">
+            CONNECTING TO GLOBAL SATELLITE NETWORK...
+            <div class="mt-2"><button onclick="fetchWirePosts()" class="bg-black hover:bg-slate-800 text-white text-xs px-4 py-1.5 rounded uppercase font-bold cursor-pointer">RETRY CONNECTION</button></div>
+        </div>`;
         return;
     }
 
