@@ -108,6 +108,8 @@ window.reworkBusinessCard = function(itemData) {
     if (commsInput) commsInput.value = c.comms || '';
     if (webInput) webInput.value = c.web || '';
     if (detailsInput) detailsInput.value = c.details || '';
+    const shootingRangesInput = document.getElementById('post-contact-shooting-ranges');
+    if (shootingRangesInput) shootingRangesInput.value = c.shootingRanges || '';
     if (contentInput && itemData.content) contentInput.value = itemData.content;
 
     // Expand Contact Form
@@ -257,6 +259,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 else if (filterText.includes('FISHING')) currentWireCategoryFilter = 'FISHING';
                 else if (filterText.includes('BUSINESS')) currentWireCategoryFilter = 'BUSINESS';
                 else if (filterText.includes('MISC')) currentWireCategoryFilter = 'MISC';
+                else if (filterText.includes('MATCH') || filterText.includes('RANGE')) currentWireCategoryFilter = 'MATCHES_RANGES';
                 else if (filterText.includes('FLAGGED')) currentWireCategoryFilter = 'FLAGGED';
                 else currentWireCategoryFilter = 'ALL';
 
@@ -378,6 +381,12 @@ document.addEventListener('DOMContentLoaded', () => {
         if (prevComms) prevComms.innerHTML = `<span class="text-slate-400">COMMS:</span> <span class="text-emerald-400 font-bold">${comms}</span>`;
         if (prevWeb) prevWeb.innerHTML = `<span class="text-slate-400">WEB:</span> <span class="text-blue-400 font-bold">${web}</span>`;
         if (prevDetails) prevDetails.textContent = `Specialties: ${details}`;
+        const shootRangesPreview = document.getElementById('preview-card-shooting-ranges');
+        const shootRangesVal = document.getElementById('post-contact-shooting-ranges')?.value?.trim() || '';
+        if (shootRangesPreview) {
+            if (shootRangesVal) { shootRangesPreview.textContent = '🎯 Ranges: ' + shootRangesVal; shootRangesPreview.classList.remove('hidden'); }
+            else { shootRangesPreview.classList.add('hidden'); }
+        }
         if (prevGps && prevGpsText) {
             if (lodgeGps) {
                 prevGps.classList.remove('hidden');
@@ -425,6 +434,8 @@ document.addEventListener('DOMContentLoaded', () => {
             if (commsInput) commsInput.value = '';
             if (webInput) webInput.value = '';
             if (detailsInput) detailsInput.value = '';
+            const shootRangesField = document.getElementById('post-contact-shooting-ranges');
+            if (shootRangesField) shootRangesField.value = '';
             if (lodgeGpsInput) lodgeGpsInput.value = '';
 
             const bizcardUpload = document.getElementById('post-bizcard-upload');
@@ -468,6 +479,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (savedCard.comms && commsInput) commsInput.value = savedCard.comms;
             if (savedCard.web && webInput) webInput.value = savedCard.web;
             if (savedCard.details && detailsInput) detailsInput.value = savedCard.details;
+            if (savedCard.shootingRanges) { const sr = document.getElementById('post-contact-shooting-ranges'); if (sr) sr.value = savedCard.shootingRanges; }
             if (savedCard.gps && lodgeGpsInput) lodgeGpsInput.value = savedCard.gps;
             if (savedCard.pin && creatorPinInput && !creatorPinInput.value) creatorPinInput.value = savedCard.pin;
             updateLiveCardPreview();
@@ -641,7 +653,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if(window.clearBizCardPhoto) window.clearBizCardPhoto();
         
         // Clear card fields
-        const fields = ['bizname', 'unit', 'phone', 'comms', 'web', 'details', 'facebook', 'twitter', 'youtube'];
+        const fields = ['bizname', 'unit', 'phone', 'comms', 'web', 'details', 'shooting-ranges', 'facebook', 'twitter', 'youtube'];
         fields.forEach(f => {
             const el = document.getElementById('post-contact-' + f);
             if(el) el.value = '';
@@ -822,6 +834,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const web = webInput ? webInput.value.trim() : '';
             let details = detailsInput ? detailsInput.value.trim() : '';
             const lodgeGps = lodgeGpsInput ? lodgeGpsInput.value.trim() : '';
+            const shootingRanges = document.getElementById('post-contact-shooting-ranges') ? document.getElementById('post-contact-shooting-ranges').value.trim() : '';
             const creatorPin = (creatorPinInput ? creatorPinInput.value.trim() : '') || localStorage.getItem('trc_operator_pin') || '';
             let facebook = facebookInput ? facebookInput.value.trim() : '';
             let twitter = twitterInput ? twitterInput.value.trim() : '';
@@ -915,6 +928,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             comms: comms,
                             web: web,
                             details: details,
+                            shootingRanges: shootingRanges,
                             gps: lodgeGps,
                             pin: creatorPin
                         }));
@@ -934,6 +948,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             comms: comms,
                             web: web,
                             details: details,
+                            shootingRanges: shootingRanges,
                             gps: lodgeGps,
                             lat: lodgeLat,
                             lon: lodgeLon,
@@ -1116,6 +1131,8 @@ try {
                 query = query.or('category.eq.CONTACTS,category.eq.CONTACT');
             } else if (currentWireCategoryFilter === 'GUIDED_HUNTS') {
                 query = query.or('category.ilike.%GUIDED%,category.ilike.%LODGING%');
+            } else if (currentWireCategoryFilter === 'MATCHES_RANGES') {
+                query = query.or('category.ilike.%MATCH%,category.ilike.%RANGE%');
             } else {
                 // Use ilike to catch both singular/plural variants in DB (HOTSPOT or HOTSPOTS)
                 query = query.ilike('category', `%${currentWireCategoryFilter.replace(/S$/, '')}%`);
@@ -1209,6 +1226,9 @@ try {
             } else if (rawCat.includes('LODGING') || rawCat.includes('GUIDED')) {
                 catBadgeStyle = 'background-color: #f59e0b !important; color: #000000 !important; border: 1px solid #000 !important; font-weight: 900 !important;';
                 displayCatName = '🏕️ GUIDED/LODGE';
+            } else if (rawCat.includes('MATCH') || rawCat.includes('RANGE')) {
+                catBadgeStyle = 'background-color: #e11d48 !important; color: #ffffff !important; border: 1px solid #000 !important; font-weight: 900 !important;';
+                displayCatName = '🎯 MATCHES & RANGES';
             } else if (rawCat.includes('FISHING')) {
                 catBadgeStyle = 'background-color: #06b6d4 !important; color: #000000 !important; border: 1px solid #000 !important; font-weight: 900 !important;';
                 displayCatName = '🎣 FISHING';
@@ -1373,6 +1393,10 @@ try {
                         </div>
                         ` : ''}
                         ${contactData.details ? `<div style="color: #d8b4fe; border-top: 1px solid rgba(255,255,255,0.1);" class="mt-2 text-xs italic pt-2">Specialties: "${contactData.details}"</div>` : ''}
+                        ${contactData.shootingRanges ? `
+                        <div style="color: #fda4af; border-top: 1px solid rgba(255,255,255,0.1);" class="mt-2 text-xs pt-2 font-mono flex items-center gap-1.5">
+                            <span style="color: #fb7185;">🎯</span> <b>MATCHES / RANGES:</b> ${contactData.shootingRanges}
+                        </div>` : ''}
                         ${(contactData && (contactData.gps || (extractedLat !== null && !isNaN(extractedLat) && extractedLon !== null && !isNaN(extractedLon)))) ? `
                         <div style="border-top: 1px solid rgba(255,255,255,0.1);" class="mt-2 text-xs font-mono pt-2 flex flex-wrap items-center justify-between gap-1 text-amber-300">
                             <span class="flex items-center gap-1.5"><i data-lucide="map-pin" class="w-3.5 h-3.5 text-amber-400"></i> RANCH GPS: <b class="text-amber-200">${contactData.gps || ((extractedLat !== null && extractedLon !== null) ? (extractedLat.toFixed(5) + ', ' + extractedLon.toFixed(5)) : '--')}</b></span>
@@ -1748,6 +1772,7 @@ window.updateBlogBookDisplay = function() {
         else if (cat.toUpperCase().includes('WARNING')) categoryEl.className = 'text-[8px] font-black text-red-400 uppercase tracking-wider truncate';
         else if (cat.toUpperCase().includes('TROPHY')) categoryEl.className = 'text-[8px] font-black text-emerald-400 uppercase tracking-wider truncate';
         else if (cat.toUpperCase().includes('CONTACT')) categoryEl.className = 'text-[8px] font-black text-purple-400 uppercase tracking-wider truncate';
+        else if (cat.toUpperCase().includes('MATCH') || cat.toUpperCase().includes('RANGE')) categoryEl.className = 'text-[8px] font-black text-rose-400 uppercase tracking-wider truncate';
         else categoryEl.className = 'text-[8px] font-black text-blue-400 uppercase tracking-wider truncate';
     }
 

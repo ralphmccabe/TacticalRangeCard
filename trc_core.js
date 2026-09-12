@@ -7113,6 +7113,36 @@ function initializeTacticalDashboard2() {
     }
 
 
+    const vaultToWhiteboardBtn = document.getElementById('vault-to-whiteboard-btn');
+    if (vaultToWhiteboardBtn) {
+        vaultToWhiteboardBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const checkedBoxes = document.querySelectorAll('.vault-export-checkbox:checked');
+            if (checkedBoxes.length === 0) {
+                alert('Please select a card to regrade to the Whiteboard using the checkboxes [✓].');
+                return;
+            }
+            const selectedId = checkedBoxes[0].dataset.vaultId || checkedBoxes[0].name || checkedBoxes[0].value;
+            const item = vaultCache.find(v => v && (v.id == selectedId || v.id == selectedId.toString()));
+            if (item && item.image && window.loadWhiteboardImage) {
+                // Send to whiteboard
+                const title = (item.label || item.originalName || 'VAULT CARD') + ' - REGRADE';
+                window.loadWhiteboardImage(item.image, title);
+                // Clean up vault UI
+                checkedBoxes.forEach(cb => cb.checked = false);
+                const vaultModal = document.getElementById('vault-modal-overlay');
+                if (vaultModal) vaultModal.classList.add('hidden');
+                
+                // Ensure icons are loaded if the modal just appeared
+                if (window.lucide) {
+                    setTimeout(() => window.lucide.createIcons(), 60);
+                }
+            } else {
+                alert('Could not load image data for the selected card.');
+            }
+        });
+    }
+
     // --- VAULT TO CACHE LOGIC ---
     const vaultToDopeBtn = document.getElementById('vault-to-dope-btn');
     if (vaultToDopeBtn) {
@@ -7731,7 +7761,8 @@ function initializeTacticalDashboard2() {
             const team = document.getElementById('comms-team').value.trim().toUpperCase();
             const callsign = document.getElementById('comms-callsign').value.trim().toUpperCase();
             const role = document.getElementById('comms-role').value.trim().toUpperCase();
-            const passcode = document.getElementById('comms-passcode').value.trim();
+            const rawPasscode = document.getElementById('comms-passcode').value.trim();
+            const passcode = rawPasscode.replace(/[\u200B-\u200D\uFEFF]/g, '').toUpperCase();
 
             // Save to local storage to prevent losing place on reload
             localStorage.setItem('trc_comms_team', team);
@@ -7739,11 +7770,11 @@ function initializeTacticalDashboard2() {
             localStorage.setItem('trc_comms_role', role);
             localStorage.setItem('trc_comms_passcode', passcode);
             
-            const encSecret = document.getElementById('comms-encryption-secret') ? document.getElementById('comms-encryption-secret').value.trim() : '';
+            const encSecret = document.getElementById('comms-encryption-secret') ? document.getElementById('comms-encryption-secret').value.trim().toUpperCase() : '';
             if (encSecret) {
                 localStorage.setItem('trc_team_secret', encSecret);
             } else {
-                localStorage.removeItem('trc_team_secret');
+                localStorage.setItem('trc_team_secret', passcode);
             }
 
             window.pushTacLog(`AUTH ATTEMPT: ${callsign} @ ${team}`, "SYS");
@@ -7754,9 +7785,9 @@ function initializeTacticalDashboard2() {
             }
 
             // === MISSION CODE COMPLEXITY ENFORCEMENT ===
-            const letterCount   = (passcode.match(/[a-zA-Z]/g) || []).length;
+            const letterCount   = (passcode.match(/[A-Z]/g) || []).length;
             const digitCount    = (passcode.match(/[0-9]/g) || []).length;
-            const specialCount  = (passcode.match(/[^a-zA-Z0-9]/g) || []).length;
+            const specialCount  = (passcode.match(/[^A-Z0-9]/g) || []).length;
 
             if (passcode.length < 10) {
                 alert("MISSION CODE REJECTED: Minimum 10 characters required.");
@@ -7776,35 +7807,44 @@ function initializeTacticalDashboard2() {
             }
             // ==========================================
 
-            // Lock in the team secret
-            localStorage.setItem('trc_team_secret', passcode);
             // Force a deterministic ID based on Team + Callsign + Random Device ID so Supabase doesn't kick duplicate callsigns off
-            const devicePin = Math.floor(Math.random() * 9000) + 1000;
+            let devicePin = localStorage.getItem('trc_device_pin');
+            if (!devicePin) {
+                devicePin = String(Math.floor(Math.random() * 9000) + 1000);
+                localStorage.setItem('trc_device_pin', devicePin);
+            }
             const deterministicId = 'u_' + (team + callsign).replace(/[^a-zA-Z0-9]/g, '').toUpperCase() + '_' + devicePin;
             commsUser = { id: deterministicId, callsign, role, team };
 
-            // === UNLOCK IOS AUDIO ON CLICK ===
+            // === UNLOCK AUDIO CONTEXT ON USER CLICK ===
             const rxAudio = document.getElementById('comms-rx-audio');
             if (rxAudio) {
-                // Play a 1-byte silent wav file to unlock the HTML5 audio element for this session
                 rxAudio.src = "data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA";
-                rxAudio.play().catch(e => console.log("Audio unlock muted/failed."));
+                rxAudio.play().catch(() => {});
             }
 
-            // [NEW] WARM UP WEBRTC MICROPHONE HARDWARE (IF AVAILABLE)
-            try {
-                if (!window.activeMicStream && navigator.mediaDevices) {
-                    // Disable all hardware processing to prevent Android from switching to the low-volume 'Phone Call' audio route
-                    window.activeMicStream = await navigator.mediaDevices.getUserMedia({ 
-                        audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } 
-                    });
-                    if (window.activeMicStream.getAudioTracks().length > 0) {
+            // Warm up microphone hardware directly within user gesture
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                window.pushTacLog('⚠️ MIC UNAVAILABLE: Requires HTTPS or localhost. PTT text-only mode.', 'ALERT');
+                if (pttBtn) pttBtn.style.opacity = '0.4';
+            } else {
+                if (!window.activeMicStream) {
+                    try {
+                        window.activeMicStream = await navigator.mediaDevices.getUserMedia({ 
+                            audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } 
+                        });
+                    } catch (e1) {
+                        try {
+                            window.activeMicStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                        } catch (e2) {
+                            window.activeMicStream = null;
+                        }
+                    }
+                    if (window.activeMicStream && window.activeMicStream.getAudioTracks().length > 0) {
                         window.activeMicStream.getAudioTracks()[0].enabled = false;
+                        window.pushTacLog("MICROPHONE READY (PTT ARMED)", "SUCCESS");
                     }
                 }
-            } catch (err) {
-                console.warn("Mic access failed or not supported on this connection (HTTP). User will be text/image/receive only.");
-                window.activeMicStream = null;
             }
 
             const originalBtnHtml = connectBtn.innerHTML;
@@ -7817,9 +7857,9 @@ function initializeTacticalDashboard2() {
                 connectBtn.innerHTML = originalBtnHtml;
                 connectBtn.disabled = false;
                 connectBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-            }, 5000);
+            }, 6000);
 
-            // Pass the reset callbacks into initSupabaseComms so it can restore the button
+            // Establish comms link immediately
             initSupabaseComms(team, passcode, () => {
                 clearTimeout(failsafe);
                 connectBtn.innerHTML = originalBtnHtml;
@@ -7856,7 +7896,21 @@ function initializeTacticalDashboard2() {
         }
 
         // Mission-Specific Channel Hashing
-        const missionId = btoa(`trc_prod_${teamName}_${passcode}`).replace(/=/g, '');
+        const normPass = (passcode || '').trim().replace(/[\u200B-\u200D\uFEFF]/g, '').toUpperCase();
+        const normTeam = (teamName || '').trim().toUpperCase();
+        let freqHash = 0;
+        const seed = `TRC_${normTeam}_${normPass}`;
+        for (let i = 0; i < seed.length; i++) {
+            freqHash = ((freqHash << 5) - freqHash) + seed.charCodeAt(i);
+            freqHash |= 0;
+        }
+        const freqHex = Math.abs(freqHash).toString(16).padStart(8, '0').toUpperCase();
+        const missionId = `trc_freq_${normTeam.toLowerCase()}_${freqHex.toLowerCase()}`;
+        window.currentMissionId = missionId;
+        window.currentTeamName = normTeam;
+        window.currentPasscode = normPass;
+        window.currentFreqHex = freqHex;
+
         const supabaseUrl = window.SUPABASE_URL || 'https://nvnwqcfgpwzheekninle.supabase.co';
         const supabaseKey = window.SUPABASE_KEY || 'sb_publishable_si9fg-bURw3K5yprgAgifw_Eez79zU0';
         
@@ -7901,6 +7955,7 @@ function initializeTacticalDashboard2() {
                   const data = payload.payload;
                   if (data && data.coords) {
                       window.pushTacLog("RALLY POINT RECEIVED: " + data.user.callsign, "ALERT");
+                      if (window.registerSquadMember && data.user) window.registerSquadMember(data.user, data.coords);
                       const rallyIcon = L.divIcon({ html: '<div style="background:#0ea5e9; border:2px solid white; width:20px; height:20px; border-radius:50%; box-shadow:0 0 15px #0ea5e9; animation: pulse 1s infinite;"></div>', className: '', iconSize:[20,20] });
                       window.eventMarkers = window.eventMarkers || [];
                       
@@ -7929,6 +7984,7 @@ function initializeTacticalDashboard2() {
                   const data = payload.payload;
                   if (data) {
                       window.pushTacLog("S.O.S. RECEIVED FROM " + data.user.callsign + "!", "ALERT");
+                      if (window.registerSquadMember && data.user) window.registerSquadMember(data.user, data.coords || null, '', true);
                       
                       // ── RECEIVED SOS BAR INDICATOR ──────────────────────────────────
                       if (window.showReceivedSosBar) window.showReceivedSosBar(data.user.callsign, data.user.id);
@@ -7977,6 +8033,13 @@ function initializeTacticalDashboard2() {
                 const dec = TacticalCrypto.decrypt(payload.payload.data);
                 if (dec) {
                     window.pushTacLog(`CHAT DECRYPTED SUCCESSFULLY FROM ${dec.user.callsign}`, "SUCCESS");
+                    if (window.registerSquadMember && dec.user) {
+                        window.registerSquadMember(dec.user);
+                    }
+                    // Auto-negotiate WebRTC if not connected yet
+                    if (dec.user && dec.user.id !== commsUser.id && !window.peerConnections[dec.user.id] && commsUser.id > dec.user.id) {
+                        createPeerConnection(dec.user.id, true);
+                    }
                     renderChatMessage(dec.user, dec.message, dec.user.id === commsUser.id, dec.image, dec.tapeUrl || null, dec.metadata || null);
                     if (dec.user.id !== commsUser.id) {
                         if (window.playChatAlert) window.playChatAlert();
@@ -8134,22 +8197,51 @@ function initializeTacticalDashboard2() {
             };
         }
         
+        window.pendingIceQueues = window.pendingIceQueues || {};
+
+        window.attachMicToPeers = function(stream) {
+            if (!stream) return;
+            const track = stream.getAudioTracks()[0];
+            if (!track) return;
+            Object.values(window.peerConnections || {}).forEach(pc => {
+                if (!pc || pc === 'FAILED') return;
+                try {
+                    const senders = pc.getSenders ? pc.getSenders() : [];
+                    const audioSender = senders.find(s => s.track && s.track.kind === 'audio');
+                    if (audioSender) {
+                        audioSender.replaceTrack(track);
+                    } else {
+                        const emptySender = senders.find(s => !s.track);
+                        if (emptySender) {
+                            emptySender.replaceTrack(track);
+                        } else if (pc.addTrack) {
+                            pc.addTrack(track, stream);
+                        }
+                    }
+                } catch(e) {
+                    console.warn("attachMicToPeers error:", e);
+                }
+            });
+        };
+        
         async function createPeerConnection(peerId, isInitiator) {
             const pc = new RTCPeerConnection({ 
                 iceServers: [
                     { urls: 'stun:stun.l.google.com:19302' },
+                    { urls: 'stun:stun1.l.google.com:19302' },
                     { urls: 'stun:global.stun.twilio.com:3478' }
-                ] 
+                ],
+                iceCandidatePoolSize: 10
             });
             window.peerConnections[peerId] = pc;
 
             // Establish audio channel with the actual hardware microphone (muted by default)
-            if (window.activeMicStream) {
+            if (window.activeMicStream && window.activeMicStream.getAudioTracks().length > 0) {
                 window.activeMicStream.getTracks().forEach(track => {
                     pc.addTrack(track, window.activeMicStream);
                 });
             } else {
-                pc.addTransceiver('audio', { direction: 'recvonly' });
+                try { pc.addTransceiver('audio', { direction: 'sendrecv' }); } catch(e){}
             }
 
             // Batch ICE candidates
@@ -8165,13 +8257,13 @@ function initializeTacticalDashboard2() {
                             const candidatesToSend = window.webrtcIceQueues[peerId];
                             window.webrtcIceQueues[peerId] = [];
                             window.webrtcIceTimeouts[peerId] = null;
-                            if (candidatesToSend.length > 0) {
+                            if (candidatesToSend.length > 0 && commsChannel) {
                                 commsChannel.send({
                                     type: 'broadcast', event: 'webrtc-ice-batch',
                                     payload: { target: peerId, sender: commsUser.id, candidates: candidatesToSend }
-                                });
+                                }).catch(() => {});
                             }
-                        }, 500);
+                        }, 250);
                     }
                 }
             };
@@ -8182,24 +8274,25 @@ function initializeTacticalDashboard2() {
                     audioEl = document.createElement('audio');
                     audioEl.id = 'webrtc-audio-' + peerId;
                     audioEl.autoplay = true;
+                    audioEl.playsInline = true;
                     document.body.appendChild(audioEl);
                 }
                 
                 const stream = (event.streams && event.streams[0]) ? event.streams[0] : new MediaStream([event.track]);
                 audioEl.srcObject = stream;
-                
-                audioEl.play().catch(e => {
-                    // Ignore autoplay errors for silent tracks
-                });
-                window.pushTacLog(`LINK SECURED: ${peerId}`, "SUCCESS");
+                audioEl.volume = 1.0;
+                audioEl.muted = false;
+                audioEl.play().catch(() => {});
+                window.pushTacLog(`AUDIO LINK SECURED: ${peerId}`, "SUCCESS");
             };
 
             pc.oniceconnectionstatechange = () => {
-                window.pushTacLog(`WEBRTC LINK: ${pc.iceConnectionState.toUpperCase()}`, "SYS");
-                if (pc.iceConnectionState === 'disconnected' || pc.iceConnectionState === 'failed') {
+                const state = pc.iceConnectionState;
+                window.pushTacLog(`WEBRTC LINK: ${state.toUpperCase()}`, "SYS");
+                if (state === 'disconnected' || state === 'failed') {
                     const audioEl = document.getElementById('webrtc-audio-' + peerId);
                     if (audioEl) audioEl.remove();
-                    window.peerConnections[peerId] = 'FAILED';
+                    delete window.peerConnections[peerId];
                     if (window.dataChannels[peerId]) delete window.dataChannels[peerId];
                 }
             };
@@ -8210,10 +8303,12 @@ function initializeTacticalDashboard2() {
                 
                 const offer = await pc.createOffer();
                 await pc.setLocalDescription(offer);
-                commsChannel.send({
-                    type: 'broadcast', event: 'webrtc-offer',
-                    payload: { target: peerId, sender: commsUser.id, offer: offer }
-                });
+                if (commsChannel) {
+                    commsChannel.send({
+                        type: 'broadcast', event: 'webrtc-offer',
+                        payload: { target: peerId, sender: commsUser.id, offer: offer }
+                    }).catch(() => {});
+                }
             } else {
                 pc.ondatachannel = (event) => {
                     setupDataChannel(peerId, event.channel);
@@ -8226,18 +8321,24 @@ function initializeTacticalDashboard2() {
             try {
                 if (payload.payload.target !== commsUser.id) return;
                 const { sender, offer } = payload.payload;
-                if (!window.peerConnections[sender] || window.peerConnections[sender] === 'FAILED') {
-                    await createPeerConnection(sender, false);
+                let pc = window.peerConnections[sender];
+                if (!pc || pc === 'FAILED' || pc.signalingState === 'closed') {
+                    pc = await createPeerConnection(sender, false);
                 }
-                const pc = window.peerConnections[sender];
                 if (pc && pc !== 'FAILED') {
                     await pc.setRemoteDescription(new RTCSessionDescription(offer));
+                    if (window.pendingIceQueues && window.pendingIceQueues[sender]) {
+                        for (let c of window.pendingIceQueues[sender]) {
+                            try { await pc.addIceCandidate(new RTCIceCandidate(c)); } catch (e) {}
+                        }
+                        delete window.pendingIceQueues[sender];
+                    }
                     const answer = await pc.createAnswer();
                     await pc.setLocalDescription(answer);
                     commsChannel.send({
                         type: 'broadcast', event: 'webrtc-answer',
                         payload: { target: sender, sender: commsUser.id, answer: answer }
-                    });
+                    }).catch(() => {});
                 }
             } catch (err) { console.error("WebRTC Offer Error:", err); }
         });
@@ -8247,7 +8348,15 @@ function initializeTacticalDashboard2() {
                 if (payload.payload.target !== commsUser.id) return;
                 const { sender, answer } = payload.payload;
                 const pc = window.peerConnections[sender];
-                if (pc && pc !== 'FAILED') await pc.setRemoteDescription(new RTCSessionDescription(answer));
+                if (pc && pc !== 'FAILED') {
+                    await pc.setRemoteDescription(new RTCSessionDescription(answer));
+                    if (window.pendingIceQueues && window.pendingIceQueues[sender]) {
+                        for (let c of window.pendingIceQueues[sender]) {
+                            try { await pc.addIceCandidate(new RTCIceCandidate(c)); } catch (e) {}
+                        }
+                        delete window.pendingIceQueues[sender];
+                    }
+                }
             } catch (err) { console.error("WebRTC Answer Error:", err); }
         });
 
@@ -8256,7 +8365,12 @@ function initializeTacticalDashboard2() {
                 if (payload.payload.target !== commsUser.id) return;
                 const { sender, candidates } = payload.payload;
                 const pc = window.peerConnections[sender];
-                if (pc && pc !== 'FAILED') {
+                if (!pc || pc === 'FAILED') return;
+                
+                if (!pc.remoteDescription || !pc.remoteDescription.type) {
+                    window.pendingIceQueues[sender] = window.pendingIceQueues[sender] || [];
+                    window.pendingIceQueues[sender].push(...candidates);
+                } else {
                     for (let c of candidates) {
                         try { await pc.addIceCandidate(new RTCIceCandidate(c)); } catch (e) {}
                     }
@@ -8270,6 +8384,12 @@ function initializeTacticalDashboard2() {
                 window.diagRxCount++;
                 if (diagRx) diagRx.textContent = `RX: ${window.diagRxCount}`;
                 const dec = TacticalCrypto.decrypt(payload.payload.data);
+                if (dec && dec.user) {
+                    if (window.registerSquadMember) window.registerSquadMember(dec.user);
+                    if (dec.user.id !== commsUser.id && !window.peerConnections[dec.user.id] && commsUser.id > dec.user.id) {
+                        createPeerConnection(dec.user.id, true);
+                    }
+                }
                 const activeSpeaker = document.getElementById('ptt-active-speaker');
                 if (dec && activeSpeaker && dec.user.id !== commsUser.id) {
                     if (dec.active) {
@@ -8286,6 +8406,50 @@ function initializeTacticalDashboard2() {
             } catch (err) { window.pushTacLog(`PTT HANDLER ERROR`, "ERROR"); }
         });
 
+        // 2.5 DUAL-LAYER DISCOVERY HANDSHAKE (Instant teammate visibility without re-login)
+        commsChannel.on('broadcast', { event: 'announce_join' }, (payload) => {
+            try {
+                const data = payload.payload;
+                if (data && data.user) {
+                    if (window.registerSquadMember) window.registerSquadMember(data.user, data.location, data.dutyStatus);
+                    window.pushTacLog(`OPERATOR ONLINE: ${data.user.callsign}`, "SUCCESS");
+                    if (data.user.id !== commsUser.id) {
+                        // Immediately respond so the new teammate sees our badge too!
+                        commsChannel.send({
+                            type: 'broadcast',
+                            event: 'announce_reply',
+                            payload: { user: commsUser, location: window.myLatestCoords || null, dutyStatus: window.myDutyStatus || '', target: data.user.id }
+                        }).catch(() => {});
+                        // Automatically establish WebRTC peer connection
+                        if (!window.peerConnections[data.user.id] && commsUser.id > data.user.id) {
+                            createPeerConnection(data.user.id, true);
+                        }
+                    }
+                }
+            } catch(e) { console.error("announce_join RX Error:", e); }
+        });
+
+        commsChannel.on('broadcast', { event: 'announce_reply' }, (payload) => {
+            try {
+                const data = payload.payload;
+                if (data && data.user && (!data.target || data.target === commsUser.id)) {
+                    if (window.registerSquadMember) window.registerSquadMember(data.user, data.location, data.dutyStatus);
+                    if (!window.peerConnections[data.user.id] && commsUser.id > data.user.id) {
+                        createPeerConnection(data.user.id, true);
+                    }
+                }
+            } catch(e) { console.error("announce_reply RX Error:", e); }
+        });
+
+        commsChannel.on('broadcast', { event: 'squad_ping' }, (payload) => {
+            try {
+                const data = payload.payload;
+                if (data && data.user && data.user.id !== commsUser.id) {
+                    if (window.registerSquadMember) window.registerSquadMember(data.user, data.location, data.dutyStatus);
+                }
+            } catch(e) {}
+        });
+
         // 3. Handle Presence (Roster & GPS)
         commsChannel.on('presence', { event: 'sync' }, () => {
             const state = commsChannel.presenceState();
@@ -8299,27 +8463,50 @@ function initializeTacticalDashboard2() {
             });
         });
 
-        //  RECONNECT FIX: When a new player joins, ALL existing players
-        // automatically sync state natively via Supabase Presence. We do not need
-        // to forcefully re-track, as that causes an infinite rate-limit ping-pong loop.
+        // RECONNECT & JOIN HANDLER: Negotiates WebRTC and registers squad roster
         commsChannel.on('presence', { event: 'join' }, ({ key, newPresences }) => {
             const state = commsChannel.presenceState();
+            if (newPresences && newPresences.length > 0 && newPresences[0].user) {
+                if (window.registerSquadMember) {
+                    window.registerSquadMember(newPresences[0].user, newPresences[0].location, newPresences[0].dutyStatus, newPresences[0].distress);
+                }
+            }
             updateTeamRoster(state);
             updateTeamMarkers(state);
             if (key === commsUser.id) return;
             window.pushTacLog(`PLAYER JOINED: ${newPresences[0]?.user?.callsign || key}`, "SYS");
+
+            if (!window.peerConnections[key] && commsUser.id > key) {
+                createPeerConnection(key, true);
+            }
         });
 
         commsChannel.on('presence', { event: 'leave' }, ({ key, leftPresences }) => {
             const state = commsChannel.presenceState();
+            if (state[key] && state[key].length > 0) {
+                updateTeamRoster(state);
+                updateTeamMarkers(state);
+                return;
+            }
+            
+            // Clean up left operator from registry
+            if (leftPresences && leftPresences[0]?.user?.id) {
+                const uid = leftPresences[0].user.id;
+                let stillOnline = false;
+                Object.values(state).forEach(list => {
+                    (list || []).forEach(p => {
+                        if (p.user?.id === uid) stillOnline = true;
+                    });
+                });
+                if (!stillOnline && window.activeSquadRegistry && window.activeSquadRegistry[uid]) {
+                    delete window.activeSquadRegistry[uid];
+                }
+            }
             updateTeamRoster(state);
             updateTeamMarkers(state);
-            if (state[key] && state[key].length > 0) return; // User is still here, just updated location
             
             if (window.peerConnections && window.peerConnections[key]) {
-                if (window.peerConnections[key] !== 'FAILED') {
-                    try { window.peerConnections[key].close(); } catch(e){}
-                }
+                try { window.peerConnections[key].close(); } catch(e){}
                 delete window.peerConnections[key];
                 const audioEl = document.getElementById('webrtc-audio-' + key);
                 if (audioEl) audioEl.remove();
@@ -8329,12 +8516,16 @@ function initializeTacticalDashboard2() {
         let isIntentionalDisconnect = false;
 
         // ── BULLETPROOF DISCONNECT ───────────────────────────────────────────
-        // Named function so it can never be double-bound. Always resets UI
-        // even if Supabase or WebRTC throws an error.
         function doDisconnect() {
             isIntentionalDisconnect = true;
 
-            // 1. Kill Supabase channel
+            // 1. Kill Heartbeat Timer
+            if (window.squadHeartbeatInterval) {
+                clearInterval(window.squadHeartbeatInterval);
+                window.squadHeartbeatInterval = null;
+            }
+
+            // 2. Kill Supabase channel
             try {
                 if (commsChannel) {
                     window.supabaseClient.removeChannel(commsChannel);
@@ -8342,13 +8533,13 @@ function initializeTacticalDashboard2() {
                 }
             } catch(e) { console.warn('[DISCONNECT] Supabase cleanup error:', e); }
 
-            // 2. Kill all WebRTC peer connections
+            // 3. Kill all WebRTC peer connections
             try {
                 Object.values(window.peerConnections || {}).forEach(pc => { try { pc.close(); } catch(e){} });
                 window.peerConnections = {};
             } catch(e) { console.warn('[DISCONNECT] WebRTC cleanup error:', e); }
 
-            // 3. Kill microphone stream
+            // 4. Kill microphone stream
             try {
                 if (window.activeMicStream) {
                     window.activeMicStream.getTracks().forEach(t => t.stop());
@@ -8356,12 +8547,16 @@ function initializeTacticalDashboard2() {
                 }
             } catch(e) { console.warn('[DISCONNECT] Mic cleanup error:', e); }
 
-            // 4. Stop GPS watch
+            // 5. Stop GPS watch
             try {
                 if (geoWatchId) { navigator.geolocation.clearWatch(geoWatchId); geoWatchId = null; }
             } catch(e) {}
 
-            // 5. ALWAYS reset UI — this must never be skipped
+            // 6. Reset Registry & Markers
+            window.activeSquadRegistry = {};
+            window.latestPresenceState = {};
+
+            // 7. ALWAYS reset UI
             try {
                 document.getElementById('comms-login').classList.remove('hidden');
                 document.getElementById('comms-dashboard').classList.add('hidden');
@@ -8369,7 +8564,6 @@ function initializeTacticalDashboard2() {
                 document.getElementById('comms-sos-bar').classList.add('hidden');
                 const disconnectBtn = document.getElementById('comms-terminate-link-btn');
                 if (disconnectBtn) disconnectBtn.classList.add('hidden');
-                // Clear all team markers from map
                 if (window.teamMarkers) {
                     Object.values(window.teamMarkers).forEach(m => { try { if(commsMapInstance) commsMapInstance.removeLayer(m); } catch(e){} });
                     window.teamMarkers = {};
@@ -8378,26 +8572,43 @@ function initializeTacticalDashboard2() {
 
             window.pushTacLog(`DISCONNECTED FROM NETWORK`, "SYS");
         }
-        // Make it globally accessible so future reconnect attempts can also call it
         window.doDisconnect = doDisconnect;
 
+        function reconnectComms() {
+            if (isIntentionalDisconnect || !commsUser || !commsUser.callsign) return;
+            window.pushTacLog("LINK SIGNAL RE-SYNCING...", "ALERT");
+            try {
+                if (commsChannel) {
+                    try { window.supabaseClient.removeChannel(commsChannel); } catch(e){}
+                    commsChannel = null;
+                }
+                initSupabaseComms(window.currentTeamName, window.currentPasscode, () => {
+                    window.pushTacLog("FREQUENCY LINK RESTORED", "SUCCESS");
+                });
+            } catch(err) {
+                console.warn("Reconnect attempt error:", err);
+            }
+        }
+        window.reconnectComms = reconnectComms;
+        window.establishTacticalLink = reconnectComms;
+
         commsChannel.subscribe(async (status, err) => {
-            if (diagSub) diagSub.textContent = `SUB: ${status}`;
-            window.pushTacLog(`COMMS LINK: ${status}`, status === 'SUBSCRIBED' ? "SUCCESS" : "ERROR");
+            const hexBadge = window.currentFreqHex ? ` [${window.currentFreqHex.slice(0, 4)}]` : '';
+            if (diagSub) diagSub.textContent = `SUB: ${status}${hexBadge}`;
+            window.pushTacLog(`COMMS LINK: ${status}${hexBadge}`, status === 'SUBSCRIBED' ? "SUCCESS" : "ERROR");
             
             if (status === 'CLOSED' || status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
                 if (!isIntentionalDisconnect) {
-                    window.pushTacLog(`CONNECTION DROPPED. AUTO-RECONNECTING IN 3s...`, "ALERT");
+                    window.pushTacLog(`SIGNAL DROPPED (${status}). RECONNECTING IN 2s...`, "ALERT");
                     setTimeout(() => {
-                        window.pushTacLog(`INITIATING AUTO-RECONNECT...`, "SYS");
-                        if (window.establishTacticalLink) window.establishTacticalLink();
-                    }, 3000);
+                        if (!isIntentionalDisconnect) reconnectComms();
+                    }, 2000);
                 }
             }
 
             if (status === 'SUBSCRIBED') {
                 if (onConnectedCallback) onConnectedCallback();
-                window.pushTacLog(`LINK ESTABLISHED: MISSION CHANNEL ${teamName}`, "SUCCESS");
+                window.pushTacLog(`LINK LOCKED: MISSION CHANNEL ${teamName}${hexBadge}`, "SUCCESS");
                 
                 // Show dashboard
                 document.getElementById('comms-login').classList.add('hidden');
@@ -8405,11 +8616,10 @@ function initializeTacticalDashboard2() {
                 document.getElementById('comms-dashboard').classList.add('grid');
                 document.getElementById('comms-sos-bar').classList.remove('hidden');
                 
-                // Wire up disconnect button — use a single named handler to avoid stacking
+                // Wire up disconnect button
                 const disconnectBtn = document.getElementById('comms-terminate-link-btn');
                 if (disconnectBtn) {
                     disconnectBtn.classList.remove('hidden');
-                    // Clone node wipes any previously attached listeners before binding fresh
                     const freshBtn = disconnectBtn.cloneNode(true);
                     disconnectBtn.parentNode.replaceChild(freshBtn, disconnectBtn);
                     freshBtn.classList.remove('hidden');
@@ -8422,10 +8632,42 @@ function initializeTacticalDashboard2() {
                 // Initialize Map
                 initCommsMap();
 
-                // Track presence
+                // Track presence immediately
                 if (commsChannel) {
-                    commsChannel.track({ online_at: new Date().toISOString(), user: commsUser, distress: window.isDistressActive, dutyStatus: window.myDutyStatus || '' }).catch(e => console.warn("Initial track failed:", e));
+                    commsChannel.track({
+                        online_at: new Date().toISOString(),
+                        user: commsUser,
+                        distress: window.isDistressActive || false,
+                        dutyStatus: window.myDutyStatus || ''
+                    }).catch(e => console.warn("Initial track failed:", e));
+
+                    // Announce join so teammates immediately discover this operator
+                    commsChannel.send({
+                        type: 'broadcast',
+                        event: 'announce_join',
+                        payload: { user: commsUser, location: window.myLatestCoords || null, dutyStatus: window.myDutyStatus || '' }
+                    }).catch(() => {});
                 }
+
+                // Active 20-Second Keepalive Heartbeat (Prevents 1-minute idle timeouts permanently)
+                if (window.squadHeartbeatInterval) clearInterval(window.squadHeartbeatInterval);
+                window.squadHeartbeatInterval = setInterval(() => {
+                    if (commsChannel && commsChannel.state === 'joined') {
+                        commsChannel.track({
+                            online_at: new Date().toISOString(),
+                            user: commsUser,
+                            location: window.myLatestCoords || null,
+                            dutyStatus: window.myDutyStatus || '',
+                            distress: window.isDistressActive || false
+                        }).catch(() => {});
+
+                        commsChannel.send({
+                            type: 'broadcast',
+                            event: 'squad_ping',
+                            payload: { user: commsUser, location: window.myLatestCoords || null, dutyStatus: window.myDutyStatus || '' }
+                        }).catch(() => {});
+                    }
+                }, 20000);
             }
         });
         } catch (error) {
@@ -8815,6 +9057,10 @@ function initializeTacticalDashboard2() {
         const startPTT = async (e) => {
             if (e) e.preventDefault();
             if (!commsUser || !commsUser.callsign) { alert("Log into the Comms First Before Operating the Comms"); return; }
+            if (!window.activeMicStream) {
+                window.pushTacLog('⚠️ PTT AUDIO UNAVAILABLE: Requires HTTPS for voice.', 'ALERT');
+                // Do not return; allow visual PTT to transmit
+            }
             pttBtn.classList.add('border-emerald-500', 'bg-emerald-950/20', 'shadow-[0_0_20px_rgba(16,185,129,0.3)]');
             
             window.pushTacLog(`TRANSMITTING TO SQUAD`, "SYS");
@@ -8825,15 +9071,39 @@ function initializeTacticalDashboard2() {
             }
 
             try {
+                // If microphone is not yet armed, acquire it now on direct user gesture
+                if (!window.activeMicStream && navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                    try {
+                        window.activeMicStream = await navigator.mediaDevices.getUserMedia({ 
+                            audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } 
+                        });
+                    } catch (e1) {
+                        try {
+                            window.activeMicStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                        } catch (e2) {
+                            window.activeMicStream = null;
+                        }
+                    }
+                    if (window.activeMicStream) {
+                        if (window.attachMicToPeers) window.attachMicToPeers(window.activeMicStream);
+                        window.pushTacLog("MICROPHONE ARMED (PTT)", "SUCCESS");
+                    }
+                }
+
+                // Half-Duplex Rule: Mute incoming remote speakers while transmitting to stop acoustic feedback loops
+                document.querySelectorAll('audio[id^="webrtc-audio-"]').forEach(el => { el.muted = true; });
+
                 // Unmute the microphone to start broadcasting
                 if (window.activeMicStream && window.activeMicStream.getAudioTracks().length > 0) {
                     window.activeMicStream.getAudioTracks()[0].enabled = true;
                 }
 
-                commsChannel.send({
-                    type: 'broadcast', event: 'ptt',
-                    payload: { data: TacticalCrypto.encrypt({ active: true, user: commsUser }) }
-                });
+                if (commsChannel) {
+                    commsChannel.send({
+                        type: 'broadcast', event: 'ptt',
+                        payload: { data: TacticalCrypto.encrypt({ active: true, user: commsUser }) }
+                    }).catch(() => {});
+                }
                 window.diagTxCount++;
                 const diagTx = document.getElementById('diag-tx');
                 if (diagTx) diagTx.textContent = `TX: ${window.diagTxCount}`;
@@ -8860,10 +9130,15 @@ function initializeTacticalDashboard2() {
                     window.activeMicStream.getAudioTracks()[0].enabled = false;
                 }
 
-                commsChannel.send({
-                    type: 'broadcast', event: 'ptt',
-                    payload: { data: TacticalCrypto.encrypt({ active: false, user: commsUser }) }
-                });
+                // Restore remote speakers to hear incoming squad transmissions
+                document.querySelectorAll('audio[id^="webrtc-audio-"]').forEach(el => { el.muted = false; });
+
+                if (commsChannel) {
+                    commsChannel.send({
+                        type: 'broadcast', event: 'ptt',
+                        payload: { data: TacticalCrypto.encrypt({ active: false, user: commsUser }) }
+                    }).catch(() => {});
+                }
             } catch(e) { console.error("PTT Stop error", e); }
         };
         pttBtn.onmousedown = startPTT;
@@ -9239,28 +9514,91 @@ function initializeTacticalDashboard2() {
         if (sosToggle) sosToggle.onclick = toggleDistress;
     }
 
+    window.activeSquadRegistry = window.activeSquadRegistry || {};
+
+    window.registerSquadMember = function(userObj, location = null, dutyStatus = '', distress = false) {
+        if (!userObj || !userObj.id) return;
+        const uid = userObj.id;
+        
+        const existing = window.activeSquadRegistry[uid] || {};
+        window.activeSquadRegistry[uid] = {
+            user: userObj,
+            location: location || existing.location || null,
+            dutyStatus: (dutyStatus !== undefined && dutyStatus !== null && dutyStatus !== '') ? dutyStatus : (existing.dutyStatus || ''),
+            distress: distress !== undefined ? distress : (existing.distress || false),
+            lastSeen: Date.now()
+        };
+        updateTeamRoster(window.latestPresenceState || {});
+        updateTeamMarkers(window.latestPresenceState || {});
+    };
+
     function updateTeamRoster(state) {
-        window.latestPresenceState = state;
+        window.latestPresenceState = state || {};
         const roster = document.getElementById('team-roster');
         if (!roster) return;
         roster.innerHTML = '';
-        const seenUsers = new Set();
-        Object.keys(state).forEach(userId => {
-            const presences = state[userId];
-            if (presences.length > 0) {
+        
+        // 1. Ingest all presence records into squad registry keyed by user id
+        Object.keys(state || {}).forEach(presenceKey => {
+            const presences = state[presenceKey];
+            if (presences && presences.length > 0) {
                 const sorted = [...presences].sort((a,b) => (new Date(b.online_at).getTime() || 0) - (new Date(a.online_at).getTime() || 0));
                 const p = sorted[0];
-                if (p.user && !seenUsers.has(p.user.id)) {
-                    seenUsers.add(p.user.id);
+                if (p && p.user && p.user.id) {
+                    const uid = p.user.id;
+                    const existing = window.activeSquadRegistry[uid] || {};
+                    window.activeSquadRegistry[uid] = {
+                        user: p.user,
+                        location: p.location || existing.location || null,
+                        dutyStatus: p.dutyStatus || existing.dutyStatus || '',
+                        distress: p.distress !== undefined ? p.distress : (existing.distress || false),
+                        lastSeen: Date.now()
+                    };
+                }
+            }
+        });
+
+        // 2. Always ensure local operator is in squad registry
+        if (commsUser && commsUser.callsign) {
+            const myCall = commsUser.callsign.trim().toUpperCase();
+            const existing = window.activeSquadRegistry[myCall] || {};
+            window.activeSquadRegistry[myCall] = {
+                user: commsUser,
+                location: window.myLatestCoords || existing.location || null,
+                dutyStatus: window.myDutyStatus || existing.dutyStatus || '',
+                distress: window.isDistressActive || false,
+                lastSeen: Date.now()
+            };
+        }
+
+        // 3. Render all active members (retained if seen within last 30 minutes)
+        const now = Date.now();
+        const seenCallsigns = new Set();
+        const myCall = (commsUser?.callsign || '').trim().toUpperCase();
+        
+        // Local user first, then teammates alphabetically
+        const sortedCallsigns = Object.keys(window.activeSquadRegistry).sort((a, b) => {
+            if (a === myCall) return -1;
+            if (b === myCall) return 1;
+            return a.localeCompare(b);
+        });
+
+        sortedCallsigns.forEach(callKey => {
+            const member = window.activeSquadRegistry[callKey];
+            if (member && member.user && (now - (member.lastSeen || 0) < 1800000)) {
+                const normCall = (member.user.callsign || callKey).trim().toUpperCase();
+                if (!seenCallsigns.has(normCall)) {
+                    seenCallsigns.add(normCall);
                     const tag = document.createElement('span');
-                    const statusIcon = p.dutyStatus ? ` <span class="font-bold text-amber-300 ml-0.5">${p.dutyStatus}</span>` : '';
+                    const statusIcon = member.dutyStatus ? ` <span class="font-bold text-amber-300 ml-0.5">${member.dutyStatus}</span>` : '';
+                    const roleLabel = member.user.role || 'OP';
                     
-                    if (p.distress) {
+                    if (member.distress) {
                         tag.className = 'bg-red-950/80 border border-red-500/50 text-red-400 px-1.5 py-0.5 rounded text-[7px] font-black uppercase flex items-center gap-1 animate-pulse';
-                        tag.innerHTML = `<span class="w-1 h-1 rounded-full bg-red-500 animate-pulse"></span> ${p.user.callsign} [${p.user.role}]${statusIcon}`;
+                        tag.innerHTML = `<span class="w-1 h-1 rounded-full bg-red-500 animate-pulse"></span> ${normCall} [${roleLabel}]${statusIcon}`;
                     } else {
                         tag.className = 'bg-emerald-950/60 border border-emerald-500/50 text-emerald-400 px-1.5 py-0.5 rounded text-[7px] font-black uppercase flex items-center gap-1';
-                        tag.innerHTML = `<span class="w-1 h-1 rounded-full bg-emerald-500 animate-pulse"></span> ${p.user.callsign} [${p.user.role}]${statusIcon}`;
+                        tag.innerHTML = `<span class="w-1 h-1 rounded-full bg-emerald-500 animate-pulse"></span> ${normCall} [${roleLabel}]${statusIcon}`;
                     }
                     roster.appendChild(tag);
                 }
@@ -9270,59 +9608,87 @@ function initializeTacticalDashboard2() {
 
     function updateTeamMarkers(state) {
         if (!commsMapInstance) return;
-        const currentActiveUsers = new Set();
-        Object.keys(state).forEach(userId => {
-            const presences = state[userId];
-            if (presences.length > 0) {
-                const sorted = [...presences].sort((a,b) => (new Date(b.online_at).getTime() || 0) - (new Date(a.online_at).getTime() || 0));
-                const p = sorted[0];
-                if (p.location && p.user) {
-                    currentActiveUsers.add(p.user.id);
-                    const isMe = p.user.id === commsUser.id;
-                    const isDistress = p.distress === true;
+        const currentActiveCallsigns = new Set();
+        
+        // Collect all members with known location
+        const membersWithLoc = [];
+        const seenLocCallsigns = new Set();
 
-                    // Marker color: always normal (green=me, blue=teammate). No red box ever.
-                    const bgColor = isMe ? 'bg-emerald-500 shadow-[0_0_10px_#10b981]' : 'bg-blue-500 shadow-[0_0_10px_#3b82f6]';
-
-                    const icon = L.divIcon({
-                        className: 'custom-div-icon',
-                        html: `<div class="relative w-3 h-3 flex items-center justify-center"><div class="absolute w-full h-full rounded-full ${bgColor}"></div><div class="relative w-3 h-3 ${bgColor} border-2 border-white rounded-full flex items-center justify-center text-[5px] text-white font-black"></div></div>`,
-                        iconSize: [12, 12]
-                    });
-
-                    // Tooltip above unit: plain callsign text. Distress shown via banner, not on map.
-                    const dutyStr = p.dutyStatus ? ` '${p.dutyStatus}'` : '';
-                    const tooltipText = `${p.user.callsign} [${p.user.role}]${dutyStr}`;
-                    const tooltipClass = 'tactical-tooltip'; // Distress shown via banner ONLY, not on map.
-                    
-                    const latStr = p.location.lat.toFixed(5);
-                    const lngStr = p.location.lng.toFixed(5);
-                    const popupHtml = `
-                        <div class="text-[10px] font-mono text-center bg-slate-900 text-white p-1 rounded border border-slate-700">
-                            <b>${p.user.callsign}</b><br>
-                            <button onclick="alert('GPS: ${latStr}, ${lngStr}')" class="mt-1 bg-blue-900 hover:bg-blue-700 text-blue-200 px-2 py-0.5 rounded border border-blue-500 cursor-pointer">SHOW GPS</button>
-                        </div>
-                    `;
-
-                    if (!teamMarkers[p.user.id]) {
-                        teamMarkers[p.user.id] = L.marker([p.location.lat, p.location.lng], { icon: icon }).addTo(commsMapInstance);
-                        teamMarkers[p.user.id].bindTooltip(tooltipText, { permanent: true, direction: 'top', className: tooltipClass, interactive: false });
-                        teamMarkers[p.user.id].bindPopup(popupHtml);
-                    } else {
-                        teamMarkers[p.user.id].setLatLng([p.location.lat, p.location.lng]);
-                        // Update tooltip if needed
-                        teamMarkers[p.user.id].setTooltipContent(tooltipText);
-                        teamMarkers[p.user.id].setPopupContent(popupHtml);
-                    }
+        Object.keys(window.activeSquadRegistry || {}).forEach(callKey => {
+            const m = window.activeSquadRegistry[callKey];
+            if (m && m.user && m.location && m.location.lat && m.location.lng) {
+                const normCall = (m.user.callsign || callKey).trim().toUpperCase();
+                if (!seenLocCallsigns.has(normCall)) {
+                    seenLocCallsigns.add(normCall);
+                    membersWithLoc.push(m);
                 }
             }
         });
-        
+
+        // Group members by geographic proximity to detect identical/overlapping coordinates
+        const coordGroups = {};
+        membersWithLoc.forEach(m => {
+            const key = `${m.location.lat.toFixed(4)}_${m.location.lng.toFixed(4)}`;
+            if (!coordGroups[key]) coordGroups[key] = [];
+            coordGroups[key].push(m);
+        });
+
+        membersWithLoc.forEach(m => {
+            const normCall = (m.user.callsign || '').trim().toUpperCase();
+            currentActiveCallsigns.add(normCall);
+            const myCall = (commsUser?.callsign || '').trim().toUpperCase();
+            const isMe = normCall === myCall;
+
+            const bgColor = isMe ? 'bg-emerald-500 shadow-[0_0_10px_#10b981]' : 'bg-blue-500 shadow-[0_0_10px_#3b82f6]';
+
+            const icon = L.divIcon({
+                className: 'custom-div-icon',
+                html: `<div class="relative w-3.5 h-3.5 flex items-center justify-center"><div class="absolute w-full h-full rounded-full ${bgColor}"></div><div class="relative w-3.5 h-3.5 ${bgColor} border-2 border-white rounded-full flex items-center justify-center text-[5px] text-white font-black"></div></div>`,
+                iconSize: [14, 14]
+            });
+
+            const dutyStr = m.dutyStatus ? ` '${m.dutyStatus}'` : '';
+            const tooltipText = `${normCall} [${m.user.role || 'OP'}]${dutyStr}`;
+            const tooltipClass = 'tactical-tooltip';
+
+            // Jitter / Dispersion offset if teammates are at the exact same location (e.g. testing in the same room)
+            let renderLat = m.location.lat;
+            let renderLng = m.location.lng;
+            const key = `${m.location.lat.toFixed(4)}_${m.location.lng.toFixed(4)}`;
+            const group = coordGroups[key] || [];
+            if (group.length > 1) {
+                const idx = group.findIndex(g => (g.user.callsign || '').trim().toUpperCase() === normCall);
+                const angle = idx * (2 * Math.PI / group.length);
+                // Offset by ~5 meters so badges and dots do not overlap
+                renderLat += 0.000045 * Math.sin(angle);
+                renderLng += 0.000055 * Math.cos(angle);
+            }
+
+            const latStr = m.location.lat.toFixed(5);
+            const lngStr = m.location.lng.toFixed(5);
+            const popupHtml = `
+                <div class="text-[10px] font-mono text-center bg-slate-900 text-white p-1 rounded border border-slate-700">
+                    <b>${normCall}</b><br>
+                    <button onclick="alert('GPS: ${latStr}, ${lngStr}')" class="mt-1 bg-blue-900 hover:bg-blue-700 text-blue-200 px-2 py-0.5 rounded border border-blue-500 cursor-pointer">SHOW GPS</button>
+                </div>
+            `;
+
+            if (!teamMarkers[normCall]) {
+                teamMarkers[normCall] = L.marker([renderLat, renderLng], { icon: icon }).addTo(commsMapInstance);
+                teamMarkers[normCall].bindTooltip(tooltipText, { permanent: true, direction: 'top', className: tooltipClass, interactive: false });
+                teamMarkers[normCall].bindPopup(popupHtml);
+            } else {
+                teamMarkers[normCall].setLatLng([renderLat, renderLng]);
+                teamMarkers[normCall].setTooltipContent(tooltipText);
+                teamMarkers[normCall].setPopupContent(popupHtml);
+            }
+        });
+
         // Remove markers for disconnected users
-        Object.keys(teamMarkers).forEach(id => {
-            if (!currentActiveUsers.has(id)) {
-                commsMapInstance.removeLayer(teamMarkers[id]);
-                delete teamMarkers[id];
+        Object.keys(teamMarkers).forEach(callKey => {
+            if (!currentActiveCallsigns.has(callKey)) {
+                try { commsMapInstance.removeLayer(teamMarkers[callKey]); } catch(e){}
+                delete teamMarkers[callKey];
             }
         });
     }
@@ -9640,6 +10006,318 @@ function initializeTacticalDashboard2() {
             window.pushTacLog("REMARKS NOTE SAVED TO VAULT", "SUCCESS");
         });
     }
+
+// ═══════════════════════════════════════════════════════════
+// TACTICAL WHITEBOARD — Floating Drawing Board
+// ═══════════════════════════════════════════════════════════
+(function initWhiteboard() {
+    const wbModal = document.getElementById('whiteboard-modal');
+    if (!wbModal) return;
+    const wbCanvas = document.getElementById('wb-canvas');
+    const wbGridCanvas = document.getElementById('wb-grid-canvas');
+    const wbTitle = document.getElementById('wb-title');
+    const wbNotes = document.getElementById('wb-notes');
+    if (!wbCanvas) return;
+
+    const ctx = wbCanvas.getContext('2d');
+    let isDrawing = false;
+    let currentColor = '#ffffff';
+    let currentSize = 4;
+    let isEraser = false;
+    let strokeHistory = []; // Array of ImageData snapshots for undo
+    let gridVisible = false;
+
+    // --- Canvas Sizing ---
+    function resizeCanvas() {
+        const container = wbCanvas.parentElement;
+        const w = container.clientWidth;
+        const h = container.clientHeight;
+        // Save current drawing
+        const imageData = ctx.getImageData(0, 0, wbCanvas.width, wbCanvas.height);
+        wbCanvas.width = w;
+        wbCanvas.height = h;
+        // Restore drawing
+        ctx.putImageData(imageData, 0, 0);
+        // Resize grid canvas too
+        if (wbGridCanvas) {
+            wbGridCanvas.width = w;
+            wbGridCanvas.height = h;
+            if (gridVisible) drawGrid();
+        }
+    }
+
+    // --- Toggle Visibility ---
+    document.addEventListener('click', (e) => {
+        const btn = e.target.closest('.whiteboard-toggle-btn');
+        if (btn) {
+            e.preventDefault();
+            wbModal.classList.toggle('hidden');
+            if (!wbModal.classList.contains('hidden')) {
+                setTimeout(() => {
+                    resizeCanvas();
+                    if (window.lucide) window.lucide.createIcons();
+                }, 50);
+            }
+        }
+    });
+
+    // --- Drag Logic ---
+    const dragHeader = document.getElementById('wb-drag-header');
+    let isDragging = false, startX, startY, initialLeft, initialTop;
+    const startDrag = (e) => {
+        if (e.target.closest('button, input')) return;
+        isDragging = true;
+        const clientX = e.type.startsWith('touch') ? e.touches[0].clientX : e.clientX;
+        const clientY = e.type.startsWith('touch') ? e.touches[0].clientY : e.clientY;
+        startX = clientX; startY = clientY;
+        const rect = wbModal.getBoundingClientRect();
+        initialLeft = rect.left; initialTop = rect.top;
+        wbModal.style.right = 'auto'; wbModal.style.bottom = 'auto';
+        wbModal.style.left = initialLeft + 'px'; wbModal.style.top = initialTop + 'px';
+        document.addEventListener('mousemove', doDrag);
+        document.addEventListener('touchmove', doDrag, { passive: false });
+        document.addEventListener('mouseup', stopDrag);
+        document.addEventListener('touchend', stopDrag);
+    };
+    const doDrag = (e) => {
+        if (!isDragging) return;
+        if (e.cancelable) e.preventDefault();
+        const clientX = e.type.startsWith('touch') ? e.touches[0].clientX : e.clientX;
+        const clientY = e.type.startsWith('touch') ? e.touches[0].clientY : e.clientY;
+        let newLeft = initialLeft + (clientX - startX);
+        let newTop = initialTop + (clientY - startY);
+        if (newTop < 48) newTop = 48;
+        const maxLeft = window.innerWidth - wbModal.offsetWidth;
+        if (newLeft < 0) newLeft = 0;
+        if (newLeft > maxLeft) newLeft = maxLeft;
+        const maxTop = window.innerHeight - wbModal.offsetHeight;
+        if (newTop > maxTop) newTop = maxTop;
+        wbModal.style.left = newLeft + 'px'; wbModal.style.top = newTop + 'px';
+    };
+    const stopDrag = () => {
+        isDragging = false;
+        document.removeEventListener('mousemove', doDrag);
+        document.removeEventListener('touchmove', doDrag);
+        document.removeEventListener('mouseup', stopDrag);
+        document.removeEventListener('touchend', stopDrag);
+    };
+    if (dragHeader) {
+        dragHeader.addEventListener('mousedown', startDrag);
+        dragHeader.addEventListener('touchstart', startDrag, { passive: false });
+    }
+
+    // --- Drawing Engine ---
+    function getPos(e) {
+        const rect = wbCanvas.getBoundingClientRect();
+        const clientX = e.type.startsWith('touch') ? e.touches[0].clientX : e.clientX;
+        const clientY = e.type.startsWith('touch') ? e.touches[0].clientY : e.clientY;
+        return { x: clientX - rect.left, y: clientY - rect.top };
+    }
+    function saveState() {
+        if (strokeHistory.length >= 30) strokeHistory.shift();
+        strokeHistory.push(ctx.getImageData(0, 0, wbCanvas.width, wbCanvas.height));
+    }
+    const onDrawStart = (e) => {
+        if (e.target.closest('button, input, textarea, select')) return;
+        if (e.cancelable) e.preventDefault();
+        isDrawing = true;
+        saveState();
+        const pos = getPos(e);
+        ctx.beginPath();
+        ctx.moveTo(pos.x, pos.y);
+        ctx.strokeStyle = isEraser ? '#0f172a' : currentColor; // slate-900 bg for eraser
+        ctx.lineWidth = isEraser ? currentSize * 3 : currentSize;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+    };
+    const onDrawMove = (e) => {
+        if (!isDrawing) return;
+        if (e.cancelable) e.preventDefault();
+        const pos = getPos(e);
+        ctx.lineTo(pos.x, pos.y);
+        ctx.stroke();
+    };
+    const onDrawEnd = () => { isDrawing = false; };
+    wbCanvas.addEventListener('mousedown', onDrawStart);
+    wbCanvas.addEventListener('mousemove', onDrawMove);
+    wbCanvas.addEventListener('mouseup', onDrawEnd);
+    wbCanvas.addEventListener('mouseleave', onDrawEnd);
+    wbCanvas.addEventListener('touchstart', onDrawStart, { passive: false });
+    wbCanvas.addEventListener('touchmove', onDrawMove, { passive: false });
+    wbCanvas.addEventListener('touchend', onDrawEnd);
+    wbCanvas.addEventListener('touchcancel', onDrawEnd);
+
+    // --- Color Palette ---
+    const palette = document.getElementById('wb-color-palette');
+    if (palette) {
+        palette.addEventListener('click', (e) => {
+            const btn = e.target.closest('[data-color]');
+            if (!btn) return;
+            currentColor = btn.dataset.color;
+            isEraser = false;
+            document.getElementById('wb-eraser-btn')?.classList.remove('border-cyan-500', 'text-cyan-300');
+            palette.querySelectorAll('button').forEach(b => b.style.borderColor = '#475569');
+            btn.style.borderColor = '#fff';
+        });
+    }
+
+    // --- Size Buttons ---
+    const sizeBtns = document.getElementById('wb-size-btns');
+    if (sizeBtns) {
+        sizeBtns.addEventListener('click', (e) => {
+            const btn = e.target.closest('[data-size]');
+            if (!btn) return;
+            currentSize = parseInt(btn.dataset.size);
+            sizeBtns.querySelectorAll('button').forEach(b => {
+                b.classList.remove('text-cyan-300', 'bg-cyan-950', 'border-cyan-500');
+                b.classList.add('text-slate-300', 'bg-slate-800', 'border-slate-600');
+            });
+            btn.classList.remove('text-slate-300', 'bg-slate-800', 'border-slate-600');
+            btn.classList.add('text-cyan-300', 'bg-cyan-950', 'border-cyan-500');
+        });
+    }
+
+    // --- Undo ---
+    document.getElementById('wb-undo-btn')?.addEventListener('click', () => {
+        if (strokeHistory.length === 0) return;
+        ctx.putImageData(strokeHistory.pop(), 0, 0);
+    });
+
+    // --- Clear All ---
+    document.getElementById('wb-clear-all-btn')?.addEventListener('click', () => {
+        ctx.clearRect(0, 0, wbCanvas.width, wbCanvas.height);
+        strokeHistory = [];
+        if (wbTitle) wbTitle.value = '';
+        if (wbNotes) wbNotes.value = '';
+    });
+
+    // --- Eraser Toggle ---
+    document.getElementById('wb-eraser-btn')?.addEventListener('click', (e) => {
+        isEraser = !isEraser;
+        const eraserBtn = e.currentTarget;
+        if (isEraser) {
+            eraserBtn.classList.add('border-cyan-500', 'text-cyan-300');
+            eraserBtn.classList.remove('border-slate-600', 'text-slate-400');
+            palette?.querySelectorAll('button').forEach(b => b.style.borderColor = '#475569');
+        } else {
+            eraserBtn.classList.remove('border-cyan-500', 'text-cyan-300');
+            eraserBtn.classList.add('border-slate-600', 'text-slate-400');
+        }
+    });
+
+    // --- Grid Toggle ---
+    function drawGrid() {
+        if (!wbGridCanvas) return;
+        const gCtx = wbGridCanvas.getContext('2d');
+        gCtx.clearRect(0, 0, wbGridCanvas.width, wbGridCanvas.height);
+        gCtx.strokeStyle = 'rgba(100,116,139,0.3)';
+        gCtx.lineWidth = 0.5;
+        const step = 20;
+        for (let x = step; x < wbGridCanvas.width; x += step) {
+            gCtx.beginPath(); gCtx.moveTo(x, 0); gCtx.lineTo(x, wbGridCanvas.height); gCtx.stroke();
+        }
+        for (let y = step; y < wbGridCanvas.height; y += step) {
+            gCtx.beginPath(); gCtx.moveTo(0, y); gCtx.lineTo(wbGridCanvas.width, y); gCtx.stroke();
+        }
+    }
+    document.getElementById('wb-grid-toggle')?.addEventListener('click', () => {
+        gridVisible = !gridVisible;
+        if (wbGridCanvas) {
+            if (gridVisible) { wbGridCanvas.classList.remove('hidden'); drawGrid(); }
+            else { wbGridCanvas.classList.add('hidden'); }
+        }
+    });
+
+    // --- Composite & Save to Vault ---
+    function compositeWhiteboard() {
+        const title = wbTitle?.value?.trim() || 'UNTITLED BOARD';
+        const notes = wbNotes?.value?.trim() || '';
+        // Create composite canvas
+        const comp = document.createElement('canvas');
+        const headerH = 40;
+        const footerH = notes ? 50 : 0;
+        comp.width = wbCanvas.width;
+        comp.height = wbCanvas.height + headerH + footerH;
+        const cCtx = comp.getContext('2d');
+        // Header background
+        cCtx.fillStyle = '#0c4a6e';
+        cCtx.fillRect(0, 0, comp.width, headerH);
+        cCtx.fillStyle = '#22d3ee';
+        cCtx.font = 'bold 14px monospace';
+        cCtx.textBaseline = 'middle';
+        cCtx.fillText('⊞ WHITEBOARD: ' + title.toUpperCase(), 10, headerH / 2);
+        // Timestamp
+        cCtx.fillStyle = '#94a3b8';
+        cCtx.font = '10px monospace';
+        cCtx.textAlign = 'right';
+        cCtx.fillText(new Date().toLocaleString(), comp.width - 10, headerH / 2);
+        cCtx.textAlign = 'left';
+        // Canvas drawing
+        cCtx.drawImage(wbCanvas, 0, headerH);
+        // Footer with notes
+        if (notes) {
+            cCtx.fillStyle = '#1e293b';
+            cCtx.fillRect(0, headerH + wbCanvas.height, comp.width, footerH);
+            cCtx.fillStyle = '#cbd5e1';
+            cCtx.font = '11px monospace';
+            cCtx.fillText('📝 ' + notes.substring(0, 120), 10, headerH + wbCanvas.height + 20);
+            if (notes.length > 120) cCtx.fillText('   ' + notes.substring(120, 240), 10, headerH + wbCanvas.height + 36);
+        }
+        return { dataUrl: comp.toDataURL('image/png'), title };
+    }
+
+    document.getElementById('wb-save-vault-btn')?.addEventListener('click', async () => {
+        const { dataUrl, title } = compositeWhiteboard();
+        if (typeof window.saveIntelSnapshot === 'function') {
+            await window.saveIntelSnapshot('WHITEBOARD: ' + title, dataUrl, { type: 'whiteboard' });
+            window.pushTacLog?.('WHITEBOARD "' + title + '" saved to Intel Vault.', 'INTEL');
+            alert('✅ Whiteboard saved to Intel Vault!');
+        } else {
+            alert('Intel Vault not available.');
+        }
+    });
+
+    // --- Send to Chat ---
+    document.getElementById('wb-send-chat-btn')?.addEventListener('click', async () => {
+        const { dataUrl, title } = compositeWhiteboard();
+        if (typeof window.saveIntelSnapshot === 'function') {
+            const entryId = Date.now();
+            await window.saveIntelSnapshot('WHITEBOARD: ' + title, dataUrl, { type: 'whiteboard', id: entryId });
+            if (typeof window.sendVaultItemToChat === 'function') {
+                await window.sendVaultItemToChat(entryId.toString());
+                window.pushTacLog?.('WHITEBOARD "' + title + '" transmitted to team chat.', 'INTEL');
+                alert('✅ Whiteboard saved & sent to team chat!');
+            } else {
+                alert('Comms not connected. Whiteboard saved to Vault only.');
+            }
+        } else {
+            alert('Intel Vault not available.');
+        }
+    });
+
+    // --- Window resize handler ---
+    window.addEventListener('resize', () => {
+        if (!wbModal.classList.contains('hidden')) resizeCanvas();
+    });
+    // --- Regrade from Vault ---
+    window.loadWhiteboardImage = function(dataUrl, title) {
+        if (!wbModal) return;
+        wbModal.classList.remove('hidden');
+        setTimeout(() => {
+            resizeCanvas();
+            if (wbTitle) wbTitle.value = title || 'VAULT IMPORT';
+            const img = new Image();
+            img.onload = () => {
+                ctx.clearRect(0, 0, wbCanvas.width, wbCanvas.height);
+                // Draw the incoming image onto the canvas
+                ctx.drawImage(img, 0, 0, wbCanvas.width, wbCanvas.height);
+                strokeHistory = []; // Reset undo history for the new import
+            };
+            img.src = dataUrl;
+        }, 50);
+    };
+
+})();
 
     // --- MISSION BRIEFING LOGIC ---
     {
